@@ -1,0 +1,1 @@
+This is a program for budgeting. My daughter is hoping I can create an app to help her. So far, AI has done the work on it. She attempted to use ChatGPT, and I've converted that base to what is here using Gemini.
