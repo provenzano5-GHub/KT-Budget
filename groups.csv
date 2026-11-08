@@ -1,0 +1,9 @@
+Group_ID,Name,Description,Type,Budget,Impact,Is_Demo
+GRP_SALON,Salon Business,Booth rent color supplies booking and salon marketing,Fixed,Yes,business,1
+GRP_PETS,Pets,Dog food grooming veterinary care pet insurance and pet reserves,Flexible,Yes,personal,1
+GRP_HOUSING,Housing & Bills,Home rent phone essential subscriptions and irregular household bills,Fixed,Yes,personal,1
+GRP_AUTO,Auto & Transport,Fuel car insurance vehicle registration and maintenance,Flexible,Yes,personal,1
+GRP_HEALTH,Health & Wellness,Health insurance premiums medical appointments optical and prescriptions,Fixed,Yes,personal,1
+GRP_FOOD,Food & Household,Supermarket groceries household supplies restaurants takeout and coffee,Flexible,Yes,personal,1
+GRP_LIFESTYLE,Lifestyle & Wants,Clothing online shopping beauty nails bars entertainment and fun,Flexible,Yes,personal,1
+GRP_FINANCE,Taxes Debt & Savings,Quarterly tax reserves credit card paydowns emergency and retirement savings,Fixed,Yes,personal,1

@@ -1,0 +1,25 @@
+Category_ID,Name,Description,Type,Budget,Impact,Is_Demo
+SAL_RENT,Salon rent,Monthly salon booth or suite rental,Fixed,Yes,business,1
+SAL_SUP,Salon color & products,Backbar color developer foils and styling products,Flexible,Yes,business,1
+SAL_BOOK,Salon booking system,Scheduling and point-of-sale software subscription,Fixed,Yes,business,1
+SAL_AD,Salon advertising,Social media promotions and local salon ads,Flexible,Yes,business,1
+DOGFOOD,Dog food & grooming,Badlands Ranch dog food treats and professional grooming,Flexible,Yes,personal,1
+VET,Vet care & vet savings,Routine veterinary visits vaccines and pet medications,Non Monthly,Yes,personal,1
+PETINS,Pet insurance premiums,Monthly Fetch pet insurance policy premium,Fixed,Yes,personal,1
+DOGEMERG,Dog emergency savings,Dedicated savings transfer for major veterinary emergencies,Fixed,Yes,personal,1
+HOME,Home rent,Monthly residential rent or housing payment,Fixed,Yes,personal,1
+PHONE,Phone & essential subscriptions,Mobile phone plan cloud storage and essential digital tools,Fixed,Yes,personal,1
+OTHERNEED,Other essentials & irregular bills,Personal care essentials vehicle registration and irregular necessities,Non Monthly,Yes,personal,1
+GAS,Gas,Vehicle fuel at gas stations,Flexible,Yes,personal,1
+AUTOINS,Car insurance,Auto insurance policy premium,Fixed,Yes,personal,1
+HEALTH,Health insurance & medications,Health insurance premium prescriptions optical and medical care,Fixed,Yes,personal,1
+GROC,Groceries & household,Supermarket food household paper goods and cleaning supplies,Flexible,Yes,personal,1
+DINING,Restaurants takeout & coffee,Restaurants fast food coffee shops and food delivery,Flexible,Yes,personal,1
+SHOP,Clothing & online shopping,Apparel shoes accessories Amazon and online retail,Flexible,Yes,personal,1
+BEAUTY,Nails beauty & piercings,Nails hair extensions tattoos piercings and cosmetics,Flexible,Yes,personal,1
+BARS,Bars & entertainment,Bars nightclubs streaming video jukebox and live entertainment,Flexible,Yes,personal,1
+FUN,Other fun & lifestyle,Home projects gifts dog park rentals travel fees and miscellaneous wants,Flexible,Yes,personal,1
+TAX,Tax reserve transfers,Transfers set aside for quarterly federal and Wisconsin estimated taxes,Fixed,Yes,business,1
+DEBT,Credit card payments,Monthly principal and minimum payments toward credit card balances,Fixed,Yes,personal,1
+EMERG,Personal emergency savings,Transfers to liquid personal emergency savings account,Fixed,Yes,personal,1
+RETIRE,Retirement investing,Contributions to long-term retirement investment account,Fixed,Yes,personal,1

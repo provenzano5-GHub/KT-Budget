@@ -1,0 +1,25 @@
+Budget_ID,Scope_Level,Target_Ref_ID,Priority_Type,Rule_Type,Amount,Start_Month,Target_Month,Is_Demo,Notes
+BDG_001,Group_Category,SAL_RENT,Necessity,Each Month,525.00,2026-01,2026-12,1,Fixed monthly salon booth rent
+BDG_002,Group_Category,SAL_SUP,Necessity,Each Month,300.00,2026-01,2026-12,1,Monthly color and backbar product allowance
+BDG_003,Group_Category,SAL_BOOK,Necessity,Each Month,51.70,2026-01,2026-12,1,Monthly booking software fee
+BDG_004,Group_Category,SAL_AD,Want,Each Month,0.00,2026-01,2026-12,1,Optional social promotion budget
+BDG_005,Group_Category,DOGFOOD,Necessity,Each Month,450.00,2026-01,2026-12,1,Badlands Ranch food and regular grooming
+BDG_006,Group_Category,VET,Necessity,Each Month,275.00,2026-01,2026-12,1,Monthly allowance for vet visits and preventatives
+BDG_007,Group_Category,PETINS,Necessity,Each Month,177.12,2026-01,2026-12,1,Monthly Fetch pet insurance premium
+BDG_008,Group_Category,DOGEMERG,Necessity,Each Month,150.00,2026-01,2026-12,1,Monthly transfer to dog emergency fund
+BDG_009,Group_Category,HOME,Necessity,Each Month,600.00,2026-01,2026-12,1,Monthly home rent allocation
+BDG_010,Group_Category,PHONE,Necessity,Each Month,150.00,2026-01,2026-12,1,Phone bill iCloud Prime and essential subscriptions
+BDG_011,Group_Category,OTHERNEED,Necessity,Each Month,300.00,2026-01,2026-12,1,Irregular bills registration and personal necessities
+BDG_012,Group_Category,GAS,Necessity,Each Month,250.00,2026-01,2026-12,1,Monthly fuel allowance
+BDG_013,Group_Category,AUTOINS,Necessity,Each Month,132.16,2026-01,2026-12,1,Monthly car insurance allocation
+BDG_014,Group_Category,HEALTH,Necessity,Each Month,300.00,2026-01,2026-12,1,Health insurance and routine medications
+BDG_015,Group_Category,GROC,Necessity,Each Month,450.00,2026-01,2026-12,1,Supermarket groceries and household supplies
+BDG_016,Group_Category,DINING,Want,Each Month,175.00,2026-01,2026-12,1,Restaurants takeout coffee and delivery
+BDG_017,Group_Category,SHOP,Want,Each Month,125.00,2026-01,2026-12,1,Clothing Amazon TikTok Shop and retail
+BDG_018,Group_Category,BEAUTY,Want,Each Month,125.00,2026-01,2026-12,1,Nails hair extensions piercings and cosmetics
+BDG_019,Group_Category,BARS,Want,Each Month,100.00,2026-01,2026-12,1,Bars entertainment streaming and music
+BDG_020,Group_Category,FUN,Want,Each Month,75.00,2026-01,2026-12,1,Other lifestyle dog activities and projects
+BDG_021,Group_Category,TAX,Necessity,Each Month,2000.00,2026-01,2026-12,1,Monthly transfer for quarterly self-employment taxes
+BDG_022,Group_Category,DEBT,Necessity,Each Month,800.00,2026-01,2026-12,1,Planned monthly credit card paydown allocation
+BDG_023,Group_Category,EMERG,Necessity,Each Month,250.00,2026-01,2026-12,1,Monthly personal emergency fund contribution
+BDG_024,Group_Category,RETIRE,Necessity,Each Month,200.00,2026-01,2026-12,1,Monthly retirement investment contribution

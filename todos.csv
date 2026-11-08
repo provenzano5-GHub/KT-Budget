@@ -1,0 +1,8 @@
+Task_ID,Task,Type,Due_Date,Status,Priority,Is_Demo,Notes
+TASK-001,Review quarterly estimated taxes with accountant,Taxes,2027-01-15,Not started,High,1,Confirm federal and Wisconsin quarterly due dates
+TASK-002,Verify September photoshoot duplicates,Reconciliation,2026-11-15,Not started,High,1,Venmo $695.25 and $139.05 appear on Chase and Ulta cards
+TASK-003,Review pet insurance overlap in budget,Budget,2026-11-15,Not started,High,1,$275 existing vet allowance plus $177.12 Fetch premiums
+TASK-004,Enter credit card balances APRs and minimums,Debt,2026-11-15,Not started,High,1,Enter current statement balances in Accounts tab
+TASK-005,Reconcile October statements,Reconciliation,2026-11-15,Not started,Medium,1,Mixed Walmart purchases require split review
+TASK-006,Check monthly actuals versus budget,Monthly review,2026-12-01,Not started,Medium,1,Repeat at the start of each month
+TASK-007,Set up retirement account and transfer,Savings,2026-12-01,Not started,Medium,1,Confirm IRA eligibility and monthly auto-transfer

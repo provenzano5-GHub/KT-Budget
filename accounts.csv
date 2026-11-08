@@ -1,0 +1,12 @@
+Account_ID,Name,Type,Balance,Default_GC_ID,Is_Demo,Notes
+ACC_CHASE,Chase,CCard,0.00,DEBT,1,Primary Chase credit card (enter current statement balance)
+ACC_ULTA,Ulta,CCard,0.00,DEBT,1,Ulta store & lifestyle credit card (enter current statement balance)
+ACC_AE,American Eagle,CCard,0.00,DEBT,1,American Eagle credit card (enter current statement balance)
+ACC_VENMO,Venmo,Payment,0.00,SAL_RENT,1,Venmo wallet used for salon rent supplies and peer transfers
+ACC_PAYPAL,PayPal,Payment,0.00,PHONE,1,PayPal wallet used for phone bill subscriptions and registration
+ACC_SALON_INC,Salon Gross Receipts,Income,8000.00,SAL_RENT,1,Estimated monthly gross revenue from salon clients
+ACC_CHECKING,Primary Checking,Payment,0.00,HOME,1,Main bank checking account for rent bills and card paydowns
+ACC_TAX_RES,Quarterly Tax Reserve,Tax,0.00,TAX,1,Dedicated account for federal and Wisconsin quarterly estimated taxes
+ACC_PER_SAVE,Personal Emergency Savings,Savings,0.00,EMERG,1,High-yield savings for personal emergency buffer
+ACC_DOG_SAVE,Dog Emergency Savings,Savings,0.00,DOGEMERG,1,Dedicated savings bucket for major veterinary care
+ACC_RETIRE,Retirement Account,Investment,0.00,RETIRE,1,IRA or solo 401k retirement investment account

@@ -1,0 +1,25 @@
+GC_ID,Group_ID,Category_ID,Display_Label,Is_Active,Is_Demo
+SAL_RENT,GRP_SALON,SAL_RENT,Salon Business :: Salon rent,1,1
+SAL_SUP,GRP_SALON,SAL_SUP,Salon Business :: Salon color & products,1,1
+SAL_BOOK,GRP_SALON,SAL_BOOK,Salon Business :: Salon booking system,1,1
+SAL_AD,GRP_SALON,SAL_AD,Salon Business :: Salon advertising,1,1
+DOGFOOD,GRP_PETS,DOGFOOD,Pets :: Dog food & grooming,1,1
+VET,GRP_PETS,VET,Pets :: Vet care & vet savings,1,1
+PETINS,GRP_PETS,PETINS,Pets :: Pet insurance premiums,1,1
+DOGEMERG,GRP_PETS,DOGEMERG,Pets :: Dog emergency savings,1,1
+HOME,GRP_HOUSING,HOME,Housing & Bills :: Home rent,1,1
+PHONE,GRP_HOUSING,PHONE,Housing & Bills :: Phone & essential subscriptions,1,1
+OTHERNEED,GRP_HOUSING,OTHERNEED,Housing & Bills :: Other essentials & irregular bills,1,1
+GAS,GRP_AUTO,GAS,Auto & Transport :: Gas,1,1
+AUTOINS,GRP_AUTO,AUTOINS,Auto & Transport :: Car insurance,1,1
+HEALTH,GRP_HEALTH,HEALTH,Health & Wellness :: Health insurance & medications,1,1
+GROC,GRP_FOOD,GROC,Food & Household :: Groceries & household,1,1
+DINING,GRP_FOOD,DINING,Food & Household :: Restaurants takeout & coffee,1,1
+SHOP,GRP_LIFESTYLE,SHOP,Lifestyle & Wants :: Clothing & online shopping,1,1
+BEAUTY,GRP_LIFESTYLE,BEAUTY,Lifestyle & Wants :: Nails beauty & piercings,1,1
+BARS,GRP_LIFESTYLE,BARS,Lifestyle & Wants :: Bars & entertainment,1,1
+FUN,GRP_LIFESTYLE,FUN,Lifestyle & Wants :: Other fun & lifestyle,1,1
+TAX,GRP_FINANCE,TAX,Taxes Debt & Savings :: Tax reserve transfers,1,1
+DEBT,GRP_FINANCE,DEBT,Taxes Debt & Savings :: Credit card payments,1,1
+EMERG,GRP_FINANCE,EMERG,Taxes Debt & Savings :: Personal emergency savings,1,1
+RETIRE,GRP_FINANCE,RETIRE,Taxes Debt & Savings :: Retirement investing,1,1

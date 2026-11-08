@@ -1,0 +1,6 @@
+Goal_ID,Name,Description,Account_ID,GC_ID,Target_Amount,Monthly_Expected,Target_Month,Status,Is_Demo
+GOL_001,Q4 Estimated Tax Reserve,Build quarterly federal and WI tax reserve fund,ACC_TAX_RES,TAX,6000.00,2000.00,2027-01,Active,1
+GOL_002,Credit Card Debt Paydown Plan,Pay down revolving balances across Chase Ulta and AE,ACC_CHASE,DEBT,9600.00,800.00,2027-09,Active,1
+GOL_003,Personal Emergency Buffer,Build $3000 liquid personal emergency savings,ACC_PER_SAVE,EMERG,3000.00,250.00,2027-09,Active,1
+GOL_004,Dog Vet Emergency Fund,Build $1800 dedicated pet surgical/emergency reserve,ACC_DOG_SAVE,DOGEMERG,1800.00,150.00,2027-09,Active,1
+GOL_005,2026-2027 Retirement Kickstart,Automate $200/mo into IRA retirement account,ACC_RETIRE,RETIRE,2400.00,200.00,2027-09,Active,1
