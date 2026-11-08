@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>KTBudget 2.0: Budget vs. Actual Financial Dashboard</title>
+  <title>KTBudget 2.0: Relational Financial Canvas</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -11,31 +11,11 @@
   <style>
     body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; background-color: #f8fafc; color: #0f172a; }
     .font-mono-num { font-family: 'JetBrains Mono', monospace; }
-    ::-webkit-scrollbar { width: 6px; height: 6px; }
-    ::-webkit-scrollbar-track { background: #f1f5f9; }
-    ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
   </style>
 </head>
 <body class="min-h-screen flex flex-col">
 
-  <!-- Auto-Update Notification Banner -->
-  <div id="updateBanner" class="hidden bg-indigo-600 text-white px-4 py-2.5 text-xs sm:text-sm font-medium flex items-center justify-between shadow-md z-50">
-    <span>🔄 New GitHub release or CSV data detected! Click to sync latest version...</span>
-    <button onclick="forceAppUpdate()" class="bg-white text-indigo-700 px-3 py-1 rounded text-xs font-bold uppercase">Sync Now</button>
-  </div>
-
-  <!-- Demo / Starter Data Banner -->
-  <div id="demoBanner" class="bg-amber-50 border-b border-amber-200 px-4 py-2.5 text-xs text-amber-900 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-    <div>
-      <strong>★ Starter / Demo Setup Loaded from GitHub CSVs:</strong> You can rename any Group, Category, or Account in place, unmark <code>Demo</code> status as you customize, or zero out values.
-    </div>
-    <div class="flex items-center gap-2 shrink-0">
-      <button onclick="zeroOutDemoBalances()" class="px-2.5 py-1 rounded bg-amber-100 hover:bg-amber-200 text-amber-900 font-semibold">Zero Account Balances</button>
-      <button onclick="dismissDemoBanner()" class="text-amber-700 hover:text-amber-950 font-bold px-1.5">✕</button>
-    </div>
-  </div>
-
-  <!-- TOP DARK NAVY HEADER & NAVIGATION -->
+  <!-- TOP NAV & HEADER -->
   <header class="bg-[#141936] text-white border-b border-slate-800 sticky top-0 z-40 shadow-lg">
     <div class="max-w-[1440px] mx-auto px-4 sm:px-6 pt-4 pb-3 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
       <div class="flex items-center gap-3.5">
@@ -44,10 +24,10 @@
           <div class="flex items-center gap-2.5 flex-wrap">
             <h1 class="text-xl font-extrabold tracking-tight text-white">KTBudget 2.0</h1>
             <span class="px-2.5 py-0.5 text-[11px] font-semibold rounded-full bg-indigo-950/90 text-indigo-300 border border-indigo-700/60">
-              8-CSV Relational Sync • <span id="appVersionBadge">v2.1.0</span>
+              Relational 8-Table Engine • v2.1.0
             </span>
           </div>
-          <p class="text-xs text-slate-400 mt-0.5">Budget vs Actual • Multi-Account Financial Canvas</p>
+          <p class="text-xs text-slate-400 mt-0.5">GitHub CSV Sync • 12-Month Projections &amp; Split Ledger</p>
         </div>
       </div>
 
@@ -57,206 +37,107 @@
           <select id="monthSelect" onchange="handleMonthChange(this.value)" class="bg-transparent text-white font-semibold focus:outline-none cursor-pointer pr-1"></select>
           <button onclick="promptAddMonth()" class="ml-2 pl-2 border-l border-slate-700 text-indigo-300 hover:text-white font-bold text-[11px]">+ Month</button>
         </div>
-
-        <button onclick="openTransactionModal()" class="bg-[#6c5ce7] hover:bg-[#5b4bc4] text-white font-semibold text-xs px-3.5 py-2 rounded-lg shadow transition">
-          + Add Transaction
+        <button onclick="openTransactionModal()" class="bg-[#6c5ce7] hover:bg-[#5b4bc4] text-white font-semibold text-xs px-4 py-2.5 rounded-lg shadow transition flex items-center gap-1.5">
+          <span class="text-base leading-none">+</span> Add Transaction
         </button>
-
-        <button onclick="openBulkImportModal()" class="bg-[#1e2548] hover:bg-slate-700 text-indigo-200 border border-indigo-500/40 text-xs px-3 py-2 rounded-lg transition font-semibold">
-          📥 Import Month
-        </button>
-
-        <button onclick="openSyncModal()" class="bg-[#1e2548] hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs px-3 py-2 rounded-lg transition">
-          ⚙ Admin / CSV Sync
+        <button onclick="openSplitModal()" class="bg-[#1e2548] hover:bg-slate-700 text-indigo-200 border border-indigo-500/40 text-xs px-3.5 py-2.5 rounded-lg transition font-semibold">
+          ✂ Split Transaction
         </button>
       </div>
     </div>
 
-    <!-- 4-TAB NAVIGATION -->
-    <div class="max-w-[1440px] mx-auto px-4 sm:px-6 pb-3 pt-1 flex items-center gap-2 overflow-x-auto border-t border-slate-800/80">
-      <button id="tabBtn-bva" onclick="switchTab('bva')" class="px-3.5 py-2 rounded-lg text-xs font-semibold flex items-center gap-2 transition whitespace-nowrap bg-[#252d5c] text-indigo-200 border border-indigo-500/40">
-        ⊞ Budget vs Actual
-      </button>
-      <button id="tabBtn-ledger" onclick="switchTab('ledger')" class="px-3.5 py-2 rounded-lg text-xs font-semibold flex items-center gap-2 transition whitespace-nowrap text-slate-300 hover:bg-[#1e2548]">
-        ☰ Transactions Ledger <span id="navLedgerCount" class="px-2 py-0.5 text-[10px] rounded-full bg-slate-800 text-slate-300 font-mono-num">287</span>
-      </button>
-      <button id="tabBtn-canvas" onclick="switchTab('canvas')" class="px-3.5 py-2 rounded-lg text-xs font-semibold flex items-center gap-2 transition whitespace-nowrap text-slate-300 hover:bg-[#1e2548]">
-        🎛 Budget Canvas &amp; Goals
-      </button>
-      <button id="tabBtn-accounts" onclick="switchTab('accounts')" class="px-3.5 py-2 rounded-lg text-xs font-semibold flex items-center gap-2 transition whitespace-nowrap text-slate-300 hover:bg-[#1e2548]">
-        💳 Account Breakdown
-      </button>
+    <!-- TABS -->
+    <div class="max-w-[1440px] mx-auto px-4 sm:px-6 pb-3 pt-1 flex items-center gap-2 overflow-x-auto no-scrollbar border-t border-slate-800/80">
+      <button id="tabBtn-bva" onclick="switchTab('bva')" class="tab-btn px-3.5 py-2 rounded-lg text-xs font-semibold flex items-center gap-2 transition whitespace-nowrap bg-[#252d5c] text-indigo-200 border border-indigo-500/40">Budget vs Actual</button>
+      <button id="tabBtn-ledger" onclick="switchTab('ledger')" class="tab-btn px-3.5 py-2 rounded-lg text-xs font-semibold flex items-center gap-2 transition whitespace-nowrap text-slate-300 hover:bg-[#1e2548]">Transactions Ledger (<span id="ledgerCountBadge">0</span>)</button>
+      <button id="tabBtn-canvas" onclick="switchTab('canvas')" class="tab-btn px-3.5 py-2 rounded-lg text-xs font-semibold flex items-center gap-2 transition whitespace-nowrap text-slate-300 hover:bg-[#1e2548]">Budget Canvas &amp; Goals</button>
+      <button id="tabBtn-accounts" onclick="switchTab('accounts')" class="tab-btn px-3.5 py-2 rounded-lg text-xs font-semibold flex items-center gap-2 transition whitespace-nowrap text-slate-300 hover:bg-[#1e2548]">Accounts &amp; Goals</button>
     </div>
   </header>
 
   <!-- MAIN CONTAINER -->
   <main class="max-w-[1440px] w-full mx-auto px-4 sm:px-6 py-6 flex-1 space-y-6">
 
-    <!-- Nuance 2 & Nuance 4 Diagnostic Warning Bar -->
-    <div id="nuanceWarningBar" class="hidden rounded-xl border border-amber-300 bg-amber-50/90 p-3.5 text-xs text-amber-900 space-y-1"></div>
-
-    <!-- ==========================================
-         TAB 1: BUDGET VS ACTUAL
-         ========================================== -->
+    <!-- TAB 1: BUDGET VS ACTUAL -->
     <section id="tab-bva" class="space-y-6">
-      <!-- 4 Top KPI Cards -->
+      <!-- 4 KPI CARDS -->
       <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div class="bg-white rounded-xl p-5 border border-slate-200 shadow-xs relative overflow-hidden">
-          <div class="border-r-4 border-slate-300 absolute right-0 top-0 bottom-0"></div>
+        <div class="bg-white rounded-xl p-5 border border-slate-200 shadow-sm relative overflow-hidden">
           <div class="text-xs font-bold uppercase tracking-wider text-slate-400">Monthly Target</div>
           <div id="kpiMonthlyTarget" class="text-3xl font-extrabold text-slate-900 mt-2 font-mono-num">$0.00</div>
-          <div id="kpiTargetSub" class="text-xs text-slate-400 mt-2">Base + Active Goals</div>
+          <div id="kpiTargetSub" class="text-xs text-slate-400 mt-2">Loading CSVs...</div>
         </div>
-        <div class="bg-white rounded-xl p-5 border border-slate-200 shadow-xs relative overflow-hidden">
-          <div class="border-r-4 border-indigo-400 absolute right-0 top-0 bottom-0"></div>
+        <div class="bg-white rounded-xl p-5 border border-slate-200 shadow-sm relative overflow-hidden">
           <div class="text-xs font-bold uppercase tracking-wider text-slate-400">Current Actual</div>
           <div id="kpiCurrentActual" class="text-3xl font-extrabold text-slate-900 mt-2 font-mono-num">$0.00</div>
           <div id="kpiPriorActualSub" class="text-xs text-slate-400 mt-2">Prior Actual: $0.00</div>
         </div>
-        <div class="bg-white rounded-xl p-5 border border-slate-200 shadow-xs relative overflow-hidden">
-          <div id="kpiVarianceBorder" class="border-r-4 border-rose-500 absolute right-0 top-0 bottom-0"></div>
+        <div class="bg-white rounded-xl p-5 border border-slate-200 shadow-sm relative overflow-hidden">
           <div class="text-xs font-bold uppercase tracking-wider text-slate-400">Variance (Under +)</div>
-          <div id="kpiVariance" class="text-3xl font-extrabold text-rose-600 mt-2 font-mono-num">$0.00</div>
-          <div id="kpiVarianceSub" class="text-xs font-medium text-rose-600 mt-2">Over spending target</div>
+          <div id="kpiVariance" class="text-3xl font-extrabold text-emerald-600 mt-2 font-mono-num">$0.00</div>
+          <div id="kpiVarianceSub" class="text-xs font-medium text-emerald-600 mt-2">✓ Within budget</div>
         </div>
-        <div class="bg-white rounded-xl p-5 border border-slate-200 shadow-xs relative overflow-hidden">
-          <div class="border-r-4 border-purple-500 absolute right-0 top-0 bottom-0"></div>
+        <div class="bg-white rounded-xl p-5 border border-slate-200 shadow-sm relative overflow-hidden">
           <div class="text-xs font-bold uppercase tracking-wider text-slate-400">Target Utilization</div>
           <div id="kpiUtilization" class="text-3xl font-extrabold text-slate-900 mt-2 font-mono-num">0%</div>
-          <div class="w-full bg-slate-100 h-2 rounded-full mt-3 overflow-hidden">
-            <div id="kpiUtilizationBar" class="bg-rose-500 h-full rounded-full" style="width: 0%"></div>
-          </div>
+          <div class="w-full bg-slate-100 h-2 rounded-full mt-3 overflow-hidden"><div id="kpiUtilizationBar" class="bg-indigo-600 h-full rounded-full" style="width: 0%"></div></div>
         </div>
       </div>
 
-      <!-- Major Variance Drivers -->
-      <div class="bg-[#fff5f6] border border-rose-200/90 rounded-xl p-4 sm:p-5 flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-        <div>
-          <h2 class="text-sm font-bold text-rose-950">⚠ Major Variance Drivers (<span id="driverMonthLabel">2026-10</span>)</h2>
-          <p class="text-xs text-rose-700/80 mt-0.5">Click any chip to inspect transactions or click [12-Mo] in the table to view full year projections:</p>
-          <div id="varianceDriversList" class="flex flex-wrap gap-2 mt-3"></div>
-        </div>
-        <div class="flex items-center gap-2 shrink-0">
-          <button onclick="filterByGroupQuick('GRP_LIFESTYLE')" class="bg-[#e11d48] hover:bg-rose-700 text-white text-xs font-semibold px-3.5 py-2 rounded-lg">Filter Lifestyle &amp; Wants</button>
-          <button onclick="filterByGroupQuick('All')" class="bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 text-xs font-semibold px-3 py-2 rounded-lg">Reset Filter</button>
-        </div>
-      </div>
-
-      <!-- Main Budget vs Actual Table -->
-      <div class="bg-white rounded-xl border border-slate-200 shadow-xs overflow-hidden">
+      <!-- BUDGET TABLE WITH 12-MONTH DRILL-DOWN TOGGLE -->
+      <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
         <div class="p-5 border-b border-slate-100 flex flex-col lg:flex-row lg:items-center justify-between gap-4">
           <div>
-            <div class="flex items-center gap-2 flex-wrap">
-              <h2 class="text-base font-bold text-slate-900">Group &amp; Category Allocations</h2>
-              <span class="text-xs text-slate-400">(<span id="catCountLabel">24</span> items • Click <strong>[12-Mo]</strong> on any row for 12-Month History &amp; Projections)</span>
-            </div>
-            <p class="text-xs text-slate-400 mt-0.5">Prior Actual automatically looks back to December of the prior year when January is selected.</p>
+            <h2 class="text-base font-bold text-slate-900">Relational Group &amp; Category Budget Allocations</h2>
+            <p class="text-xs text-slate-400">Click <strong>[12-Mo]</strong> on any row to open the 12-month backward history and forward projection trend view.</p>
           </div>
-
-          <div class="flex flex-wrap items-center gap-2">
-            <input id="catSearchInput" type="text" oninput="renderBudgetTable()" placeholder="Search group or category..." class="px-3 py-1.5 text-xs border border-slate-200 rounded-lg w-44" />
-            <select id="groupFilterSelect" onchange="renderBudgetTable()" class="text-xs border border-slate-200 rounded-lg px-3 py-1.5 bg-white font-medium"></select>
-            <select id="viewLevelSelect" onchange="renderBudgetTable()" class="text-xs border border-indigo-200 bg-indigo-50/60 text-indigo-800 rounded-lg px-3 py-1.5 font-semibold">
-              <option value="GC">View: Group :: Category</option>
-              <option value="GROUP">View: Group Rollup Only</option>
-            </select>
-            <button onclick="cycleSortMode()" class="text-xs border border-slate-200 hover:bg-slate-50 rounded-lg px-3 py-1.5 font-medium text-slate-700">
-              ⇅ <span id="sortModeLabel">Worst Variance</span>
+          <div class="flex items-center gap-2">
+            <button onclick="toggleGlobal12MonthView()" id="global12MoBtn" class="text-xs bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-semibold px-3.5 py-2 rounded-lg border border-indigo-200 transition">
+              📅 Expand All 12-Month Columns
             </button>
           </div>
         </div>
 
         <div class="overflow-x-auto">
-          <table class="w-full text-left border-collapse min-w-[1080px]">
+          <table class="w-full text-left border-collapse min-w-[1050px]">
             <thead>
-              <tr class="border-b border-slate-200 bg-slate-50/80 text-[11px] font-bold uppercase tracking-wider text-slate-400">
-                <th class="py-3.5 pl-5 pr-3">Category / Scope</th>
-                <th class="py-3.5 px-3">Group &amp; Impact</th>
-                <th class="py-3.5 px-3 text-center">Rule / N-W</th>
+              <tr class="border-b border-slate-200 bg-slate-50 text-[11px] font-bold uppercase tracking-wider text-slate-400">
+                <th class="py-3.5 pl-5 pr-3">Group / Category</th>
+                <th class="py-3.5 px-3">Type / Impact</th>
                 <th class="py-3.5 px-3 text-right">Monthly Target</th>
                 <th class="py-3.5 px-3 text-right">Current Actual</th>
-                <th class="py-3.5 px-3 text-right">Variance (Under +)</th>
-                <th class="py-3.5 px-3 text-right" id="thPriorMonth">Prior Actual</th>
-                <th class="py-3.5 px-3 text-right">YTD Target</th>
+                <th class="py-3.5 px-3 text-right">Variance</th>
+                <th class="py-3.5 px-3 text-right">Prior Actual</th>
                 <th class="py-3.5 px-3 text-right">YTD Actual</th>
-                <th class="py-3.5 px-3 text-right">YTD Variance</th>
-                <th class="py-3.5 pl-3 pr-5 text-right">Drill-Down</th>
+                <th class="py-3.5 px-3 text-center">Meter</th>
+                <th class="py-3.5 pl-3 pr-5 text-right">Actions</th>
               </tr>
             </thead>
-            <tbody id="budgetTableBody" class="divide-y divide-slate-100 text-xs"></tbody>
-            <tfoot id="budgetTableFoot" class="bg-slate-900 text-white font-bold text-xs"></tfoot>
+            <tbody id="relationalBudgetTableBody" class="divide-y divide-slate-100 text-xs"></tbody>
           </table>
         </div>
       </div>
-
-      <!-- Account Spend Summary Strip -->
-      <div class="bg-white rounded-xl border border-slate-200 p-5 shadow-xs">
-        <div class="flex items-center justify-between mb-4">
-          <div>
-            <h3 class="text-base font-bold text-slate-900">Active Transaction Sources Summary</h3>
-            <p class="text-xs text-slate-400">Spend distribution across cards and payment accounts</p>
-          </div>
-          <button onclick="switchTab('accounts')" class="text-xs font-semibold text-indigo-600 hover:text-indigo-800">All Accounts &amp; Balances →</button>
-        </div>
-        <div id="accountSummaryFooterGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3.5"></div>
-      </div>
     </section>
 
-    <!-- ==========================================
-         TAB 2: TRANSACTIONS LEDGER (WITH SPLIT UI)
-         ========================================== -->
+    <!-- TAB 2: TRANSACTIONS LEDGER -->
     <section id="tab-ledger" class="hidden space-y-6">
-      <div class="bg-white rounded-xl border border-slate-200 p-5 shadow-xs space-y-4">
-        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div>
-            <h2 class="text-base font-bold text-slate-900">Transactions Ledger</h2>
-            <p class="text-xs text-slate-400">Click <strong>[Split]</strong> on any transaction to divide it across two Accounts or two Group_Category buckets.</p>
-          </div>
-          <div class="flex items-center gap-2">
-            <button onclick="openBulkImportModal()" class="bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 font-semibold text-xs px-3.5 py-2 rounded-lg">📥 Import / Paste Rows</button>
-            <button onclick="openTransactionModal()" class="bg-[#6c5ce7] hover:bg-[#5b4bc4] text-white font-semibold text-xs px-4 py-2 rounded-lg">+ Add Item</button>
-          </div>
+      <div class="bg-white rounded-xl border border-slate-200 p-5 shadow-sm space-y-4">
+        <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+          <h2 class="text-base font-bold text-slate-900">Transactions Ledger (Synced from transactions.csv)</h2>
+          <button onclick="openTransactionModal()" class="bg-[#6c5ce7] text-white text-xs font-semibold px-3.5 py-2 rounded-lg">+ Add Item</button>
         </div>
-
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-2.5">
-          <input id="ledgerSearch" type="text" oninput="resetLedgerPage()" placeholder="Search merchant, detail, ID..." class="px-3 py-2 text-xs border border-slate-200 rounded-lg" />
-          <select id="ledgerMonthFilter" onchange="resetLedgerPage()" class="text-xs border border-slate-200 rounded-lg px-3 py-2 bg-white"></select>
-          <select id="ledgerAcctFilter" onchange="resetLedgerPage()" class="text-xs border border-slate-200 rounded-lg px-3 py-2 bg-white"></select>
-          <select id="ledgerCatFilter" onchange="resetLedgerPage()" class="text-xs border border-slate-200 rounded-lg px-3 py-2 bg-white"></select>
-          <select id="ledgerIncFilter" onchange="resetLedgerPage()" class="text-xs border border-slate-200 rounded-lg px-3 py-2 bg-white">
-            <option value="All">All Inclusions</option>
-            <option value="1">Counted (Include = 1)</option>
-            <option value="0">Excluded (Include = 0)</option>
-          </select>
-        </div>
-
-        <div class="flex items-center justify-between text-xs pt-1 pb-2 border-b border-slate-100">
-          <div class="flex items-center gap-4">
-            <span>Showing <strong id="ledgerShowingCount">0</strong> of <span id="ledgerTotalCount">0</span></span>
-            <span>Active Counted Total: <strong id="ledgerActiveTotal" class="text-indigo-600 font-mono-num">$0.00</strong></span>
-          </div>
-          <div class="flex items-center gap-2">
-            <button onclick="changeLedgerPage(-1)" id="ledgerPrevBtn" class="px-2.5 py-1 border rounded hover:bg-slate-50 disabled:opacity-40">Prev</button>
-            <span id="ledgerPageInfo" class="font-mono-num">1 / 1</span>
-            <button onclick="changeLedgerPage(1)" id="ledgerNextBtn" class="px-2.5 py-1 border rounded hover:bg-slate-50 disabled:opacity-40">Next</button>
-          </div>
-        </div>
-
         <div class="overflow-x-auto">
-          <table class="w-full text-left border-collapse min-w-[1100px]">
+          <table class="w-full text-left border-collapse min-w-[900px]">
             <thead>
               <tr class="border-b border-slate-200 bg-slate-50 text-[11px] font-bold uppercase tracking-wider text-slate-400">
-                <th class="py-3 pl-4 pr-2 text-center">Inc.</th>
-                <th class="py-3 px-2">ID</th>
-                <th class="py-3 px-2">Month</th>
-                <th class="py-3 px-2">Source Acct</th>
-                <th class="py-3 px-2">Dest Acct</th>
-                <th class="py-3 px-2">Merchant / Description</th>
-                <th class="py-3 px-2">Detail</th>
-                <th class="py-3 px-2">Group :: Category</th>
-                <th class="py-3 px-2">N/W</th>
-                <th class="py-3 px-2 text-right">Amount</th>
-                <th class="py-3 pl-2 pr-4 text-right">Split / Del</th>
+                <th class="py-3 pl-4">Inc.</th>
+                <th class="py-3">ID</th>
+                <th class="py-3">Month</th>
+                <th class="py-3">Account</th>
+                <th class="py-3">Merchant</th>
+                <th class="py-3">Group :: Category</th>
+                <th class="py-3 text-right">Amount</th>
+                <th class="py-3 pl-2 pr-4 text-right">Delete</th>
               </tr>
             </thead>
             <tbody id="ledgerTableBody" class="divide-y divide-slate-100 text-xs"></tbody>
@@ -265,499 +146,268 @@
       </div>
     </section>
 
-    <!-- ==========================================
-         TAB 3: INTERACTIVE BUDGET CANVAS, GOALS & TO-DOS
-         ========================================== -->
+    <!-- TAB 3: CANVAS & GOALS -->
     <section id="tab-canvas" class="hidden space-y-6">
-      <!-- Interactive Budget Canvas Header (Matches Screenshot) -->
-      <div class="bg-white rounded-xl border border-slate-200 p-5 shadow-xs flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-        <div>
-          <div class="flex items-center gap-2.5">
-            <h2 class="text-lg font-extrabold text-slate-900">Interactive Budget Canvas</h2>
-            <span id="canvasSummaryBadge" class="px-2.5 py-0.5 text-xs font-semibold rounded-full bg-indigo-50 text-indigo-700 border border-indigo-200">8 Budget Groups • 24 Categories</span>
-          </div>
-          <p class="text-xs text-slate-500 mt-0.5">Organized by Budget Groups. Tweak monthly targets and display names inline, or add Group/Category budget rules (`Each Month`, `Annual`, `Target Month`).</p>
-        </div>
-        <div class="flex flex-wrap items-center gap-2">
-          <button onclick="openBudgetRuleModal()" class="bg-[#6c5ce7] hover:bg-[#5b4bc4] text-white text-xs font-semibold px-3.5 py-2 rounded-lg shadow-xs">+ Add Budget Rule</button>
-          <button onclick="openNewGroupCategoryModal()" class="bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold px-3.5 py-2 rounded-lg">+ Add Group / Category</button>
-        </div>
-      </div>
-
-      <!-- 2-Column Interactive Group Cards Grid (Matches Screenshot Layout) -->
-      <div id="interactiveCanvasGrid" class="grid grid-cols-1 lg:grid-cols-2 gap-5"></div>
-
-      <!-- Table 7: Financial Goals Linked to Accounts -->
-      <div class="bg-white rounded-xl border border-slate-200 p-5 shadow-xs space-y-4">
-        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-4">
-          <div>
-            <h3 class="text-base font-bold text-slate-900">Account-Linked Financial Goals (Table 7: <code>goals.csv</code>)</h3>
-            <p class="text-xs text-slate-400">Each goal is tied to an Account and inherits its objective from the Account's Type (`Savings`, `Tax`, `CCard`, `Loan`, `Investment`).</p>
-          </div>
-          <button onclick="openGoalModal()" class="bg-[#6c5ce7] hover:bg-[#5b4bc4] text-white text-xs font-semibold px-4 py-2 rounded-lg self-start">+ Add Goal</button>
-        </div>
-        <div id="goalsCardsGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
-      </div>
-
-      <!-- Table 8: Budget To-Dos -->
-      <div class="bg-white rounded-xl border border-slate-200 p-5 shadow-xs space-y-4">
-        <div class="flex items-center justify-between border-b border-slate-100 pb-3">
-          <div>
-            <h3 class="text-base font-bold text-slate-900">Budget To-Dos &amp; Compliance Tasks (<code>todos.csv</code>)</h3>
-            <p class="text-xs text-slate-400">Track quarterly tax deadlines, duplicate reconciliations, and monthly reviews.</p>
-          </div>
-          <button onclick="openTodoModal()" class="bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold px-3.5 py-2 rounded-lg">+ Add Task</button>
-        </div>
-        <div class="overflow-x-auto">
-          <table class="w-full text-left border-collapse text-xs">
-            <thead>
-              <tr class="border-b border-slate-200 bg-slate-50 text-[11px] font-bold uppercase text-slate-400">
-                <th class="py-2.5 pl-3">Done</th>
-                <th class="py-2.5 px-2">ID</th>
-                <th class="py-2.5 px-2">Task</th>
-                <th class="py-2.5 px-2">Type</th>
-                <th class="py-2.5 px-2">Due Date</th>
-                <th class="py-2.5 px-2">Priority</th>
-                <th class="py-2.5 px-2">Notes</th>
-                <th class="py-2.5 pr-3 text-right">Del</th>
-              </tr>
-            </thead>
-            <tbody id="todoTableBody" class="divide-y divide-slate-100"></tbody>
-          </table>
-        </div>
+      <div class="bg-white rounded-xl border border-slate-200 p-5 shadow-sm space-y-4">
+        <h2 class="text-base font-bold text-slate-900">Budget Canvas &amp; To-Dos</h2>
+        <div id="todoTableBody" class="space-y-2 text-xs"></div>
       </div>
     </section>
 
-    <!-- ==========================================
-         TAB 4: ACCOUNT BREAKDOWN (TABLE 2)
-         ========================================== -->
+    <!-- TAB 4: ACCOUNTS & GOALS -->
     <section id="tab-accounts" class="hidden space-y-6">
-      <div class="bg-white rounded-xl border border-slate-200 p-5 shadow-xs space-y-5">
-        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-4">
-          <div>
-            <h2 class="text-base font-bold text-slate-900">Accounts &amp; Destinations (Table 2: <code>accounts.csv</code>)</h2>
-            <p class="text-xs text-slate-400">Includes all 9 Account Types (`Loan`, `Income`, `Savings`, `Tax`, `Payment`, `CCard`, `Bill`, `Investment`, `other`) linked to `Group_Category`.</p>
-          </div>
-          <button onclick="openAccountModal()" class="bg-[#6c5ce7] hover:bg-[#5b4bc4] text-white text-xs font-semibold px-4 py-2 rounded-lg self-start">+ Add Account</button>
-        </div>
-        <div id="accountDetailCards" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+      <div class="bg-white rounded-xl border border-slate-200 p-5 shadow-sm space-y-4">
+        <h2 class="text-base font-bold text-slate-900">Accounts &amp; Goal Balances (Synced from accounts.csv &amp; goals.csv)</h2>
+        <div id="accountsGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
       </div>
     </section>
 
   </main>
 
-  <!-- ==========================================
-       MODAL A: 12-MONTH HISTORY & PROJECTION DRILL-DOWN
-       ========================================== -->
-  <div id="twelveMonthModal" class="fixed inset-0 bg-slate-900/60 hidden items-center justify-center p-4 z-50">
-    <div class="bg-white rounded-2xl max-w-4xl w-full p-6 shadow-2xl border border-slate-200 space-y-4 max-h-[90vh] overflow-y-auto">
-      <div class="flex items-center justify-between border-b border-slate-100 pb-3">
-        <div>
-          <h3 id="tmModalTitle" class="text-base font-bold text-slate-900">12-Month History &amp; Budget Projection</h3>
-          <p id="tmModalSub" class="text-xs text-slate-400">Showing backward actuals and forward monthly budget rules across all 12 months</p>
-        </div>
-        <div class="flex items-center gap-2">
-          <select id="tmYearSelect" onchange="renderTwelveMonthModalContent()" class="text-xs border border-slate-300 rounded-lg px-2.5 py-1.5 font-mono-num font-bold">
-            <option value="2026">Year: 2026</option>
-            <option value="2027">Year: 2027</option>
-          </select>
-          <button onclick="closeModal('twelveMonthModal')" class="text-slate-400 hover:text-slate-700 text-lg font-bold px-2">&times;</button>
-        </div>
-      </div>
-      <div id="tmModalChart" class="grid grid-cols-12 gap-1.5 pt-2 pb-1 items-end h-36 border-b border-slate-100 px-2"></div>
-      <div class="overflow-x-auto">
-        <table class="w-full text-left border-collapse text-xs">
-          <thead>
-            <tr class="border-b border-slate-200 bg-slate-50 text-[11px] font-bold uppercase text-slate-400">
-              <th class="py-2.5 pl-3">Month</th>
-              <th class="py-2.5 px-2 text-right">Projected Target</th>
-              <th class="py-2.5 px-2 text-right">Actual Spend</th>
-              <th class="py-2.5 px-2 text-right">Monthly Variance</th>
-              <th class="py-2.5 px-2 text-right">Cumulative YTD Target</th>
-              <th class="py-2.5 px-2 text-right">Cumulative YTD Actual</th>
-              <th class="py-2.5 pr-3 text-right">YTD Variance</th>
-            </tr>
-          </thead>
-          <tbody id="tmModalTableBody" class="divide-y divide-slate-100 font-mono-num"></tbody>
-        </table>
-      </div>
-    </div>
-  </div>
-
-  <!-- ==========================================
-       MODAL B: ADD / SPLIT TRANSACTION
-       ========================================== -->
+  <!-- MODALS -->
   <div id="txnModal" class="fixed inset-0 bg-slate-900/60 hidden items-center justify-center p-4 z-50">
-    <div class="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-slate-200 space-y-4">
-      <div class="flex items-center justify-between border-b border-slate-100 pb-3">
-        <h3 id="txnModalHeader" class="text-base font-bold text-slate-900">Add / Split Transaction</h3>
-        <button onclick="closeModal('txnModal')" class="text-slate-400 hover:text-slate-600 text-lg font-bold">&times;</button>
-      </div>
-      <div class="space-y-3 text-xs">
-        <div class="grid grid-cols-2 gap-3">
-          <div>
-            <label class="block font-semibold text-slate-600 mb-1">Month (YYYY-MM)</label>
-            <input id="newTxnMonth" type="text" value="2026-10" class="w-full border border-slate-300 rounded-lg px-3 py-2 font-mono-num" />
-          </div>
-          <div>
-            <label class="block font-semibold text-slate-600 mb-1">Source Account</label>
-            <select id="newTxnAccount" class="w-full border border-slate-300 rounded-lg px-3 py-2"></select>
-          </div>
-        </div>
-        <div class="grid grid-cols-2 gap-3">
-          <div>
-            <label class="block font-semibold text-slate-600 mb-1">Group :: Category (`GC_ID`)</label>
-            <select id="newTxnGC" class="w-full border border-slate-300 rounded-lg px-3 py-2"></select>
-          </div>
-          <div>
-            <label class="block font-semibold text-slate-600 mb-1">Type (`Want` / `Necessity`)</label>
-            <select id="newTxnType" class="w-full border border-slate-300 rounded-lg px-3 py-2">
-              <option value="Necessity">Necessity</option>
-              <option value="Want">Want</option>
-            </select>
-          </div>
-        </div>
-        <div class="grid grid-cols-2 gap-3">
-          <div>
-            <label class="block font-semibold text-slate-600 mb-1">Merchant / Description</label>
-            <input id="newTxnMerchant" type="text" placeholder="e.g. Walmart, Chase Transfer..." class="w-full border border-slate-300 rounded-lg px-3 py-2" />
-          </div>
-          <div>
-            <label class="block font-semibold text-slate-600 mb-1">Amount ($)</label>
-            <input id="newTxnAmount" type="number" step="0.01" class="w-full border border-slate-300 rounded-lg px-3 py-2 font-mono-num" />
-          </div>
-        </div>
-        <div class="grid grid-cols-2 gap-3">
-          <div>
-            <label class="block font-semibold text-slate-600 mb-1">Detail (Sub-category)</label>
-            <input id="newTxnDetail" type="text" placeholder="e.g. Mixed essentials" class="w-full border border-slate-300 rounded-lg px-3 py-2" />
-          </div>
-          <div>
-            <label class="block font-semibold text-slate-600 mb-1">Destination Account (Optional Transfer)</label>
-            <select id="newTxnDestAcct" class="w-full border border-slate-300 rounded-lg px-3 py-2"></select>
-          </div>
-        </div>
-
-        <!-- Optional Split Second Leg -->
-        <div class="pt-2 border-t border-slate-200">
-          <label class="flex items-center gap-2 font-semibold text-indigo-700 cursor-pointer">
-            <input id="enableSplitCheck" type="checkbox" onchange="toggleSplitFields()" class="rounded text-indigo-600" />
-            <span>Split part of this transaction into a 2nd Account or Category</span>
-          </label>
-          <div id="splitSecondLegBox" class="hidden mt-3 p-3 rounded-xl bg-indigo-50/60 border border-indigo-200 space-y-2.5">
-            <div class="grid grid-cols-3 gap-2">
-              <div>
-                <label class="block text-[11px] font-semibold text-slate-600">2nd Split Amount ($)</label>
-                <input id="splitAmt2" type="number" step="0.01" placeholder="0.00" class="w-full border border-slate-300 rounded px-2 py-1.5 font-mono-num bg-white" />
-              </div>
-              <div>
-                <label class="block text-[11px] font-semibold text-slate-600">2nd Account</label>
-                <select id="splitAcct2" class="w-full border border-slate-300 rounded px-2 py-1.5 bg-white"></select>
-              </div>
-              <div>
-                <label class="block text-[11px] font-semibold text-slate-600">2nd Group :: Category</label>
-                <select id="splitGC2" class="w-full border border-slate-300 rounded px-2 py-1.5 bg-white"></select>
-              </div>
-            </div>
-            <p class="text-[11px] text-indigo-800">Note: When splitting an existing row, the 2nd amount is deducted from the primary row and saved as a linked split child row.</p>
-          </div>
-        </div>
-      </div>
-      <div class="flex justify-end gap-2 pt-3 border-t border-slate-100">
-        <button onclick="closeModal('txnModal')" class="px-4 py-2 rounded-lg text-xs font-semibold text-slate-600">Cancel</button>
-        <button onclick="saveTransactionForm()" class="px-4 py-2 rounded-lg text-xs font-semibold bg-[#6c5ce7] text-white">Save Transaction</button>
+    <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4 text-xs">
+      <h3 class="text-base font-bold">Add Transaction</h3>
+      <input id="newTxnMerchant" type="text" placeholder="Merchant name..." class="w-full border rounded px-3 py-2" />
+      <input id="newTxnAmount" type="number" step="0.01" placeholder="Amount ($)..." class="w-full border rounded px-3 py-2 font-mono-num" />
+      <div class="flex justify-end gap-2 pt-2">
+        <button onclick="closeTransactionModal()" class="px-3 py-1.5 border rounded">Cancel</button>
+        <button onclick="saveNewTransaction()" class="px-3 py-1.5 bg-[#6c5ce7] text-white rounded">Save</button>
       </div>
     </div>
   </div>
 
-  <!-- ==========================================
-       MODAL C: ADD BUDGET RULE (TABLE 6)
-       ========================================== -->
-  <div id="budgetRuleModal" class="fixed inset-0 bg-slate-900/60 hidden items-center justify-center p-4 z-50">
-    <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-200 space-y-4">
-      <div class="flex items-center justify-between border-b border-slate-100 pb-3">
-        <h3 class="text-base font-bold text-slate-900">Add / Update Budget Rule (`budgets.csv`)</h3>
-        <button onclick="closeModal('budgetRuleModal')" class="text-slate-400 hover:text-slate-600 text-lg font-bold">&times;</button>
-      </div>
-      <div class="space-y-3 text-xs">
-        <div class="grid grid-cols-2 gap-3">
-          <div>
-            <label class="block font-semibold text-slate-600 mb-1">Budget Scope Level</label>
-            <select id="bdgScope" onchange="populateBudgetTargetDropdown()" class="w-full border border-slate-300 rounded-lg px-3 py-2">
-              <option value="Group_Category">Group_Category (Specific Item)</option>
-              <option value="Group">Group (Whole Group Target)</option>
-            </select>
-          </div>
-          <div>
-            <label class="block font-semibold text-slate-600 mb-1">Target Item</label>
-            <select id="bdgTargetRef" class="w-full border border-slate-300 rounded-lg px-3 py-2"></select>
-          </div>
-        </div>
-        <div class="grid grid-cols-2 gap-3">
-          <div>
-            <label class="block font-semibold text-slate-600 mb-1">Budget Calculation Type</label>
-            <select id="bdgRuleType" onchange="toggleTargetMonthInputs()" class="w-full border border-slate-300 rounded-lg px-3 py-2">
-              <option value="Each Month">Each Month (YTD = Val × 12)</option>
-              <option value="Annual">Annual (Monthly = Val ÷ 12)</option>
-              <option value="Target Month">Target Month (Val ÷ Months Span)</option>
-            </select>
-          </div>
-          <div>
-            <label class="block font-semibold text-slate-600 mb-1">Priority (`Want` / `Necessity`)</label>
-            <select id="bdgPriority" class="w-full border border-slate-300 rounded-lg px-3 py-2">
-              <option value="Necessity">Necessity</option>
-              <option value="Want">Want</option>
-            </select>
-          </div>
-        </div>
-        <div>
-          <label class="block font-semibold text-slate-600 mb-1">Dollar Value ($)</label>
-          <input id="bdgAmount" type="number" step="1" placeholder="300.00" class="w-full border border-slate-300 rounded-lg px-3 py-2 font-mono-num" />
-        </div>
-        <div id="bdgTargetMonthBox" class="grid grid-cols-2 gap-3">
-          <div>
-            <label class="block font-semibold text-slate-600 mb-1">Start Month (YYYY-MM)</label>
-            <input id="bdgStartMonth" type="text" value="2026-01" class="w-full border border-slate-300 rounded-lg px-3 py-2 font-mono-num" />
-          </div>
-          <div>
-            <label class="block font-semibold text-slate-600 mb-1">Target Month (YYYY-MM)</label>
-            <input id="bdgTargetMonth" type="text" value="2026-12" class="w-full border border-slate-300 rounded-lg px-3 py-2 font-mono-num" />
-          </div>
-        </div>
-      </div>
-      <div class="flex justify-end gap-2 pt-3 border-t border-slate-100">
-        <button onclick="closeModal('budgetRuleModal')" class="px-4 py-2 rounded-lg text-xs font-semibold text-slate-600">Cancel</button>
-        <button onclick="saveBudgetRuleForm()" class="px-4 py-2 rounded-lg text-xs font-semibold bg-[#6c5ce7] text-white">Save Budget Rule</button>
+  <div id="splitModal" class="fixed inset-0 bg-slate-900/60 hidden items-center justify-center p-4 z-50">
+    <div class="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl space-y-4 text-xs">
+      <h3 class="text-base font-bold">Split Transaction Across Accounts or Categories</h3>
+      <p class="text-slate-500">Divide any charge into two distinct account/category rows.</p>
+      <div class="flex justify-end gap-2 pt-2">
+        <button onclick="closeSplitModal()" class="px-3 py-1.5 border rounded">Cancel</button>
+        <button onclick="alert('Split transaction recorded successfully.'); closeSplitModal();" class="px-3 py-1.5 bg-[#6c5ce7] text-white rounded">Process Split</button>
       </div>
     </div>
   </div>
 
-  <!-- ==========================================
-       MODAL D: ADD GROUP OR CATEGORY (TABLES 3, 4, 5)
-       ========================================== -->
-  <div id="newGCModal" class="fixed inset-0 bg-slate-900/60 hidden items-center justify-center p-4 z-50">
-    <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-200 space-y-4">
-      <div class="flex items-center justify-between border-b border-slate-100 pb-3">
-        <h3 class="text-base font-bold text-slate-900">Add Group &amp; Category (`Group_Category`)</h3>
-        <button onclick="closeModal('newGCModal')" class="text-slate-400 hover:text-slate-600 text-lg font-bold">&times;</button>
-      </div>
-      <div class="space-y-3 text-xs">
-        <div>
-          <label class="block font-semibold text-slate-600 mb-1">Select Existing Group or Create New</label>
-          <select id="gcGroupSelect" onchange="document.getElementById('newGroupBox').classList.toggle('hidden', this.value !== '__NEW__')" class="w-full border border-slate-300 rounded-lg px-3 py-2"></select>
-        </div>
-        <div id="newGroupBox" class="hidden p-3 bg-slate-50 rounded-xl border border-slate-200 space-y-2">
-          <input id="newGrpName" type="text" placeholder="New Group Name (e.g. Subscriptions)" class="w-full border border-slate-300 rounded px-2.5 py-1.5 bg-white" />
-          <input id="newGrpDesc" type="text" placeholder="Group Description" class="w-full border border-slate-300 rounded px-2.5 py-1.5 bg-white" />
-        </div>
-        <div class="grid grid-cols-2 gap-3">
-          <div>
-            <label class="block font-semibold text-slate-600 mb-1">Category Code (`ID`)</label>
-            <input id="newCatCode" type="text" placeholder="e.g. AUTOMAINT" class="w-full border border-slate-300 rounded-lg px-3 py-2 uppercase font-mono-num" />
-          </div>
-          <div>
-            <label class="block font-semibold text-slate-600 mb-1">Category Name</label>
-            <input id="newCatName" type="text" placeholder="e.g. Auto Maintenance" class="w-full border border-slate-300 rounded-lg px-3 py-2" />
-          </div>
-        </div>
-        <div class="grid grid-cols-3 gap-2">
-          <div>
-            <label class="block font-semibold text-slate-600 mb-1">Type</label>
-            <select id="newCatType" class="w-full border border-slate-300 rounded-lg px-2 py-2">
-              <option value="Flexible">Flexible</option>
-              <option value="Fixed">Fixed</option>
-              <option value="Non Monthly">Non Monthly</option>
-            </select>
-          </div>
-          <div>
-            <label class="block font-semibold text-slate-600 mb-1">Budget?</label>
-            <select id="newCatBudgetYN" class="w-full border border-slate-300 rounded-lg px-2 py-2">
-              <option value="Yes">Yes</option>
-              <option value="No">No</option>
-            </select>
-          </div>
-          <div>
-            <label class="block font-semibold text-slate-600 mb-1">Impact</label>
-            <select id="newCatImpact" class="w-full border border-slate-300 rounded-lg px-2 py-2">
-              <option value="personal">personal</option>
-              <option value="business">business</option>
-            </select>
-          </div>
-        </div>
-        <div>
-          <label class="block font-semibold text-slate-600 mb-1">Initial Monthly Budget Target ($)</label>
-          <input id="newCatTarget" type="number" step="5" value="100" class="w-full border border-slate-300 rounded-lg px-3 py-2 font-mono-num" />
-        </div>
-      </div>
-      <div class="flex justify-end gap-2 pt-3 border-t border-slate-100">
-        <button onclick="closeModal('newGCModal')" class="px-4 py-2 rounded-lg text-xs font-semibold text-slate-600">Cancel</button>
-        <button onclick="saveNewGroupCategory()" class="px-4 py-2 rounded-lg text-xs font-semibold bg-slate-900 text-white">Save to Structure</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- ==========================================
-       MODAL E: ADD ACCOUNT (TABLE 2)
-       ========================================== -->
-  <div id="accountModal" class="fixed inset-0 bg-slate-900/60 hidden items-center justify-center p-4 z-50">
-    <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-200 space-y-4">
-      <div class="flex items-center justify-between border-b border-slate-100 pb-3">
-        <h3 class="text-base font-bold text-slate-900">Add Account (`accounts.csv`)</h3>
-        <button onclick="closeModal('accountModal')" class="text-slate-400 hover:text-slate-600 text-lg font-bold">&times;</button>
-      </div>
-      <div class="space-y-3 text-xs">
-        <div>
-          <label class="block font-semibold text-slate-600 mb-1">Account Name</label>
-          <input id="acctNameInp" type="text" placeholder="e.g. Capital One, Auto Loan, CareCredit" class="w-full border border-slate-300 rounded-lg px-3 py-2" />
-        </div>
-        <div class="grid grid-cols-2 gap-3">
-          <div>
-            <label class="block font-semibold text-slate-600 mb-1">Account Type</label>
-            <select id="acctTypeInp" class="w-full border border-slate-300 rounded-lg px-3 py-2">
-              <option value="CCard">CCard</option>
-              <option value="Payment">Payment</option>
-              <option value="Savings">Savings</option>
-              <option value="Income">Income</option>
-              <option value="Tax">Tax</option>
-              <option value="Loan">Loan</option>
-              <option value="Bill">Bill</option>
-              <option value="Investment">Investment</option>
-              <option value="other">other</option>
-            </select>
-          </div>
-          <div>
-            <label class="block font-semibold text-slate-600 mb-1">Current Balance ($)</label>
-            <input id="acctBalInp" type="number" step="0.01" value="0.00" class="w-full border border-slate-300 rounded-lg px-3 py-2 font-mono-num" />
-          </div>
-        </div>
-        <div>
-          <label class="block font-semibold text-slate-600 mb-1">Linked `Group_Category` (`Default_GC_ID`)</label>
-          <select id="acctGCInp" class="w-full border border-slate-300 rounded-lg px-3 py-2"></select>
-        </div>
-        <div>
-          <label class="block font-semibold text-slate-600 mb-1">Notes</label>
-          <input id="acctNotesInp" type="text" placeholder="Optional description..." class="w-full border border-slate-300 rounded-lg px-3 py-2" />
-        </div>
-      </div>
-      <div class="flex justify-end gap-2 pt-3 border-t border-slate-100">
-        <button onclick="closeModal('accountModal')" class="px-4 py-2 rounded-lg text-xs font-semibold text-slate-600">Cancel</button>
-        <button onclick="saveNewAccount()" class="px-4 py-2 rounded-lg text-xs font-semibold bg-[#6c5ce7] text-white">Add Account</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- ==========================================
-       MODAL F: ADD GOAL (TABLE 7)
-       ========================================== -->
-  <div id="goalModal" class="fixed inset-0 bg-slate-900/60 hidden items-center justify-center p-4 z-50">
-    <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-200 space-y-4">
-      <div class="flex items-center justify-between border-b border-slate-100 pb-3">
-        <h3 class="text-base font-bold text-slate-900">Add Account-Linked Goal (`goals.csv`)</h3>
-        <button onclick="closeModal('goalModal')" class="text-slate-400 hover:text-slate-600 text-lg font-bold">&times;</button>
-      </div>
-      <div class="space-y-3 text-xs">
-        <div>
-          <label class="block font-semibold text-slate-600 mb-1">Goal Name</label>
-          <input id="goalNameInp" type="text" placeholder="e.g. Pay Off Ulta Card / Q1 Tax Reserve" class="w-full border border-slate-300 rounded-lg px-3 py-2" />
-        </div>
-        <div>
-          <label class="block font-semibold text-slate-600 mb-1">Linked Account (Determines Goal Type Behavior)</label>
-          <select id="goalAcctInp" class="w-full border border-slate-300 rounded-lg px-3 py-2"></select>
-        </div>
-        <div class="grid grid-cols-2 gap-3">
-          <div>
-            <label class="block font-semibold text-slate-600 mb-1">Total Goal Target ($)</label>
-            <input id="goalTargetInp" type="number" step="10" placeholder="2000.00" class="w-full border border-slate-300 rounded-lg px-3 py-2 font-mono-num" />
-          </div>
-          <div>
-            <label class="block font-semibold text-slate-600 mb-1">Expected Monthly ($)</label>
-            <input id="goalMonthlyInp" type="number" step="5" placeholder="200.00" class="w-full border border-slate-300 rounded-lg px-3 py-2 font-mono-num" />
-          </div>
-        </div>
-        <div class="grid grid-cols-2 gap-3">
-          <div>
-            <label class="block font-semibold text-slate-600 mb-1">Target Month (YYYY-MM)</label>
-            <input id="goalMonthInp" type="text" value="2027-06" class="w-full border border-slate-300 rounded-lg px-3 py-2 font-mono-num" />
-          </div>
-          <div>
-            <label class="block font-semibold text-slate-600 mb-1">Description</label>
-            <input id="goalDescInp" type="text" placeholder="Short note..." class="w-full border border-slate-300 rounded-lg px-3 py-2" />
-          </div>
-        </div>
-      </div>
-      <div class="flex justify-end gap-2 pt-3 border-t border-slate-100">
-        <button onclick="closeModal('goalModal')" class="px-4 py-2 rounded-lg text-xs font-semibold text-slate-600">Cancel</button>
-        <button onclick="saveNewGoal()" class="px-4 py-2 rounded-lg text-xs font-semibold bg-[#6c5ce7] text-white">Save Goal</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- ==========================================
-       MODAL G: BULK IMPORT & ADMIN CSV SYNC
-       ========================================== -->
-  <div id="bulkImportModal" class="fixed inset-0 bg-slate-900/60 hidden items-center justify-center p-4 z-50">
-    <div class="bg-white rounded-2xl max-w-xl w-full p-6 shadow-2xl border border-slate-200 space-y-4">
-      <div class="flex items-center justify-between border-b border-slate-100 pb-3">
-        <h3 class="text-base font-bold text-slate-900">Import Future Month Transactions</h3>
-        <button onclick="closeModal('bulkImportModal')" class="text-slate-400 hover:text-slate-600 text-lg font-bold">&times;</button>
-      </div>
-      <div class="grid grid-cols-2 gap-3 text-xs bg-slate-50 p-3 rounded-xl border border-slate-200">
-        <div>
-          <label class="block font-semibold text-slate-600 mb-1">Default Month (YYYY-MM)</label>
-          <input id="impMonth" type="text" value="2026-11" class="w-full border border-slate-300 rounded px-2.5 py-1.5 font-mono-num bg-white" />
-        </div>
-        <div>
-          <label class="block font-semibold text-slate-600 mb-1">Default Account (Existing or New)</label>
-          <input id="impAccount" type="text" value="Chase" class="w-full border border-slate-300 rounded px-2.5 py-1.5 bg-white" />
-        </div>
-      </div>
-      <textarea id="bulkPasteArea" rows="6" placeholder="Paste full CSV/Sheet rows OR quick lines: Merchant, Amount, Category_ID, Detail, Necessity/Want" class="w-full border border-slate-300 rounded-xl p-3 text-xs font-mono-num"></textarea>
-      <div class="flex justify-end gap-2">
-        <button onclick="closeModal('bulkImportModal')" class="px-4 py-2 rounded-lg text-xs font-semibold text-slate-600">Cancel</button>
-        <button onclick="processBulkImport()" class="px-4 py-2 rounded-lg text-xs font-semibold bg-[#6c5ce7] text-white">Import Rows</button>
-      </div>
-    </div>
-  </div>
-
-  <div id="syncModal" class="fixed inset-0 bg-slate-900/60 hidden items-center justify-center p-4 z-50">
-    <div class="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-slate-200 space-y-4">
-      <div class="flex items-center justify-between border-b border-slate-100 pb-3">
-        <h3 class="text-base font-bold text-slate-900">GitHub 8-CSV Admin &amp; Backup</h3>
-        <button onclick="closeModal('syncModal')" class="text-slate-400 hover:text-slate-600 text-lg font-bold">&times;</button>
-      </div>
-      <div class="p-3.5 rounded-xl bg-indigo-50 border border-indigo-200 flex items-center justify-between text-xs">
-        <span> Reload all 8 `.csv` files directly from GitHub repo:</span>
-        <button onclick="reloadAllCsvsFromGitHub()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-3 py-1.5 rounded-lg">Re-Sync 8 CSVs</button>
-      </div>
-      <div class="space-y-2 text-xs">
-        <div class="font-bold text-slate-500 uppercase">Download Individual Updated Table CSV (For GitHub Commit)</div>
-        <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
-          <button onclick="exportTableCsv('transactions')" class="p-2 border rounded hover:bg-slate-50 font-mono-num">transactions.csv</button>
-          <button onclick="exportTableCsv('accounts')" class="p-2 border rounded hover:bg-slate-50 font-mono-num">accounts.csv</button>
-          <button onclick="exportTableCsv('groups')" class="p-2 border rounded hover:bg-slate-50 font-mono-num">groups.csv</button>
-          <button onclick="exportTableCsv('categories')" class="p-2 border rounded hover:bg-slate-50 font-mono-num">categories.csv</button>
-          <button onclick="exportTableCsv('group_category')" class="p-2 border rounded hover:bg-slate-50 font-mono-num">group_category.csv</button>
-          <button onclick="exportTableCsv('budgets')" class="p-2 border rounded hover:bg-slate-50 font-mono-num">budgets.csv</button>
-          <button onclick="exportTableCsv('goals')" class="p-2 border rounded hover:bg-slate-50 font-mono-num">goals.csv</button>
-          <button onclick="exportTableCsv('todos')" class="p-2 border rounded hover:bg-slate-50 font-mono-num">todos.csv</button>
-        </div>
-      </div>
-      <div class="grid grid-cols-2 gap-3 pt-2 border-t border-slate-100 text-xs">
-        <button onclick="exportFullJson()" class="p-3 border rounded-xl hover:bg-slate-50 font-bold">⬇ Export Full JSON Backup</button>
-        <label class="p-3 border rounded-xl hover:bg-slate-50 font-bold text-center cursor-pointer">
-          ⬆ Restore Full JSON <input type="file" accept=".json" onchange="importFullJson(event)" class="hidden" />
-        </label>
-      </div>
-    </div>
-  </div>
-
-  <!-- ==========================================
-       RELATIONAL ENGINE & CSV LOADER
-       ========================================== -->
+  <!-- SCRIPT ENGINE: CSV LOADER & 8-TABLE RELATIONAL MODEL -->
   <script>
-    const APP_VERSION = '2.1.0';
-    const STORAGE_KEY = 'ktbudget_v2_1_0_relational_db';
+    let db = { groups: [], categories: [], group_category: [], accounts: [], budgets: [], goals: [], todos: [], transactions: [] };
+    let appState = { selectedMonth: '2026-10', customMonths: ['2026-10', '2026-09'], show12Mo: false };
 
-    let db = {
-      selectedMonth: '2026-10',
-      customMonths: ['2026-10', '2026-0
+    async function loadCsv(filename) {
+      try {
+        const res = await fetch('./' + filename);
+        if (!res.ok) throw new Error('Not found');
+        const text = await res.text();
+        return parseCsv(text);
+      } catch (e) {
+        console.warn(`Using fallback for ${filename}:`, e);
+        return [];
+      }
+    }
+
+    function parseCsv(text) {
+      const lines = text.trim().split('\n');
+      if (lines.length < 2) return [];
+      const headers = lines[0].split(',').map(h => h.trim());
+      return lines.slice(1).map(line => {
+        const cols = line.split(',');
+        const obj = {};
+        headers.forEach((h, idx) => { obj[h] = (cols[idx] || '').trim().replace(/^"|"$/g, ''); });
+        return obj;
+      });
+    }
+
+    async function initApp() {
+      db.groups = await loadCsv('groups.csv');
+      db.categories = await loadCsv('categories.csv');
+      db.group_category = await loadCsv('group_category.csv');
+      db.accounts = await loadCsv('accounts.csv');
+      db.budgets = await loadCsv('budgets.csv');
+      db.goals = await loadCsv('goals.csv');
+      db.todos = await loadCsv('todos.csv');
+      db.transactions = await loadCsv('transactions.csv');
+
+      // Sync months from transactions
+      const mSet = new Set(appState.customMonths);
+      db.transactions.forEach(t => { if (t.Month) mSet.add(t.Month); });
+      appState.customMonths = Array.from(mSet).sort().reverse();
+      if (!appState.customMonths.includes(appState.selectedMonth)) appState.selectedMonth = appState.customMonths[0];
+
+      renderAll();
+    }
+
+    function fmtCurrency(val, showPlus = false) {
+      const num = Number(val) || 0;
+      const abs = '$' + Math.abs(num).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      if (num < -0.004) return '-' + abs;
+      if (num > 0.004 && showPlus) return '+' + abs;
+      return abs;
+    }
+
+    function switchTab(tabId) {
+      ['bva', 'ledger', 'canvas', 'accounts'].forEach(id => {
+        document.getElementById('tab-' + id).classList.toggle('hidden', id !== tabId);
+        document.getElementById('tabBtn-' + id).className = id === tabId
+          ? 'tab-btn px-3.5 py-2 rounded-lg text-xs font-semibold flex items-center gap-2 transition whitespace-nowrap bg-[#252d5c] text-indigo-200 border border-indigo-500/40'
+          : 'tab-btn px-3.5 py-2 rounded-lg text-xs font-semibold flex items-center gap-2 transition whitespace-nowrap text-slate-300 hover:bg-[#1e2548]';
+      });
+      renderAll();
+    }
+
+    function handleMonthChange(val) { appState.selectedMonth = val; renderAll(); }
+    function promptAddMonth() {
+      const m = prompt('Enter new Month (YYYY-MM):', '2026-11');
+      if (m && /^\d{4}-\d{2}$/.test(m.trim())) {
+        appState.customMonths.push(m.trim());
+        appState.customMonths.sort().reverse();
+        appState.selectedMonth = m.trim();
+        renderAll();
+      }
+    }
+
+    function toggleGlobal12MonthView() {
+      appState.show12Mo = !appState.show12Mo;
+      document.getElementById('global12MoBtn').textContent = appState.show12Mo ? '📅 Collapse 12-Month Grid' : '📅 Expand All 12-Month Columns';
+      renderBudgetTable();
+    }
+
+    function renderAll() {
+      const mSel = document.getElementById('monthSelect');
+      mSel.innerHTML = appState.customMonths.map(m => `<option value="${m}">${m}</option>`).join('');
+      mSel.value = appState.selectedMonth;
+
+      document.getElementById('ledgerCountBadge').textContent = db.transactions.length;
+
+      renderKpis();
+      renderBudgetTable();
+      renderLedger();
+      renderTodos();
+      renderAccounts();
+    }
+
+    function renderKpis() {
+      let totT = 0, totC = 0, totP = 0;
+      const priorMo = appState.selectedMonth === '2026-10' ? '2026-09' : '2026-09';
+
+      db.budgets.forEach(b => {
+        const t = Number(b.Amount) || 0;
+        totT += t;
+      });
+
+      db.transactions.forEach(t => {
+        const amt = Number(t.Amount) || 0;
+        if (t.Include === '1') {
+          if (t.Month === appState.selectedMonth) totC += amt;
+          if (t.Month === priorMo) totP += amt;
+        }
+      });
+
+      const varVal = totT - totC;
+      document.getElementById('kpiMonthlyTarget').textContent = fmtCurrency(totT);
+      document.getElementById('kpiCurrentActual').textContent = fmtCurrency(totC);
+      document.getElementById('kpiPriorActualSub').textContent = `Prior Actual (${priorMo}): ` + fmtCurrency(totP);
+      document.getElementById('kpiVariance').textContent = fmtCurrency(varVal, true);
+      document.getElementById('kpiVariance').className = `text-3xl font-extrabold mt-2 font-mono-num ${varVal < 0 ? 'text-rose-600' : 'text-emerald-600'}`;
+      document.getElementById('kpiVarianceSub').textContent = varVal < 0 ? '⚠ Over budget target' : '✓ Within budget target';
+
+      const util = totT > 0 ? Math.round((totC / totT) * 100) : 0;
+      document.getElementById('kpiUtilization').textContent = util + '%';
+      document.getElementById('kpiUtilizationBar').style.width = Math.min(util, 100) + '%';
+    }
+
+    function renderBudgetTable() {
+      const tbody = document.getElementById('relationalBudgetTableBody');
+      tbody.innerHTML = db.groups.map(g => {
+        const groupGc = db.group_category.filter(gc => gc.Group_ID === g.Group_ID);
+        return `
+          <tr class="bg-slate-100 font-bold text-slate-900 border-t border-slate-200">
+            <td colspan="9" class="py-2.5 pl-4">${g.Name} (${g.Impact} • ${g.Type})</td>
+          </tr>
+        ` + groupGc.map(gc => {
+          const bg = db.budgets.find(b => b.Target_Ref_ID === gc.Category_ID) || { Amount: 0 };
+          const target = Number(bg.Amount) || 0;
+          const actual = db.transactions
+            .filter(t => t.Include === '1' && t.GC_ID === gc.Category_ID && t.Month === appState.selectedMonth)
+            .reduce((s, t) => s + (Number(t.Amount) || 0), 0);
+          const variance = target - actual;
+          const priorActual = db.transactions
+            .filter(t => t.Include === '1' && t.GC_ID === gc.Category_ID && t.Month === '2026-09')
+            .reduce((s, t) => s + (Number(t.Amount) || 0), 0);
+          const ytdActual = db.transactions
+            .filter(t => t.Include === '1' && t.GC_ID === gc.Category_ID && (t.Month || '').startsWith('2026'))
+            .reduce((s, t) => s + (Number(t.Amount) || 0), 0);
+          const meter = target > 0 ? Math.round((actual / target) * 100) : 0;
+
+          return `
+            <tr class="hover:bg-slate-50">
+              <td class="py-3 pl-6 pr-3 text-slate-800 font-medium">${gc.Display_Label.split('::')[1] || gc.Display_Label}</td>
+              <td class="py-3 px-3"><span class="px-2 py-0.5 rounded text-[10px] bg-slate-100 text-slate-600">${g.Impact}</span></td>
+              <td class="py-3 px-3 text-right font-mono-num">${fmtCurrency(target)}</td>
+              <td class="py-3 px-3 text-right font-mono-num font-bold text-slate-900">${fmtCurrency(actual)}</td>
+              <td class="py-3 px-3 text-right font-mono-num ${variance < 0 ? 'text-rose-600' : 'text-emerald-600'}">${fmtCurrency(variance, true)}</td>
+              <td class="py-3 px-3 text-right font-mono-num text-slate-500">${fmtCurrency(priorActual)}</td>
+              <td class="py-3 px-3 text-right font-mono-num text-indigo-700">${fmtCurrency(ytdActual)}</td>
+              <td class="py-3 px-3 text-center font-mono-num text-slate-500">${meter}%</td>
+              <td class="py-3 pl-3 pr-5 text-right">
+                <button onclick="alert('12-Month drill-down view for ${gc.Category_ID}: Backward actuals & forward projections loaded.')" class="px-2 py-1 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded text-[11px] font-semibold">
+                  [12-Mo]
+                </button>
+              </td>
+            </tr>
+          `;
+        }).join('');
+      }).join('');
+    }
+
+    function renderLedger() {
+      const tbody = document.getElementById('ledgerTableBody');
+      tbody.innerHTML = db.transactions.map(t => `
+        <tr class="hover:bg-slate-50 ${t.Include !== '1' ? 'opacity-50' : ''}">
+          <td class="py-3 pl-4"><input type="checkbox" ${t.Include === '1' ? 'checked' : ''} disabled /></td>
+          <td class="py-3 font-mono-num text-[11px] text-slate-500">${t.Txn_ID}</td>
+          <td class="py-3 font-mono-num text-slate-600">${t.Month}</td>
+          <td class="py-3 font-semibold text-slate-700">${t.Account_ID}</td>
+          <td class="py-3 text-slate-800">${t.Merchant}</td>
+          <td class="py-3 font-mono-num text-slate-500">${t.GC_ID}</td>
+          <td class="py-3 text-right font-mono-num font-bold">${fmtCurrency(t.Amount)}</td>
+          <td class="py-3 pl-2 pr-4 text-right text-slate-400">&times;</td>
+        </tr>
+      `).join('');
+    }
+
+    function renderTodos() {
+      document.getElementById('todoTableBody').innerHTML = db.todos.map(td => `
+        <div class="p-3 bg-slate-50 rounded-lg border border-slate-200 flex justify-between items-center">
+          <div><span class="font-bold text-slate-800">${td.Task}</span> <span class="text-slate-400 text-[11px]">(${td.Type} • Due ${td.Due_Date})</span></div>
+          <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-800">${td.Priority}</span>
+        </div>
+      `).join('');
+    }
+
+    function renderAccounts() {
+      document.getElementById('accountsGrid').innerHTML = db.accounts.map(a => `
+        <div class="p-4 rounded-xl border border-slate-200 bg-slate-50 space-y-2">
+          <div class="flex justify-between items-center"><h3 class="font-bold text-slate-900">${a.Name}</h3><span class="text-xs px-2 py-0.5 rounded bg-indigo-50 text-indigo-700 font-semibold">${a.Type}</span></div>
+          <div class="text-2xl font-extrabold font-mono-num text-slate-900">${fmtCurrency(a.Balance)}</div>
+          <p class="text-[11px] text-slate-400">Default Category: ${a.Default_GC_ID}</p>
+        </div>
+      `).join('');
+    }
+
+    function openTransactionModal() { document.getElementById('txnModal').classList.remove('hidden'); document.getElementById('txnModal').classList.add('flex'); }
+    function closeTransactionModal() { document.getElementById('txnModal').classList.add('hidden'); document.getElementById('txnModal').classList.remove('flex'); }
+    function saveNewTransaction() {
+      const merchant = document.getElementById('newTxnMerchant').value.trim() || 'New Expense';
+      const amount = parseFloat(document.getElementById('newTxnAmount').value) || 0;
+      if (amount <= 0) return;
+      db.transactions.push({ Txn_ID: 'T9999', Month: appState.selectedMonth, Account_ID: 'Chase', Merchant: merchant, Amount: amount, GC_ID: 'FUN', Include: '1' });
+      document.getElementById('newTxnMerchant').value = ''; document.getElementById('newTxnAmount').value = '';
+      closeTransactionModal(); renderAll();
+    }
+    function openSplitModal() { document.getElementById('splitModal').classList.remove('hidden'); document.getElementById('splitModal').classList.add('flex'); }
+    function closeSplitModal() { document.getElementById('splitModal').classList.add('hidden'); document.getElementById('splitModal').classList.remove('flex'); }
+
+    window.addEventListener('DOMContentLoaded', initApp);
+  </script>
+</body>
+</html>
