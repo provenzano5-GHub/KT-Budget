@@ -9,1679 +9,755 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>
-    body {
-      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-      background-color: #f8fafc;
-      color: #0f172a;
-    }
-    .font-mono-num {
-      font-family: 'JetBrains Mono', monospace;
-    }
-    /* Custom Scrollbar */
-    ::-webkit-scrollbar {
-      width: 6px;
-      height: 6px;
-    }
-    ::-webkit-scrollbar-track {
-      background: #f1f5f9;
-    }
-    ::-webkit-scrollbar-thumb {
-      background: #cbd5e1;
-      border-radius: 3px;
-    }
-    ::-webkit-scrollbar-thumb:hover {
-      background: #94a3b8;
-    }
+    body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; background-color: #f8fafc; color: #0f172a; }
+    .font-mono-num { font-family: 'JetBrains Mono', monospace; }
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: #f1f5f9; }
+    ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
   </style>
 </head>
 <body class="min-h-screen flex flex-col">
 
-  <!-- Auto-Update Notification Banner (Hidden unless version.json changes) -->
-  <div id="updateBanner" class="hidden bg-indigo-600 text-white px-4 py-2.5 text-sm font-medium flex items-center justify-between shadow-md z-50">
-    <div class="flex items-center gap-2">
-      <svg class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
-        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
-      </svg>
-      <span>New GitHub release detected! Refreshing KTBudget 2.0 (your saved data is preserved)...</span>
-    </div>
-    <button onclick="forceAppUpdate()" class="bg-white text-indigo-700 px-3 py-1 rounded text-xs font-bold uppercase tracking-wider">Reload Now</button>
+  <!-- Auto-Update Notification Banner -->
+  <div id="updateBanner" class="hidden bg-indigo-600 text-white px-4 py-2.5 text-xs sm:text-sm font-medium flex items-center justify-between shadow-md z-50">
+    <span>🔄 New GitHub release or CSV data detected! Click to sync latest version...</span>
+    <button onclick="forceAppUpdate()" class="bg-white text-indigo-700 px-3 py-1 rounded text-xs font-bold uppercase">Sync Now</button>
   </div>
 
-  <!-- TOP DARK NAVY HEADER & NAVIGATION (Matches Google Sheet Canvas) -->
+  <!-- Demo / Starter Data Banner -->
+  <div id="demoBanner" class="bg-amber-50 border-b border-amber-200 px-4 py-2.5 text-xs text-amber-900 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+    <div>
+      <strong>★ Starter / Demo Setup Loaded from GitHub CSVs:</strong> You can rename any Group, Category, or Account in place, unmark <code>Demo</code> status as you customize, or zero out values.
+    </div>
+    <div class="flex items-center gap-2 shrink-0">
+      <button onclick="zeroOutDemoBalances()" class="px-2.5 py-1 rounded bg-amber-100 hover:bg-amber-200 text-amber-900 font-semibold">Zero Account Balances</button>
+      <button onclick="dismissDemoBanner()" class="text-amber-700 hover:text-amber-950 font-bold px-1.5">✕</button>
+    </div>
+  </div>
+
+  <!-- TOP DARK NAVY HEADER & NAVIGATION -->
   <header class="bg-[#141936] text-white border-b border-slate-800 sticky top-0 z-40 shadow-lg">
     <div class="max-w-[1440px] mx-auto px-4 sm:px-6 pt-4 pb-3 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-      <!-- Brand Identity -->
       <div class="flex items-center gap-3.5">
-        <div class="w-11 h-11 rounded-xl bg-[#6c5ce7] flex items-center justify-center font-extrabold text-lg tracking-tight shadow-inner shrink-0">
-          KT
-        </div>
+        <div class="w-11 h-11 rounded-xl bg-[#6c5ce7] flex items-center justify-center font-extrabold text-lg tracking-tight shadow-inner shrink-0">KT</div>
         <div>
           <div class="flex items-center gap-2.5 flex-wrap">
             <h1 class="text-xl font-extrabold tracking-tight text-white">KTBudget 2.0</h1>
             <span class="px-2.5 py-0.5 text-[11px] font-semibold rounded-full bg-indigo-950/90 text-indigo-300 border border-indigo-700/60">
-              Live Sheet Sync • <span id="appVersionBadge">v2.0.1</span>
+              8-CSV Relational Sync • <span id="appVersionBadge">v2.1.0</span>
             </span>
           </div>
           <p class="text-xs text-slate-400 mt-0.5">Budget vs Actual • Multi-Account Financial Canvas</p>
         </div>
       </div>
 
-      <!-- Right Controls: Month Selector + Add Transaction + Data/Backup -->
-      <div class="flex items-center gap-2.5 flex-wrap">
+      <div class="flex items-center gap-2 flex-wrap">
         <div class="flex items-center bg-[#1e2548] border border-slate-700/80 rounded-lg px-3 py-1.5 text-xs">
-          <svg class="w-4 h-4 text-slate-400 mr-2 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
-          </svg>
-          <span class="text-slate-400 mr-2 font-medium">Month:</span>
-          <select id="monthSelect" onchange="handleMonthChange(this.value)" class="bg-transparent text-white font-semibold focus:outline-none cursor-pointer pr-2">
-            <option value="2026-10" class="bg-slate-900 text-white">2026-10 (October)</option>
-            <option value="2026-09" class="bg-slate-900 text-white">2026-09 (September)</option>
-          </select>
+          <span class="text-slate-400 mr-1.5 font-medium">Month:</span>
+          <select id="monthSelect" onchange="handleMonthChange(this.value)" class="bg-transparent text-white font-semibold focus:outline-none cursor-pointer pr-1"></select>
+          <button onclick="promptAddMonth()" class="ml-2 pl-2 border-l border-slate-700 text-indigo-300 hover:text-white font-bold text-[11px]">+ Month</button>
         </div>
 
-        <button onclick="openTransactionModal()" class="bg-[#6c5ce7] hover:bg-[#5b4bc4] text-white font-semibold text-xs px-4 py-2.5 rounded-lg shadow transition flex items-center gap-1.5">
-          <span class="text-base leading-none">+</span> Add Transaction
+        <button onclick="openTransactionModal()" class="bg-[#6c5ce7] hover:bg-[#5b4bc4] text-white font-semibold text-xs px-3.5 py-2 rounded-lg shadow transition">
+          + Add Transaction
         </button>
 
-        <button onclick="openSyncModal()" title="Backup, Restore & GitHub Sync" class="bg-[#1e2548] hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs px-3 py-2.5 rounded-lg transition flex items-center gap-1.5">
-          <svg class="w-4 h-4 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
-          </svg>
-          <span class="hidden sm:inline">Backup / Sync</span>
+        <button onclick="openBulkImportModal()" class="bg-[#1e2548] hover:bg-slate-700 text-indigo-200 border border-indigo-500/40 text-xs px-3 py-2 rounded-lg transition font-semibold">
+          📥 Import Month
+        </button>
+
+        <button onclick="openSyncModal()" class="bg-[#1e2548] hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs px-3 py-2 rounded-lg transition">
+          ⚙ Admin / CSV Sync
         </button>
       </div>
     </div>
 
-    <!-- 4-TAB NAVIGATION BAR (Matches Google Sheet Canvas) -->
-    <div class="max-w-[1440px] mx-auto px-4 sm:px-6 pb-3 pt-1 flex items-center gap-2 overflow-x-auto no-scrollbar border-t border-slate-800/80">
-      <button id="tabBtn-bva" onclick="switchTab('bva')" class="tab-btn px-3.5 py-2 rounded-lg text-xs font-semibold flex items-center gap-2 transition whitespace-nowrap bg-[#252d5c] text-indigo-200 border border-indigo-500/40">
-        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"></path>
-        </svg>
-        Budget vs Actual
+    <!-- 4-TAB NAVIGATION -->
+    <div class="max-w-[1440px] mx-auto px-4 sm:px-6 pb-3 pt-1 flex items-center gap-2 overflow-x-auto border-t border-slate-800/80">
+      <button id="tabBtn-bva" onclick="switchTab('bva')" class="px-3.5 py-2 rounded-lg text-xs font-semibold flex items-center gap-2 transition whitespace-nowrap bg-[#252d5c] text-indigo-200 border border-indigo-500/40">
+        ⊞ Budget vs Actual
       </button>
-
-      <button id="tabBtn-ledger" onclick="switchTab('ledger')" class="tab-btn px-3.5 py-2 rounded-lg text-xs font-semibold flex items-center gap-2 transition whitespace-nowrap text-slate-300 hover:bg-[#1e2548]">
-        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-        </svg>
-        Transactions Ledger
-        <span id="navLedgerCount" class="px-2 py-0.5 text-[10px] rounded-full bg-slate-800 text-slate-300 font-mono-num">287</span>
+      <button id="tabBtn-ledger" onclick="switchTab('ledger')" class="px-3.5 py-2 rounded-lg text-xs font-semibold flex items-center gap-2 transition whitespace-nowrap text-slate-300 hover:bg-[#1e2548]">
+        ☰ Transactions Ledger <span id="navLedgerCount" class="px-2 py-0.5 text-[10px] rounded-full bg-slate-800 text-slate-300 font-mono-num">287</span>
       </button>
-
-      <button id="tabBtn-canvas" onclick="switchTab('canvas')" class="tab-btn px-3.5 py-2 rounded-lg text-xs font-semibold flex items-center gap-2 transition whitespace-nowrap text-slate-300 hover:bg-[#1e2548]">
-        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"></path>
-        </svg>
-        Budget Canvas &amp; Goals
+      <button id="tabBtn-canvas" onclick="switchTab('canvas')" class="px-3.5 py-2 rounded-lg text-xs font-semibold flex items-center gap-2 transition whitespace-nowrap text-slate-300 hover:bg-[#1e2548]">
+        🎛 Budget Canvas &amp; Goals
       </button>
-
-      <button id="tabBtn-accounts" onclick="switchTab('accounts')" class="tab-btn px-3.5 py-2 rounded-lg text-xs font-semibold flex items-center gap-2 transition whitespace-nowrap text-slate-300 hover:bg-[#1e2548]">
-        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"></path>
-        </svg>
-        Account Breakdown
+      <button id="tabBtn-accounts" onclick="switchTab('accounts')" class="px-3.5 py-2 rounded-lg text-xs font-semibold flex items-center gap-2 transition whitespace-nowrap text-slate-300 hover:bg-[#1e2548]">
+        💳 Account Breakdown
       </button>
     </div>
   </header>
 
-  <!-- MAIN CONTENT CONTAINER -->
+  <!-- MAIN CONTAINER -->
   <main class="max-w-[1440px] w-full mx-auto px-4 sm:px-6 py-6 flex-1 space-y-6">
 
+    <!-- Nuance 2 & Nuance 4 Diagnostic Warning Bar -->
+    <div id="nuanceWarningBar" class="hidden rounded-xl border border-amber-300 bg-amber-50/90 p-3.5 text-xs text-amber-900 space-y-1"></div>
+
     <!-- ==========================================
-         TAB 1: BUDGET VS ACTUAL (DEFAULT VIEW)
+         TAB 1: BUDGET VS ACTUAL
          ========================================== -->
     <section id="tab-bva" class="space-y-6">
-
-      <!-- 4 Top KPI Summary Cards -->
+      <!-- 4 Top KPI Cards -->
       <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <!-- Card 1: Monthly Target -->
-        <div class="bg-white rounded-xl p-5 border border-slate-200/90 shadow-sm relative overflow-hidden">
+        <div class="bg-white rounded-xl p-5 border border-slate-200 shadow-xs relative overflow-hidden">
           <div class="border-r-4 border-slate-300 absolute right-0 top-0 bottom-0"></div>
-          <div class="flex items-center justify-between text-xs font-bold uppercase tracking-wider text-slate-400">
-            <span>Monthly Target</span>
-            <span class="text-slate-400 text-sm">$</span>
-          </div>
-          <div id="kpiMonthlyTarget" class="text-3xl font-extrabold text-slate-900 mt-2 font-mono-num">$7,960.98</div>
-          <div id="kpiTargetSub" class="text-xs text-slate-400 mt-2">Month: 2026-10</div>
+          <div class="text-xs font-bold uppercase tracking-wider text-slate-400">Monthly Target</div>
+          <div id="kpiMonthlyTarget" class="text-3xl font-extrabold text-slate-900 mt-2 font-mono-num">$0.00</div>
+          <div id="kpiTargetSub" class="text-xs text-slate-400 mt-2">Base + Active Goals</div>
         </div>
-
-        <!-- Card 2: Current Actual -->
-        <div class="bg-white rounded-xl p-5 border border-slate-200/90 shadow-sm relative overflow-hidden">
+        <div class="bg-white rounded-xl p-5 border border-slate-200 shadow-xs relative overflow-hidden">
           <div class="border-r-4 border-indigo-400 absolute right-0 top-0 bottom-0"></div>
-          <div class="flex items-center justify-between text-xs font-bold uppercase tracking-wider text-slate-400">
-            <span>Current Actual</span>
-            <span class="text-indigo-500 text-xs border border-indigo-200 bg-indigo-50 px-1.5 py-0.5 rounded font-mono-num">$</span>
-          </div>
-          <div id="kpiCurrentActual" class="text-3xl font-extrabold text-slate-900 mt-2 font-mono-num">$9,597.40</div>
-          <div id="kpiPriorActualSub" class="text-xs text-slate-400 mt-2">Prior Actual: $8,913.81</div>
+          <div class="text-xs font-bold uppercase tracking-wider text-slate-400">Current Actual</div>
+          <div id="kpiCurrentActual" class="text-3xl font-extrabold text-slate-900 mt-2 font-mono-num">$0.00</div>
+          <div id="kpiPriorActualSub" class="text-xs text-slate-400 mt-2">Prior Actual: $0.00</div>
         </div>
-
-        <!-- Card 3: Variance (Under +) -->
-        <div class="bg-white rounded-xl p-5 border border-slate-200/90 shadow-sm relative overflow-hidden">
+        <div class="bg-white rounded-xl p-5 border border-slate-200 shadow-xs relative overflow-hidden">
           <div id="kpiVarianceBorder" class="border-r-4 border-rose-500 absolute right-0 top-0 bottom-0"></div>
-          <div class="flex items-center justify-between text-xs font-bold uppercase tracking-wider text-slate-400">
-            <span>Variance (Under +)</span>
-            <span id="kpiVarianceIcon" class="text-rose-500 text-xs">↘</span>
-          </div>
-          <div id="kpiVariance" class="text-3xl font-extrabold text-rose-600 mt-2 font-mono-num">-$1,636.42</div>
-          <div id="kpiVarianceSub" class="text-xs font-medium text-rose-600 mt-2 flex items-center gap-1">
-            <span>⚠ Over spending target</span>
-          </div>
+          <div class="text-xs font-bold uppercase tracking-wider text-slate-400">Variance (Under +)</div>
+          <div id="kpiVariance" class="text-3xl font-extrabold text-rose-600 mt-2 font-mono-num">$0.00</div>
+          <div id="kpiVarianceSub" class="text-xs font-medium text-rose-600 mt-2">Over spending target</div>
         </div>
-
-        <!-- Card 4: Target Utilization -->
-        <div class="bg-white rounded-xl p-5 border border-slate-200/90 shadow-sm relative overflow-hidden">
+        <div class="bg-white rounded-xl p-5 border border-slate-200 shadow-xs relative overflow-hidden">
           <div class="border-r-4 border-purple-500 absolute right-0 top-0 bottom-0"></div>
-          <div class="flex items-center justify-between text-xs font-bold uppercase tracking-wider text-slate-400">
-            <span>Target Utilization</span>
-            <span class="text-purple-500 text-sm">◔</span>
-          </div>
-          <div id="kpiUtilization" class="text-3xl font-extrabold text-slate-900 mt-2 font-mono-num">121%</div>
+          <div class="text-xs font-bold uppercase tracking-wider text-slate-400">Target Utilization</div>
+          <div id="kpiUtilization" class="text-3xl font-extrabold text-slate-900 mt-2 font-mono-num">0%</div>
           <div class="w-full bg-slate-100 h-2 rounded-full mt-3 overflow-hidden">
-            <div id="kpiUtilizationBar" class="bg-rose-500 h-full rounded-full" style="width: 100%"></div>
+            <div id="kpiUtilizationBar" class="bg-rose-500 h-full rounded-full" style="width: 0%"></div>
           </div>
         </div>
       </div>
 
-      <!-- Major Variance Drivers Alert Box -->
+      <!-- Major Variance Drivers -->
       <div class="bg-[#fff5f6] border border-rose-200/90 rounded-xl p-4 sm:p-5 flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-        <div class="flex items-start gap-3.5">
-          <div class="w-9 h-9 rounded-lg bg-rose-100 text-rose-600 flex items-center justify-center shrink-0 font-bold mt-0.5">
-            ⚠
-          </div>
-          <div>
-            <h2 class="text-sm font-bold text-rose-950">
-              Major Variance Drivers (<span id="driverMonthLabel">2026-10</span>)
-            </h2>
-            <p class="text-xs text-rose-700/80 mt-0.5">Top budget exceeded categories requiring review or adjustment:</p>
-            <div id="varianceDriversList" class="flex flex-wrap gap-2 mt-3">
-              <!-- Populated by JS -->
-            </div>
-          </div>
+        <div>
+          <h2 class="text-sm font-bold text-rose-950">⚠ Major Variance Drivers (<span id="driverMonthLabel">2026-10</span>)</h2>
+          <p class="text-xs text-rose-700/80 mt-0.5">Click any chip to inspect transactions or click [12-Mo] in the table to view full year projections:</p>
+          <div id="varianceDriversList" class="flex flex-wrap gap-2 mt-3"></div>
         </div>
-        <div class="shrink-0">
-          <button onclick="filterByGroupQuick('Wants')" class="bg-[#e11d48] hover:bg-rose-700 text-white text-xs font-semibold px-4 py-2.5 rounded-lg shadow-sm transition">
-            Filter Wants Group
-          </button>
+        <div class="flex items-center gap-2 shrink-0">
+          <button onclick="filterByGroupQuick('GRP_LIFESTYLE')" class="bg-[#e11d48] hover:bg-rose-700 text-white text-xs font-semibold px-3.5 py-2 rounded-lg">Filter Lifestyle &amp; Wants</button>
+          <button onclick="filterByGroupQuick('All')" class="bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 text-xs font-semibold px-3 py-2 rounded-lg">Reset Filter</button>
         </div>
       </div>
 
-      <!-- Category Allocations Table Card -->
-      <div class="bg-white rounded-xl border border-slate-200/90 shadow-sm overflow-hidden">
-        <!-- Table Header & Filters -->
+      <!-- Main Budget vs Actual Table -->
+      <div class="bg-white rounded-xl border border-slate-200 shadow-xs overflow-hidden">
         <div class="p-5 border-b border-slate-100 flex flex-col lg:flex-row lg:items-center justify-between gap-4">
           <div>
             <div class="flex items-center gap-2 flex-wrap">
-              <h2 class="text-base font-bold text-slate-900">Category Allocations</h2>
-              <span class="text-xs text-slate-400 font-medium">(<span id="catCountLabel">24</span> categories shown • 8 spreadsheet metric columns)</span>
+              <h2 class="text-base font-bold text-slate-900">Group &amp; Category Allocations</h2>
+              <span class="text-xs text-slate-400">(<span id="catCountLabel">24</span> items • Click <strong>[12-Mo]</strong> on any row for 12-Month History &amp; Projections)</span>
             </div>
-            <p class="text-xs text-slate-400 mt-0.5">
-              Full spreadsheet representation including Monthly Target, Actual, Variance, Prior Actual, plus YTD Target, YTD Actual, and YTD Variance.
-            </p>
+            <p class="text-xs text-slate-400 mt-0.5">Prior Actual automatically looks back to December of the prior year when January is selected.</p>
           </div>
 
-          <div class="flex flex-wrap items-center gap-2.5">
-            <!-- Search Input -->
-            <div class="relative">
-              <input
-                id="catSearchInput"
-                type="text"
-                oninput="renderBudgetTable()"
-                placeholder="Search category..."
-                class="pl-8 pr-3 py-1.5 text-xs border border-slate-200 rounded-lg focus:outline-none focus:border-indigo-500 w-44 sm:w-52"
-              />
-              <svg class="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
-              </svg>
-            </div>
-
-            <!-- Group Filter -->
-            <select id="groupFilterSelect" onchange="renderBudgetTable()" class="text-xs border border-slate-200 rounded-lg px-3 py-1.5 bg-white text-slate-700 font-medium focus:outline-none focus:border-indigo-500">
-              <option value="All">All Groups</option>
-              <option value="Salon expenses">Salon expenses</option>
-              <option value="Personal necessities">Personal necessities</option>
-              <option value="Wants">Wants</option>
-              <option value="Taxes">Taxes</option>
-              <option value="Debt">Debt</option>
-              <option value="Savings">Savings</option>
+          <div class="flex flex-wrap items-center gap-2">
+            <input id="catSearchInput" type="text" oninput="renderBudgetTable()" placeholder="Search group or category..." class="px-3 py-1.5 text-xs border border-slate-200 rounded-lg w-44" />
+            <select id="groupFilterSelect" onchange="renderBudgetTable()" class="text-xs border border-slate-200 rounded-lg px-3 py-1.5 bg-white font-medium"></select>
+            <select id="viewLevelSelect" onchange="renderBudgetTable()" class="text-xs border border-indigo-200 bg-indigo-50/60 text-indigo-800 rounded-lg px-3 py-1.5 font-semibold">
+              <option value="GC">View: Group :: Category</option>
+              <option value="GROUP">View: Group Rollup Only</option>
             </select>
-
-            <!-- Sort Button -->
-            <button id="sortModeBtn" onclick="cycleSortMode()" class="text-xs border border-slate-200 hover:bg-slate-50 rounded-lg px-3 py-1.5 font-medium text-slate-700 flex items-center gap-1.5">
-              <span>⇅</span> <span id="sortModeLabel">Worst Variance</span>
-            </button>
-
-            <!-- YTD Mode Toggle -->
-            <button id="ytdModeBtn" onclick="toggleYtdMode()" title="Switch between Sheet $0.00 placeholder and cumulative 2026 YTD calculation" class="text-xs border border-indigo-200 bg-indigo-50/60 hover:bg-indigo-100/70 rounded-lg px-3 py-1.5 font-medium text-indigo-700">
-              YTD: <span id="ytdModeLabel">Sheet ($0.00)</span>
+            <button onclick="cycleSortMode()" class="text-xs border border-slate-200 hover:bg-slate-50 rounded-lg px-3 py-1.5 font-medium text-slate-700">
+              ⇅ <span id="sortModeLabel">Worst Variance</span>
             </button>
           </div>
         </div>
 
-        <!-- Scrollable 11-Column Spreadsheet Table -->
         <div class="overflow-x-auto">
-          <table class="w-full text-left border-collapse min-w-[1050px]">
+          <table class="w-full text-left border-collapse min-w-[1080px]">
             <thead>
-              <tr class="border-b border-slate-200 bg-slate-50/70 text-[11px] font-bold uppercase tracking-wider text-slate-400">
-                <th class="py-3.5 pl-5 pr-3">Category</th>
-                <th class="py-3.5 px-3">Group</th>
+              <tr class="border-b border-slate-200 bg-slate-50/80 text-[11px] font-bold uppercase tracking-wider text-slate-400">
+                <th class="py-3.5 pl-5 pr-3">Category / Scope</th>
+                <th class="py-3.5 px-3">Group &amp; Impact</th>
+                <th class="py-3.5 px-3 text-center">Rule / N-W</th>
                 <th class="py-3.5 px-3 text-right">Monthly Target</th>
                 <th class="py-3.5 px-3 text-right">Current Actual</th>
                 <th class="py-3.5 px-3 text-right">Variance (Under +)</th>
-                <th class="py-3.5 px-3 text-right">Prior Actual</th>
+                <th class="py-3.5 px-3 text-right" id="thPriorMonth">Prior Actual</th>
                 <th class="py-3.5 px-3 text-right">YTD Target</th>
                 <th class="py-3.5 px-3 text-right">YTD Actual</th>
                 <th class="py-3.5 px-3 text-right">YTD Variance</th>
-                <th class="py-3.5 px-3 text-center w-28">Spend Meter</th>
-                <th class="py-3.5 pl-3 pr-5 text-right">Action</th>
+                <th class="py-3.5 pl-3 pr-5 text-right">Drill-Down</th>
               </tr>
             </thead>
-            <tbody id="budgetTableBody" class="divide-y divide-slate-100 text-xs">
-              <!-- Populated by JS -->
-            </tbody>
-            <tfoot id="budgetTableFoot" class="bg-slate-900 text-white font-bold text-xs">
-              <!-- Populated by JS -->
-            </tfoot>
+            <tbody id="budgetTableBody" class="divide-y divide-slate-100 text-xs"></tbody>
+            <tfoot id="budgetTableFoot" class="bg-slate-900 text-white font-bold text-xs"></tfoot>
           </table>
         </div>
       </div>
 
-      <!-- Bottom Account Spend Summary Strip (Matches Canvas Footer) -->
-      <div class="bg-white rounded-xl border border-slate-200/90 p-5 shadow-sm">
-        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4">
+      <!-- Account Spend Summary Strip -->
+      <div class="bg-white rounded-xl border border-slate-200 p-5 shadow-xs">
+        <div class="flex items-center justify-between mb-4">
           <div>
-            <h3 class="text-base font-bold text-slate-900">Account Spend Summary</h3>
-            <p class="text-xs text-slate-400">Distribution of expenses across cards and digital payment methods</p>
+            <h3 class="text-base font-bold text-slate-900">Active Transaction Sources Summary</h3>
+            <p class="text-xs text-slate-400">Spend distribution across cards and payment accounts</p>
           </div>
-          <button onclick="switchTab('accounts')" class="text-xs font-semibold text-indigo-600 hover:text-indigo-800 flex items-center gap-1">
-            Detailed breakdown →
-          </button>
+          <button onclick="switchTab('accounts')" class="text-xs font-semibold text-indigo-600 hover:text-indigo-800">All Accounts &amp; Balances →</button>
         </div>
-        <div id="accountSummaryFooterGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3.5">
-          <!-- Populated by JS -->
-        </div>
+        <div id="accountSummaryFooterGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3.5"></div>
       </div>
-
     </section>
 
     <!-- ==========================================
-         TAB 2: TRANSACTIONS LEDGER
+         TAB 2: TRANSACTIONS LEDGER (WITH SPLIT UI)
          ========================================== -->
     <section id="tab-ledger" class="hidden space-y-6">
-      <div class="bg-white rounded-xl border border-slate-200/90 p-5 shadow-sm space-y-4">
-        <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4 border-b border-slate-100 pb-4">
+      <div class="bg-white rounded-xl border border-slate-200 p-5 shadow-xs space-y-4">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
             <h2 class="text-base font-bold text-slate-900">Transactions Ledger</h2>
-            <p class="text-xs text-slate-400">Filter by category, payment account, or month. Toggle "Include?" to exclude duplicates (such as Venmo photoshoot transfers).</p>
+            <p class="text-xs text-slate-400">Click <strong>[Split]</strong> on any transaction to divide it across two Accounts or two Group_Category buckets.</p>
           </div>
-          <div class="flex flex-wrap items-center gap-2">
-            <input
-              id="ledgerSearch"
-              type="text"
-              oninput="renderLedgerTable()"
-              placeholder="Search merchant or detail..."
-              class="px-3 py-1.5 text-xs border border-slate-200 rounded-lg focus:outline-none focus:border-indigo-500 w-48"
-            />
-            <select id="ledgerCatFilter" onchange="renderLedgerTable()" class="text-xs border border-slate-200 rounded-lg px-3 py-1.5 bg-white text-slate-700">
-              <option value="All">All Categories</option>
-            </select>
-            <select id="ledgerAcctFilter" onchange="renderLedgerTable()" class="text-xs border border-slate-200 rounded-lg px-3 py-1.5 bg-white text-slate-700">
-              <option value="All">All Accounts</option>
-              <option value="Chase">Chase</option>
-              <option value="Ulta">Ulta</option>
-              <option value="American Eagle">American Eagle</option>
-              <option value="Venmo">Venmo</option>
-              <option value="PayPal">PayPal</option>
-            </select>
-            <button onclick="openBulkImportModal()" class="text-xs bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-semibold px-3 py-1.5 rounded-lg border border-indigo-200">
-              Paste Rows from Sheet
-            </button>
+          <div class="flex items-center gap-2">
+            <button onclick="openBulkImportModal()" class="bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 font-semibold text-xs px-3.5 py-2 rounded-lg">📥 Import / Paste Rows</button>
+            <button onclick="openTransactionModal()" class="bg-[#6c5ce7] hover:bg-[#5b4bc4] text-white font-semibold text-xs px-4 py-2 rounded-lg">+ Add Item</button>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-2.5">
+          <input id="ledgerSearch" type="text" oninput="resetLedgerPage()" placeholder="Search merchant, detail, ID..." class="px-3 py-2 text-xs border border-slate-200 rounded-lg" />
+          <select id="ledgerMonthFilter" onchange="resetLedgerPage()" class="text-xs border border-slate-200 rounded-lg px-3 py-2 bg-white"></select>
+          <select id="ledgerAcctFilter" onchange="resetLedgerPage()" class="text-xs border border-slate-200 rounded-lg px-3 py-2 bg-white"></select>
+          <select id="ledgerCatFilter" onchange="resetLedgerPage()" class="text-xs border border-slate-200 rounded-lg px-3 py-2 bg-white"></select>
+          <select id="ledgerIncFilter" onchange="resetLedgerPage()" class="text-xs border border-slate-200 rounded-lg px-3 py-2 bg-white">
+            <option value="All">All Inclusions</option>
+            <option value="1">Counted (Include = 1)</option>
+            <option value="0">Excluded (Include = 0)</option>
+          </select>
+        </div>
+
+        <div class="flex items-center justify-between text-xs pt-1 pb-2 border-b border-slate-100">
+          <div class="flex items-center gap-4">
+            <span>Showing <strong id="ledgerShowingCount">0</strong> of <span id="ledgerTotalCount">0</span></span>
+            <span>Active Counted Total: <strong id="ledgerActiveTotal" class="text-indigo-600 font-mono-num">$0.00</strong></span>
+          </div>
+          <div class="flex items-center gap-2">
+            <button onclick="changeLedgerPage(-1)" id="ledgerPrevBtn" class="px-2.5 py-1 border rounded hover:bg-slate-50 disabled:opacity-40">Prev</button>
+            <span id="ledgerPageInfo" class="font-mono-num">1 / 1</span>
+            <button onclick="changeLedgerPage(1)" id="ledgerNextBtn" class="px-2.5 py-1 border rounded hover:bg-slate-50 disabled:opacity-40">Next</button>
           </div>
         </div>
 
         <div class="overflow-x-auto">
-          <table class="w-full text-left border-collapse min-w-[850px]">
+          <table class="w-full text-left border-collapse min-w-[1100px]">
             <thead>
               <tr class="border-b border-slate-200 bg-slate-50 text-[11px] font-bold uppercase tracking-wider text-slate-400">
-                <th class="py-3 pl-4 pr-2">Txn ID</th>
+                <th class="py-3 pl-4 pr-2 text-center">Inc.</th>
+                <th class="py-3 px-2">ID</th>
                 <th class="py-3 px-2">Month</th>
-                <th class="py-3 px-2">Source Account</th>
+                <th class="py-3 px-2">Source Acct</th>
+                <th class="py-3 px-2">Dest Acct</th>
                 <th class="py-3 px-2">Merchant / Description</th>
-                <th class="py-3 px-2">Category</th>
+                <th class="py-3 px-2">Detail</th>
+                <th class="py-3 px-2">Group :: Category</th>
+                <th class="py-3 px-2">N/W</th>
                 <th class="py-3 px-2 text-right">Amount</th>
-                <th class="py-3 px-2 text-center">Include?</th>
-                <th class="py-3 pl-2 pr-4 text-right">Delete</th>
+                <th class="py-3 pl-2 pr-4 text-right">Split / Del</th>
               </tr>
             </thead>
-            <tbody id="ledgerTableBody" class="divide-y divide-slate-100 text-xs">
-              <!-- Populated by JS -->
-            </tbody>
+            <tbody id="ledgerTableBody" class="divide-y divide-slate-100 text-xs"></tbody>
           </table>
         </div>
       </div>
     </section>
 
     <!-- ==========================================
-         TAB 3: BUDGET CANVAS & GOALS
+         TAB 3: INTERACTIVE BUDGET CANVAS, GOALS & TO-DOS
          ========================================== -->
     <section id="tab-canvas" class="hidden space-y-6">
-
-      <!-- Income & Group Allocation At-A-Glance Canvas -->
-      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <!-- Left Column: Monthly Income & Net Allocation Summary -->
-        <div class="bg-white rounded-xl border border-slate-200/90 p-5 shadow-sm space-y-4">
-          <div class="flex items-center justify-between">
-            <div>
-              <h3 class="text-base font-bold text-slate-900">At-A-Glance Income vs. Plan</h3>
-              <p class="text-xs text-slate-400">Monthly Gross Revenue &amp; Budget Allocation</p>
-            </div>
-            <span class="px-2.5 py-1 text-xs font-mono-num font-bold bg-emerald-50 text-emerald-700 rounded-lg border border-emerald-200" id="canvasMonthBadge">2026-10</span>
+      <!-- Interactive Budget Canvas Header (Matches Screenshot) -->
+      <div class="bg-white rounded-xl border border-slate-200 p-5 shadow-xs flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+        <div>
+          <div class="flex items-center gap-2.5">
+            <h2 class="text-lg font-extrabold text-slate-900">Interactive Budget Canvas</h2>
+            <span id="canvasSummaryBadge" class="px-2.5 py-0.5 text-xs font-semibold rounded-full bg-indigo-50 text-indigo-700 border border-indigo-200">8 Budget Groups • 24 Categories</span>
           </div>
-
-          <div class="p-4 rounded-xl bg-slate-50 border border-slate-200/80 space-y-3">
-            <div class="flex justify-between items-center text-xs">
-              <span class="text-slate-500 font-medium">Estimated Salon Revenue:</span>
-              <div class="flex items-center gap-1">
-                <span class="text-slate-400">$</span>
-                <input id="incomeSalonInput" type="number" step="50" onchange="updateIncomeSetting()" class="w-24 text-right font-mono-num font-bold text-slate-900 bg-white border border-slate-300 rounded px-2 py-1 text-xs" value="8000" />
-              </div>
-            </div>
-            <div class="flex justify-between items-center text-xs">
-              <span class="text-slate-500 font-medium">Total Monthly Target Plan:</span>
-              <span id="canvasTotalTarget" class="font-mono-num font-bold text-slate-800">$7,960.98</span>
-            </div>
-            <div class="flex justify-between items-center text-xs">
-              <span class="text-slate-500 font-medium">Unallocated Income Buffer:</span>
-              <span id="canvasUnallocated" class="font-mono-num font-bold text-emerald-600">+$39.02</span>
-            </div>
-            <hr class="border-slate-200" />
-            <div class="flex justify-between items-center text-xs">
-              <span class="text-slate-600 font-semibold">Current Month Actual Spend:</span>
-              <span id="canvasActualSpend" class="font-mono-num font-bold text-slate-900">$9,597.40</span>
-            </div>
-            <div class="flex justify-between items-center text-xs">
-              <span class="text-slate-600 font-semibold">Net Cash Flow vs. Income:</span>
-              <span id="canvasNetCashflow" class="font-mono-num font-bold text-rose-600">-$1,597.40</span>
-            </div>
-          </div>
-
-          <!-- Key Takeaways Box -->
-          <div class="bg-indigo-950 text-white rounded-xl p-4 space-y-2.5">
-            <div class="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-indigo-300">
-              <span>★ Key Takeaways (<span id="takeawayMonthLabel">2026-10</span>)</span>
-            </div>
-            <ul id="keyTakeawaysList" class="text-xs text-slate-200 space-y-2 list-disc pl-4 leading-relaxed">
-              <!-- Populated by JS -->
-            </ul>
-          </div>
+          <p class="text-xs text-slate-500 mt-0.5">Organized by Budget Groups. Tweak monthly targets and display names inline, or add Group/Category budget rules (`Each Month`, `Annual`, `Target Month`).</p>
         </div>
-
-        <!-- Right 2 Columns: Group Breakdown (Salon, Personal Necessities, Wants, Savings/Debt/Taxes) -->
-        <div class="lg:col-span-2 bg-white rounded-xl border border-slate-200/90 p-5 shadow-sm space-y-4">
-          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-            <div>
-              <h3 class="text-base font-bold text-slate-900">Group Allocation Canvas (Current, Prior &amp; YTD)</h3>
-              <p class="text-xs text-slate-400">Tracks Salon Expenses, Personal Necessities, Wants / Lifestyle, Savings, Debt, and Taxes</p>
-            </div>
-          </div>
-          <div id="groupCanvasCards" class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <!-- Populated by JS -->
-          </div>
+        <div class="flex flex-wrap items-center gap-2">
+          <button onclick="openBudgetRuleModal()" class="bg-[#6c5ce7] hover:bg-[#5b4bc4] text-white text-xs font-semibold px-3.5 py-2 rounded-lg shadow-xs">+ Add Budget Rule</button>
+          <button onclick="openNewGroupCategoryModal()" class="bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold px-3.5 py-2 rounded-lg">+ Add Group / Category</button>
         </div>
       </div>
 
-      <!-- Editable Category Targets & Add New Category -->
-      <div class="bg-white rounded-xl border border-slate-200/90 p-5 shadow-sm space-y-4">
-        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-4">
-          <div>
-            <h3 class="text-base font-bold text-slate-900">Manage Category Goals &amp; Structure</h3>
-            <p class="text-xs text-slate-400">Adjust any category's Monthly Target, rename display names (keeping stable IDs), or add a new category.</p>
-          </div>
-          <button onclick="openNewCategoryModal()" class="bg-[#6c5ce7] hover:bg-[#5b4bc4] text-white text-xs font-semibold px-4 py-2 rounded-lg shadow-sm self-start sm:self-auto">
-            + Add New Category
-          </button>
-        </div>
+      <!-- 2-Column Interactive Group Cards Grid (Matches Screenshot Layout) -->
+      <div id="interactiveCanvasGrid" class="grid grid-cols-1 lg:grid-cols-2 gap-5"></div>
 
-        <div id="goalEditorGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-          <!-- Populated by JS -->
+      <!-- Table 7: Financial Goals Linked to Accounts -->
+      <div class="bg-white rounded-xl border border-slate-200 p-5 shadow-xs space-y-4">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-4">
+          <div>
+            <h3 class="text-base font-bold text-slate-900">Account-Linked Financial Goals (Table 7: <code>goals.csv</code>)</h3>
+            <p class="text-xs text-slate-400">Each goal is tied to an Account and inherits its objective from the Account's Type (`Savings`, `Tax`, `CCard`, `Loan`, `Investment`).</p>
+          </div>
+          <button onclick="openGoalModal()" class="bg-[#6c5ce7] hover:bg-[#5b4bc4] text-white text-xs font-semibold px-4 py-2 rounded-lg self-start">+ Add Goal</button>
         </div>
+        <div id="goalsCardsGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
       </div>
 
-      <!-- Budget To-Dos & Compliance Tasks (From KTBudget_2_0 To-Dos Tab) -->
-      <div class="bg-white rounded-xl border border-slate-200/90 p-5 shadow-sm space-y-4">
-        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-4">
+      <!-- Table 8: Budget To-Dos -->
+      <div class="bg-white rounded-xl border border-slate-200 p-5 shadow-xs space-y-4">
+        <div class="flex items-center justify-between border-b border-slate-100 pb-3">
           <div>
-            <h3 class="text-base font-bold text-slate-900">Budget To-Dos &amp; Quarterly Action Items</h3>
-            <p class="text-xs text-slate-400">Turn takeaways into concrete accounting tasks (taxes, statement reconciliation, goal reviews).</p>
+            <h3 class="text-base font-bold text-slate-900">Budget To-Dos &amp; Compliance Tasks (<code>todos.csv</code>)</h3>
+            <p class="text-xs text-slate-400">Track quarterly tax deadlines, duplicate reconciliations, and monthly reviews.</p>
           </div>
-          <button onclick="openAddTaskModal()" class="bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold px-4 py-2 rounded-lg shadow-sm self-start sm:self-auto">
-            + Add Budget Task
-          </button>
+          <button onclick="openTodoModal()" class="bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold px-3.5 py-2 rounded-lg">+ Add Task</button>
         </div>
-
         <div class="overflow-x-auto">
-          <table class="w-full text-left border-collapse min-w-[750px]">
+          <table class="w-full text-left border-collapse text-xs">
             <thead>
-              <tr class="border-b border-slate-200 bg-slate-50 text-[11px] font-bold uppercase tracking-wider text-slate-400">
-                <th class="py-3 pl-4 pr-2">Done</th>
-                <th class="py-3 px-2">Task ID</th>
-                <th class="py-3 px-2">Task Description</th>
-                <th class="py-3 px-2">Type</th>
-                <th class="py-3 px-2">Due Date</th>
-                <th class="py-3 px-2">Priority</th>
-                <th class="py-3 px-2">Notes</th>
-                <th class="py-3 pl-2 pr-4 text-right">Remove</th>
+              <tr class="border-b border-slate-200 bg-slate-50 text-[11px] font-bold uppercase text-slate-400">
+                <th class="py-2.5 pl-3">Done</th>
+                <th class="py-2.5 px-2">ID</th>
+                <th class="py-2.5 px-2">Task</th>
+                <th class="py-2.5 px-2">Type</th>
+                <th class="py-2.5 px-2">Due Date</th>
+                <th class="py-2.5 px-2">Priority</th>
+                <th class="py-2.5 px-2">Notes</th>
+                <th class="py-2.5 pr-3 text-right">Del</th>
               </tr>
             </thead>
-            <tbody id="todoTableBody" class="divide-y divide-slate-100 text-xs">
-              <!-- Populated by JS -->
-            </tbody>
+            <tbody id="todoTableBody" class="divide-y divide-slate-100"></tbody>
           </table>
         </div>
       </div>
-
     </section>
 
     <!-- ==========================================
-         TAB 4: ACCOUNT BREAKDOWN
+         TAB 4: ACCOUNT BREAKDOWN (TABLE 2)
          ========================================== -->
     <section id="tab-accounts" class="hidden space-y-6">
-      <div class="bg-white rounded-xl border border-slate-200/90 p-5 shadow-sm space-y-5">
-        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-4">
+      <div class="bg-white rounded-xl border border-slate-200 p-5 shadow-xs space-y-5">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-4">
           <div>
-            <h2 class="text-base font-bold text-slate-900">Account Spend Breakdown &amp; Card Balances</h2>
-            <p class="text-xs text-slate-400">Comparing September 2026 vs. October 2026 spend across payment methods, plus tracked card balances.</p>
+            <h2 class="text-base font-bold text-slate-900">Accounts &amp; Destinations (Table 2: <code>accounts.csv</code>)</h2>
+            <p class="text-xs text-slate-400">Includes all 9 Account Types (`Loan`, `Income`, `Savings`, `Tax`, `Payment`, `CCard`, `Bill`, `Investment`, `other`) linked to `Group_Category`.</p>
           </div>
+          <button onclick="openAccountModal()" class="bg-[#6c5ce7] hover:bg-[#5b4bc4] text-white text-xs font-semibold px-4 py-2 rounded-lg self-start">+ Add Account</button>
         </div>
-
-        <div id="accountDetailCards" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          <!-- Populated by JS -->
-        </div>
+        <div id="accountDetailCards" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
       </div>
     </section>
 
   </main>
 
   <!-- ==========================================
-       MODAL 1: ADD TRANSACTION
+       MODAL A: 12-MONTH HISTORY & PROJECTION DRILL-DOWN
        ========================================== -->
-  <div id="txnModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs hidden items-center justify-center p-4 z-50">
-    <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-200 space-y-4">
+  <div id="twelveMonthModal" class="fixed inset-0 bg-slate-900/60 hidden items-center justify-center p-4 z-50">
+    <div class="bg-white rounded-2xl max-w-4xl w-full p-6 shadow-2xl border border-slate-200 space-y-4 max-h-[90vh] overflow-y-auto">
       <div class="flex items-center justify-between border-b border-slate-100 pb-3">
-        <h3 class="text-base font-bold text-slate-900">Add New Transaction</h3>
-        <button onclick="closeTransactionModal()" class="text-slate-400 hover:text-slate-600 text-lg font-bold">&times;</button>
+        <div>
+          <h3 id="tmModalTitle" class="text-base font-bold text-slate-900">12-Month History &amp; Budget Projection</h3>
+          <p id="tmModalSub" class="text-xs text-slate-400">Showing backward actuals and forward monthly budget rules across all 12 months</p>
+        </div>
+        <div class="flex items-center gap-2">
+          <select id="tmYearSelect" onchange="renderTwelveMonthModalContent()" class="text-xs border border-slate-300 rounded-lg px-2.5 py-1.5 font-mono-num font-bold">
+            <option value="2026">Year: 2026</option>
+            <option value="2027">Year: 2027</option>
+          </select>
+          <button onclick="closeModal('twelveMonthModal')" class="text-slate-400 hover:text-slate-700 text-lg font-bold px-2">&times;</button>
+        </div>
+      </div>
+      <div id="tmModalChart" class="grid grid-cols-12 gap-1.5 pt-2 pb-1 items-end h-36 border-b border-slate-100 px-2"></div>
+      <div class="overflow-x-auto">
+        <table class="w-full text-left border-collapse text-xs">
+          <thead>
+            <tr class="border-b border-slate-200 bg-slate-50 text-[11px] font-bold uppercase text-slate-400">
+              <th class="py-2.5 pl-3">Month</th>
+              <th class="py-2.5 px-2 text-right">Projected Target</th>
+              <th class="py-2.5 px-2 text-right">Actual Spend</th>
+              <th class="py-2.5 px-2 text-right">Monthly Variance</th>
+              <th class="py-2.5 px-2 text-right">Cumulative YTD Target</th>
+              <th class="py-2.5 px-2 text-right">Cumulative YTD Actual</th>
+              <th class="py-2.5 pr-3 text-right">YTD Variance</th>
+            </tr>
+          </thead>
+          <tbody id="tmModalTableBody" class="divide-y divide-slate-100 font-mono-num"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==========================================
+       MODAL B: ADD / SPLIT TRANSACTION
+       ========================================== -->
+  <div id="txnModal" class="fixed inset-0 bg-slate-900/60 hidden items-center justify-center p-4 z-50">
+    <div class="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-slate-200 space-y-4">
+      <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+        <h3 id="txnModalHeader" class="text-base font-bold text-slate-900">Add / Split Transaction</h3>
+        <button onclick="closeModal('txnModal')" class="text-slate-400 hover:text-slate-600 text-lg font-bold">&times;</button>
       </div>
       <div class="space-y-3 text-xs">
         <div class="grid grid-cols-2 gap-3">
           <div>
             <label class="block font-semibold text-slate-600 mb-1">Month (YYYY-MM)</label>
-            <select id="newTxnMonth" class="w-full border border-slate-300 rounded-lg px-3 py-2">
-              <option value="2026-10">2026-10 (October)</option>
-              <option value="2026-09">2026-09 (September)</option>
-            </select>
+            <input id="newTxnMonth" type="text" value="2026-10" class="w-full border border-slate-300 rounded-lg px-3 py-2 font-mono-num" />
           </div>
           <div>
-            <label class="block font-semibold text-slate-600 mb-1">Payment Account</label>
-            <select id="newTxnAccount" class="w-full border border-slate-300 rounded-lg px-3 py-2">
-              <option value="Chase">Chase</option>
-              <option value="Ulta">Ulta</option>
-              <option value="American Eagle">American Eagle</option>
-              <option value="Venmo">Venmo</option>
-              <option value="PayPal">PayPal</option>
-            </select>
+            <label class="block font-semibold text-slate-600 mb-1">Source Account</label>
+            <select id="newTxnAccount" class="w-full border border-slate-300 rounded-lg px-3 py-2"></select>
           </div>
-        </div>
-        <div>
-          <label class="block font-semibold text-slate-600 mb-1">Category</label>
-          <select id="newTxnCategory" class="w-full border border-slate-300 rounded-lg px-3 py-2"></select>
-        </div>
-        <div>
-          <label class="block font-semibold text-slate-600 mb-1">Merchant / Description</label>
-          <input id="newTxnMerchant" type="text" placeholder="e.g., Target, Salon Centric, Shell..." class="w-full border border-slate-300 rounded-lg px-3 py-2" />
-        </div>
-        <div>
-          <label class="block font-semibold text-slate-600 mb-1">Amount ($)</label>
-          <input id="newTxnAmount" type="number" step="0.01" placeholder="0.00" class="w-full border border-slate-300 rounded-lg px-3 py-2 font-mono-num" />
-        </div>
-      </div>
-      <div class="flex justify-end gap-2 pt-3 border-t border-slate-100">
-        <button onclick="closeTransactionModal()" class="px-4 py-2 rounded-lg text-xs font-semibold text-slate-600 hover:bg-slate-100">Cancel</button>
-        <button onclick="saveNewTransaction()" class="px-4 py-2 rounded-lg text-xs font-semibold bg-[#6c5ce7] text-white hover:bg-[#5b4bc4]">Save Transaction</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- ==========================================
-       MODAL 2: ADD NEW CATEGORY
-       ========================================== -->
-  <div id="newCatModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs hidden items-center justify-center p-4 z-50">
-    <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-200 space-y-4">
-      <div class="flex items-center justify-between border-b border-slate-100 pb-3">
-        <h3 class="text-base font-bold text-slate-900">Add New Budget Category</h3>
-        <button onclick="closeNewCategoryModal()" class="text-slate-400 hover:text-slate-600 text-lg font-bold">&times;</button>
-      </div>
-      <div class="space-y-3 text-xs">
-        <div>
-          <label class="block font-semibold text-slate-600 mb-1">Stable Category ID (e.g., SAL_EQUIP)</label>
-          <input id="newCatId" type="text" placeholder="CUSTOM_ID" class="w-full border border-slate-300 rounded-lg px-3 py-2 uppercase font-mono-num" />
-        </div>
-        <div>
-          <label class="block font-semibold text-slate-600 mb-1">Category Display Name</label>
-          <input id="newCatName" type="text" placeholder="e.g., Salon Equipment" class="w-full border border-slate-300 rounded-lg px-3 py-2" />
-        </div>
-        <div>
-          <label class="block font-semibold text-slate-600 mb-1">Group</label>
-          <select id="newCatGroup" class="w-full border border-slate-300 rounded-lg px-3 py-2">
-            <option value="Salon expenses">Salon expenses</option>
-            <option value="Personal necessities">Personal necessities</option>
-            <option value="Wants">Wants</option>
-            <option value="Savings">Savings</option>
-            <option value="Debt">Debt</option>
-            <option value="Taxes">Taxes</option>
-          </select>
-        </div>
-        <div>
-          <label class="block font-semibold text-slate-600 mb-1">Monthly Target ($)</label>
-          <input id="newCatTarget" type="number" step="0.01" placeholder="100.00" class="w-full border border-slate-300 rounded-lg px-3 py-2 font-mono-num" />
-        </div>
-      </div>
-      <div class="flex justify-end gap-2 pt-3 border-t border-slate-100">
-        <button onclick="closeNewCategoryModal()" class="px-4 py-2 rounded-lg text-xs font-semibold text-slate-600 hover:bg-slate-100">Cancel</button>
-        <button onclick="saveNewCategory()" class="px-4 py-2 rounded-lg text-xs font-semibold bg-[#6c5ce7] text-white hover:bg-[#5b4bc4]">Add Category</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- ==========================================
-       MODAL 3: ADD TO-DO TASK
-       ========================================== -->
-  <div id="addTaskModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs hidden items-center justify-center p-4 z-50">
-    <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-200 space-y-4">
-      <div class="flex items-center justify-between border-b border-slate-100 pb-3">
-        <h3 class="text-base font-bold text-slate-900">New Budget To-Do Task</h3>
-        <button onclick="closeAddTaskModal()" class="text-slate-400 hover:text-slate-600 text-lg font-bold">&times;</button>
-      </div>
-      <div class="space-y-3 text-xs">
-        <div>
-          <label class="block font-semibold text-slate-600 mb-1">Task Description</label>
-          <input id="newTaskTitle" type="text" placeholder="e.g., Process Q4 estimated Wisconsin taxes" class="w-full border border-slate-300 rounded-lg px-3 py-2" />
         </div>
         <div class="grid grid-cols-2 gap-3">
           <div>
-            <label class="block font-semibold text-slate-600 mb-1">Type</label>
-            <select id="newTaskType" class="w-full border border-slate-300 rounded-lg px-3 py-2">
-              <option value="Taxes">Taxes</option>
-              <option value="Reconciliation">Reconciliation</option>
-              <option value="Budget">Budget</option>
-              <option value="Debt">Debt</option>
-              <option value="Savings">Savings</option>
-              <option value="Monthly review">Monthly review</option>
-            </select>
+            <label class="block font-semibold text-slate-600 mb-1">Group :: Category (`GC_ID`)</label>
+            <select id="newTxnGC" class="w-full border border-slate-300 rounded-lg px-3 py-2"></select>
           </div>
           <div>
-            <label class="block font-semibold text-slate-600 mb-1">Priority</label>
-            <select id="newTaskPriority" class="w-full border border-slate-300 rounded-lg px-3 py-2">
-              <option value="High">High</option>
-              <option value="Medium">Medium</option>
-              <option value="Low">Low</option>
+            <label class="block font-semibold text-slate-600 mb-1">Type (`Want` / `Necessity`)</label>
+            <select id="newTxnType" class="w-full border border-slate-300 rounded-lg px-3 py-2">
+              <option value="Necessity">Necessity</option>
+              <option value="Want">Want</option>
             </select>
           </div>
         </div>
-        <div>
-          <label class="block font-semibold text-slate-600 mb-1">Due Date</label>
-          <input id="newTaskDue" type="date" value="2026-11-15" class="w-full border border-slate-300 rounded-lg px-3 py-2" />
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block font-semibold text-slate-600 mb-1">Merchant / Description</label>
+            <input id="newTxnMerchant" type="text" placeholder="e.g. Walmart, Chase Transfer..." class="w-full border border-slate-300 rounded-lg px-3 py-2" />
+          </div>
+          <div>
+            <label class="block font-semibold text-slate-600 mb-1">Amount ($)</label>
+            <input id="newTxnAmount" type="number" step="0.01" class="w-full border border-slate-300 rounded-lg px-3 py-2 font-mono-num" />
+          </div>
         </div>
-        <div>
-          <label class="block font-semibold text-slate-600 mb-1">Notes</label>
-          <input id="newTaskNotes" type="text" placeholder="Optional details..." class="w-full border border-slate-300 rounded-lg px-3 py-2" />
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block font-semibold text-slate-600 mb-1">Detail (Sub-category)</label>
+            <input id="newTxnDetail" type="text" placeholder="e.g. Mixed essentials" class="w-full border border-slate-300 rounded-lg px-3 py-2" />
+          </div>
+          <div>
+            <label class="block font-semibold text-slate-600 mb-1">Destination Account (Optional Transfer)</label>
+            <select id="newTxnDestAcct" class="w-full border border-slate-300 rounded-lg px-3 py-2"></select>
+          </div>
+        </div>
+
+        <!-- Optional Split Second Leg -->
+        <div class="pt-2 border-t border-slate-200">
+          <label class="flex items-center gap-2 font-semibold text-indigo-700 cursor-pointer">
+            <input id="enableSplitCheck" type="checkbox" onchange="toggleSplitFields()" class="rounded text-indigo-600" />
+            <span>Split part of this transaction into a 2nd Account or Category</span>
+          </label>
+          <div id="splitSecondLegBox" class="hidden mt-3 p-3 rounded-xl bg-indigo-50/60 border border-indigo-200 space-y-2.5">
+            <div class="grid grid-cols-3 gap-2">
+              <div>
+                <label class="block text-[11px] font-semibold text-slate-600">2nd Split Amount ($)</label>
+                <input id="splitAmt2" type="number" step="0.01" placeholder="0.00" class="w-full border border-slate-300 rounded px-2 py-1.5 font-mono-num bg-white" />
+              </div>
+              <div>
+                <label class="block text-[11px] font-semibold text-slate-600">2nd Account</label>
+                <select id="splitAcct2" class="w-full border border-slate-300 rounded px-2 py-1.5 bg-white"></select>
+              </div>
+              <div>
+                <label class="block text-[11px] font-semibold text-slate-600">2nd Group :: Category</label>
+                <select id="splitGC2" class="w-full border border-slate-300 rounded px-2 py-1.5 bg-white"></select>
+              </div>
+            </div>
+            <p class="text-[11px] text-indigo-800">Note: When splitting an existing row, the 2nd amount is deducted from the primary row and saved as a linked split child row.</p>
+          </div>
         </div>
       </div>
       <div class="flex justify-end gap-2 pt-3 border-t border-slate-100">
-        <button onclick="closeAddTaskModal()" class="px-4 py-2 rounded-lg text-xs font-semibold text-slate-600 hover:bg-slate-100">Cancel</button>
-        <button onclick="saveNewTask()" class="px-4 py-2 rounded-lg text-xs font-semibold bg-slate-900 text-white hover:bg-slate-800">Add Task</button>
+        <button onclick="closeModal('txnModal')" class="px-4 py-2 rounded-lg text-xs font-semibold text-slate-600">Cancel</button>
+        <button onclick="saveTransactionForm()" class="px-4 py-2 rounded-lg text-xs font-semibold bg-[#6c5ce7] text-white">Save Transaction</button>
       </div>
     </div>
   </div>
 
   <!-- ==========================================
-       MODAL 4: BACKUP, RESTORE & GITHUB SYNC
+       MODAL C: ADD BUDGET RULE (TABLE 6)
        ========================================== -->
-  <div id="syncModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs hidden items-center justify-center p-4 z-50">
-    <div class="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-slate-200 space-y-5">
+  <div id="budgetRuleModal" class="fixed inset-0 bg-slate-900/60 hidden items-center justify-center p-4 z-50">
+    <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-200 space-y-4">
       <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+        <h3 class="text-base font-bold text-slate-900">Add / Update Budget Rule (`budgets.csv`)</h3>
+        <button onclick="closeModal('budgetRuleModal')" class="text-slate-400 hover:text-slate-600 text-lg font-bold">&times;</button>
+      </div>
+      <div class="space-y-3 text-xs">
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block font-semibold text-slate-600 mb-1">Budget Scope Level</label>
+            <select id="bdgScope" onchange="populateBudgetTargetDropdown()" class="w-full border border-slate-300 rounded-lg px-3 py-2">
+              <option value="Group_Category">Group_Category (Specific Item)</option>
+              <option value="Group">Group (Whole Group Target)</option>
+            </select>
+          </div>
+          <div>
+            <label class="block font-semibold text-slate-600 mb-1">Target Item</label>
+            <select id="bdgTargetRef" class="w-full border border-slate-300 rounded-lg px-3 py-2"></select>
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block font-semibold text-slate-600 mb-1">Budget Calculation Type</label>
+            <select id="bdgRuleType" onchange="toggleTargetMonthInputs()" class="w-full border border-slate-300 rounded-lg px-3 py-2">
+              <option value="Each Month">Each Month (YTD = Val × 12)</option>
+              <option value="Annual">Annual (Monthly = Val ÷ 12)</option>
+              <option value="Target Month">Target Month (Val ÷ Months Span)</option>
+            </select>
+          </div>
+          <div>
+            <label class="block font-semibold text-slate-600 mb-1">Priority (`Want` / `Necessity`)</label>
+            <select id="bdgPriority" class="w-full border border-slate-300 rounded-lg px-3 py-2">
+              <option value="Necessity">Necessity</option>
+              <option value="Want">Want</option>
+            </select>
+          </div>
+        </div>
         <div>
-          <h3 class="text-base font-bold text-slate-900">GitHub Auto-Update &amp; Data Backup</h3>
-          <p class="text-xs text-slate-400">Safeguard local changes and verify latest GitHub deployment</p>
+          <label class="block font-semibold text-slate-600 mb-1">Dollar Value ($)</label>
+          <input id="bdgAmount" type="number" step="1" placeholder="300.00" class="w-full border border-slate-300 rounded-lg px-3 py-2 font-mono-num" />
         </div>
-        <button onclick="closeSyncModal()" class="text-slate-400 hover:text-slate-600 text-lg font-bold">&times;</button>
-      </div>
-
-      <!-- Version Probe Status -->
-      <div class="p-4 rounded-xl bg-indigo-50/70 border border-indigo-200/80 space-y-2">
-        <div class="flex items-center justify-between">
-          <span class="text-xs font-bold text-indigo-950">Installed App Version: <span id="modalVersionText" class="font-mono-num">2.0.1</span></span>
-          <button onclick="checkForGitHubUpdates(true)" class="px-3 py-1 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-semibold">
-            Check GitHub Now
-          </button>
-        </div>
-        <p id="versionCheckStatus" class="text-xs text-indigo-700">
-          Automatically checks <code>./version.json</code> on load and every 15 minutes to bypass mobile browser cache.
-        </p>
-      </div>
-
-      <!-- JSON Export / Import -->
-      <div class="space-y-2">
-        <h4 class="text-xs font-bold uppercase tracking-wider text-slate-400">JSON Backup &amp; Restore</h4>
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <button onclick="exportBudgetJson()" class="p-3 rounded-xl border border-slate-200 hover:bg-slate-50 text-left transition">
-            <div class="text-xs font-bold text-slate-900">⬇ Export JSON Backup</div>
-            <div class="text-[11px] text-slate-400 mt-0.5">Save timestamped file to phone or Drive</div>
-          </button>
-          <label class="p-3 rounded-xl border border-slate-200 hover:bg-slate-50 text-left transition cursor-pointer block">
-            <div class="text-xs font-bold text-slate-900">⬆ Restore from JSON</div>
-            <div class="text-[11px] text-slate-400 mt-0.5">Load saved backup file</div>
-            <input type="file" accept=".json" onchange="importBudgetJson(event)" class="hidden" />
-          </label>
+        <div id="bdgTargetMonthBox" class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block font-semibold text-slate-600 mb-1">Start Month (YYYY-MM)</label>
+            <input id="bdgStartMonth" type="text" value="2026-01" class="w-full border border-slate-300 rounded-lg px-3 py-2 font-mono-num" />
+          </div>
+          <div>
+            <label class="block font-semibold text-slate-600 mb-1">Target Month (YYYY-MM)</label>
+            <input id="bdgTargetMonth" type="text" value="2026-12" class="w-full border border-slate-300 rounded-lg px-3 py-2 font-mono-num" />
+          </div>
         </div>
       </div>
-
-      <!-- Reset to Official Sheet Defaults -->
-      <div class="pt-3 border-t border-slate-100 flex items-center justify-between">
-        <span class="text-xs text-slate-500">Need to restore clean KTBudget 2.0 sheet defaults?</span>
-        <button onclick="resetToFactoryDefaults()" class="text-xs font-semibold text-rose-600 hover:text-rose-800">
-          Reset to Defaults
-        </button>
+      <div class="flex justify-end gap-2 pt-3 border-t border-slate-100">
+        <button onclick="closeModal('budgetRuleModal')" class="px-4 py-2 rounded-lg text-xs font-semibold text-slate-600">Cancel</button>
+        <button onclick="saveBudgetRuleForm()" class="px-4 py-2 rounded-lg text-xs font-semibold bg-[#6c5ce7] text-white">Save Budget Rule</button>
       </div>
     </div>
   </div>
 
   <!-- ==========================================
-       MODAL 5: BULK PASTE TRANSACTIONS FROM SHEET
+       MODAL D: ADD GROUP OR CATEGORY (TABLES 3, 4, 5)
        ========================================== -->
-  <div id="bulkImportModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs hidden items-center justify-center p-4 z-50">
+  <div id="newGCModal" class="fixed inset-0 bg-slate-900/60 hidden items-center justify-center p-4 z-50">
+    <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-200 space-y-4">
+      <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+        <h3 class="text-base font-bold text-slate-900">Add Group &amp; Category (`Group_Category`)</h3>
+        <button onclick="closeModal('newGCModal')" class="text-slate-400 hover:text-slate-600 text-lg font-bold">&times;</button>
+      </div>
+      <div class="space-y-3 text-xs">
+        <div>
+          <label class="block font-semibold text-slate-600 mb-1">Select Existing Group or Create New</label>
+          <select id="gcGroupSelect" onchange="document.getElementById('newGroupBox').classList.toggle('hidden', this.value !== '__NEW__')" class="w-full border border-slate-300 rounded-lg px-3 py-2"></select>
+        </div>
+        <div id="newGroupBox" class="hidden p-3 bg-slate-50 rounded-xl border border-slate-200 space-y-2">
+          <input id="newGrpName" type="text" placeholder="New Group Name (e.g. Subscriptions)" class="w-full border border-slate-300 rounded px-2.5 py-1.5 bg-white" />
+          <input id="newGrpDesc" type="text" placeholder="Group Description" class="w-full border border-slate-300 rounded px-2.5 py-1.5 bg-white" />
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block font-semibold text-slate-600 mb-1">Category Code (`ID`)</label>
+            <input id="newCatCode" type="text" placeholder="e.g. AUTOMAINT" class="w-full border border-slate-300 rounded-lg px-3 py-2 uppercase font-mono-num" />
+          </div>
+          <div>
+            <label class="block font-semibold text-slate-600 mb-1">Category Name</label>
+            <input id="newCatName" type="text" placeholder="e.g. Auto Maintenance" class="w-full border border-slate-300 rounded-lg px-3 py-2" />
+          </div>
+        </div>
+        <div class="grid grid-cols-3 gap-2">
+          <div>
+            <label class="block font-semibold text-slate-600 mb-1">Type</label>
+            <select id="newCatType" class="w-full border border-slate-300 rounded-lg px-2 py-2">
+              <option value="Flexible">Flexible</option>
+              <option value="Fixed">Fixed</option>
+              <option value="Non Monthly">Non Monthly</option>
+            </select>
+          </div>
+          <div>
+            <label class="block font-semibold text-slate-600 mb-1">Budget?</label>
+            <select id="newCatBudgetYN" class="w-full border border-slate-300 rounded-lg px-2 py-2">
+              <option value="Yes">Yes</option>
+              <option value="No">No</option>
+            </select>
+          </div>
+          <div>
+            <label class="block font-semibold text-slate-600 mb-1">Impact</label>
+            <select id="newCatImpact" class="w-full border border-slate-300 rounded-lg px-2 py-2">
+              <option value="personal">personal</option>
+              <option value="business">business</option>
+            </select>
+          </div>
+        </div>
+        <div>
+          <label class="block font-semibold text-slate-600 mb-1">Initial Monthly Budget Target ($)</label>
+          <input id="newCatTarget" type="number" step="5" value="100" class="w-full border border-slate-300 rounded-lg px-3 py-2 font-mono-num" />
+        </div>
+      </div>
+      <div class="flex justify-end gap-2 pt-3 border-t border-slate-100">
+        <button onclick="closeModal('newGCModal')" class="px-4 py-2 rounded-lg text-xs font-semibold text-slate-600">Cancel</button>
+        <button onclick="saveNewGroupCategory()" class="px-4 py-2 rounded-lg text-xs font-semibold bg-slate-900 text-white">Save to Structure</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==========================================
+       MODAL E: ADD ACCOUNT (TABLE 2)
+       ========================================== -->
+  <div id="accountModal" class="fixed inset-0 bg-slate-900/60 hidden items-center justify-center p-4 z-50">
+    <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-200 space-y-4">
+      <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+        <h3 class="text-base font-bold text-slate-900">Add Account (`accounts.csv`)</h3>
+        <button onclick="closeModal('accountModal')" class="text-slate-400 hover:text-slate-600 text-lg font-bold">&times;</button>
+      </div>
+      <div class="space-y-3 text-xs">
+        <div>
+          <label class="block font-semibold text-slate-600 mb-1">Account Name</label>
+          <input id="acctNameInp" type="text" placeholder="e.g. Capital One, Auto Loan, CareCredit" class="w-full border border-slate-300 rounded-lg px-3 py-2" />
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block font-semibold text-slate-600 mb-1">Account Type</label>
+            <select id="acctTypeInp" class="w-full border border-slate-300 rounded-lg px-3 py-2">
+              <option value="CCard">CCard</option>
+              <option value="Payment">Payment</option>
+              <option value="Savings">Savings</option>
+              <option value="Income">Income</option>
+              <option value="Tax">Tax</option>
+              <option value="Loan">Loan</option>
+              <option value="Bill">Bill</option>
+              <option value="Investment">Investment</option>
+              <option value="other">other</option>
+            </select>
+          </div>
+          <div>
+            <label class="block font-semibold text-slate-600 mb-1">Current Balance ($)</label>
+            <input id="acctBalInp" type="number" step="0.01" value="0.00" class="w-full border border-slate-300 rounded-lg px-3 py-2 font-mono-num" />
+          </div>
+        </div>
+        <div>
+          <label class="block font-semibold text-slate-600 mb-1">Linked `Group_Category` (`Default_GC_ID`)</label>
+          <select id="acctGCInp" class="w-full border border-slate-300 rounded-lg px-3 py-2"></select>
+        </div>
+        <div>
+          <label class="block font-semibold text-slate-600 mb-1">Notes</label>
+          <input id="acctNotesInp" type="text" placeholder="Optional description..." class="w-full border border-slate-300 rounded-lg px-3 py-2" />
+        </div>
+      </div>
+      <div class="flex justify-end gap-2 pt-3 border-t border-slate-100">
+        <button onclick="closeModal('accountModal')" class="px-4 py-2 rounded-lg text-xs font-semibold text-slate-600">Cancel</button>
+        <button onclick="saveNewAccount()" class="px-4 py-2 rounded-lg text-xs font-semibold bg-[#6c5ce7] text-white">Add Account</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==========================================
+       MODAL F: ADD GOAL (TABLE 7)
+       ========================================== -->
+  <div id="goalModal" class="fixed inset-0 bg-slate-900/60 hidden items-center justify-center p-4 z-50">
+    <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-200 space-y-4">
+      <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+        <h3 class="text-base font-bold text-slate-900">Add Account-Linked Goal (`goals.csv`)</h3>
+        <button onclick="closeModal('goalModal')" class="text-slate-400 hover:text-slate-600 text-lg font-bold">&times;</button>
+      </div>
+      <div class="space-y-3 text-xs">
+        <div>
+          <label class="block font-semibold text-slate-600 mb-1">Goal Name</label>
+          <input id="goalNameInp" type="text" placeholder="e.g. Pay Off Ulta Card / Q1 Tax Reserve" class="w-full border border-slate-300 rounded-lg px-3 py-2" />
+        </div>
+        <div>
+          <label class="block font-semibold text-slate-600 mb-1">Linked Account (Determines Goal Type Behavior)</label>
+          <select id="goalAcctInp" class="w-full border border-slate-300 rounded-lg px-3 py-2"></select>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block font-semibold text-slate-600 mb-1">Total Goal Target ($)</label>
+            <input id="goalTargetInp" type="number" step="10" placeholder="2000.00" class="w-full border border-slate-300 rounded-lg px-3 py-2 font-mono-num" />
+          </div>
+          <div>
+            <label class="block font-semibold text-slate-600 mb-1">Expected Monthly ($)</label>
+            <input id="goalMonthlyInp" type="number" step="5" placeholder="200.00" class="w-full border border-slate-300 rounded-lg px-3 py-2 font-mono-num" />
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block font-semibold text-slate-600 mb-1">Target Month (YYYY-MM)</label>
+            <input id="goalMonthInp" type="text" value="2027-06" class="w-full border border-slate-300 rounded-lg px-3 py-2 font-mono-num" />
+          </div>
+          <div>
+            <label class="block font-semibold text-slate-600 mb-1">Description</label>
+            <input id="goalDescInp" type="text" placeholder="Short note..." class="w-full border border-slate-300 rounded-lg px-3 py-2" />
+          </div>
+        </div>
+      </div>
+      <div class="flex justify-end gap-2 pt-3 border-t border-slate-100">
+        <button onclick="closeModal('goalModal')" class="px-4 py-2 rounded-lg text-xs font-semibold text-slate-600">Cancel</button>
+        <button onclick="saveNewGoal()" class="px-4 py-2 rounded-lg text-xs font-semibold bg-[#6c5ce7] text-white">Save Goal</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==========================================
+       MODAL G: BULK IMPORT & ADMIN CSV SYNC
+       ========================================== -->
+  <div id="bulkImportModal" class="fixed inset-0 bg-slate-900/60 hidden items-center justify-center p-4 z-50">
     <div class="bg-white rounded-2xl max-w-xl w-full p-6 shadow-2xl border border-slate-200 space-y-4">
       <div class="flex items-center justify-between border-b border-slate-100 pb-3">
-        <div>
-          <h3 class="text-base font-bold text-slate-900">Paste Rows from Google Sheets Transactions Tab</h3>
-          <p class="text-xs text-slate-400">Copy rows from your Transactions tab (Columns A–I) and paste below</p>
-        </div>
-        <button onclick="closeBulkImportModal()" class="text-slate-400 hover:text-slate-600 text-lg font-bold">&times;</button>
+        <h3 class="text-base font-bold text-slate-900">Import Future Month Transactions</h3>
+        <button onclick="closeModal('bulkImportModal')" class="text-slate-400 hover:text-slate-600 text-lg font-bold">&times;</button>
       </div>
-      <textarea
-        id="bulkPasteArea"
-        rows="7"
-        placeholder="Paste tab-separated rows from Google Sheets (Transactions ID, Month, Source, Original N/W, Merchant, Amount, Category ID, Detail, Include?)..."
-        class="w-full border border-slate-300 rounded-xl p-3 text-xs font-mono-num focus:outline-none focus:border-indigo-500"
-      ></textarea>
+      <div class="grid grid-cols-2 gap-3 text-xs bg-slate-50 p-3 rounded-xl border border-slate-200">
+        <div>
+          <label class="block font-semibold text-slate-600 mb-1">Default Month (YYYY-MM)</label>
+          <input id="impMonth" type="text" value="2026-11" class="w-full border border-slate-300 rounded px-2.5 py-1.5 font-mono-num bg-white" />
+        </div>
+        <div>
+          <label class="block font-semibold text-slate-600 mb-1">Default Account (Existing or New)</label>
+          <input id="impAccount" type="text" value="Chase" class="w-full border border-slate-300 rounded px-2.5 py-1.5 bg-white" />
+        </div>
+      </div>
+      <textarea id="bulkPasteArea" rows="6" placeholder="Paste full CSV/Sheet rows OR quick lines: Merchant, Amount, Category_ID, Detail, Necessity/Want" class="w-full border border-slate-300 rounded-xl p-3 text-xs font-mono-num"></textarea>
       <div class="flex justify-end gap-2">
-        <button onclick="closeBulkImportModal()" class="px-4 py-2 rounded-lg text-xs font-semibold text-slate-600 hover:bg-slate-100">Cancel</button>
-        <button onclick="processBulkPaste()" class="px-4 py-2 rounded-lg text-xs font-semibold bg-[#6c5ce7] text-white hover:bg-[#5b4bc4]">Import Rows</button>
+        <button onclick="closeModal('bulkImportModal')" class="px-4 py-2 rounded-lg text-xs font-semibold text-slate-600">Cancel</button>
+        <button onclick="processBulkImport()" class="px-4 py-2 rounded-lg text-xs font-semibold bg-[#6c5ce7] text-white">Import Rows</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="syncModal" class="fixed inset-0 bg-slate-900/60 hidden items-center justify-center p-4 z-50">
+    <div class="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-slate-200 space-y-4">
+      <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+        <h3 class="text-base font-bold text-slate-900">GitHub 8-CSV Admin &amp; Backup</h3>
+        <button onclick="closeModal('syncModal')" class="text-slate-400 hover:text-slate-600 text-lg font-bold">&times;</button>
+      </div>
+      <div class="p-3.5 rounded-xl bg-indigo-50 border border-indigo-200 flex items-center justify-between text-xs">
+        <span> Reload all 8 `.csv` files directly from GitHub repo:</span>
+        <button onclick="reloadAllCsvsFromGitHub()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-3 py-1.5 rounded-lg">Re-Sync 8 CSVs</button>
+      </div>
+      <div class="space-y-2 text-xs">
+        <div class="font-bold text-slate-500 uppercase">Download Individual Updated Table CSV (For GitHub Commit)</div>
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+          <button onclick="exportTableCsv('transactions')" class="p-2 border rounded hover:bg-slate-50 font-mono-num">transactions.csv</button>
+          <button onclick="exportTableCsv('accounts')" class="p-2 border rounded hover:bg-slate-50 font-mono-num">accounts.csv</button>
+          <button onclick="exportTableCsv('groups')" class="p-2 border rounded hover:bg-slate-50 font-mono-num">groups.csv</button>
+          <button onclick="exportTableCsv('categories')" class="p-2 border rounded hover:bg-slate-50 font-mono-num">categories.csv</button>
+          <button onclick="exportTableCsv('group_category')" class="p-2 border rounded hover:bg-slate-50 font-mono-num">group_category.csv</button>
+          <button onclick="exportTableCsv('budgets')" class="p-2 border rounded hover:bg-slate-50 font-mono-num">budgets.csv</button>
+          <button onclick="exportTableCsv('goals')" class="p-2 border rounded hover:bg-slate-50 font-mono-num">goals.csv</button>
+          <button onclick="exportTableCsv('todos')" class="p-2 border rounded hover:bg-slate-50 font-mono-num">todos.csv</button>
+        </div>
+      </div>
+      <div class="grid grid-cols-2 gap-3 pt-2 border-t border-slate-100 text-xs">
+        <button onclick="exportFullJson()" class="p-3 border rounded-xl hover:bg-slate-50 font-bold">⬇ Export Full JSON Backup</button>
+        <label class="p-3 border rounded-xl hover:bg-slate-50 font-bold text-center cursor-pointer">
+          ⬆ Restore Full JSON <input type="file" accept=".json" onchange="importFullJson(event)" class="hidden" />
+        </label>
       </div>
     </div>
   </div>
 
   <!-- ==========================================
-       APPLICATION LOGIC & VERIFIED SHEET DATASET
+       RELATIONAL ENGINE & CSV LOADER
        ========================================== -->
   <script>
-    const APP_VERSION = '2.0.1';
-    const STORAGE_KEY = 'ktbudget_v2_canvas_state';
+    const APP_VERSION = '2.1.0';
+    const STORAGE_KEY = 'ktbudget_v2_1_0_relational_db';
 
-    // Exact 24 Categories from KTBudget_2_0 Google Sheet
-    const DEFAULT_CATEGORIES = [
-      { id: 'SHOP', name: 'Clothing & online shopping', group: 'Wants', target: 125.00, octActual: 2474.63, sepActual: 1883.48 },
-      { id: 'DINING', name: 'Restaurants, takeout & coffee', group: 'Wants', target: 175.00, octActual: 1169.81, sepActual: 1042.30 },
-      { id: 'BEAUTY', name: 'Nails, beauty & piercings', group: 'Wants', target: 125.00, octActual: 824.62, sepActual: 469.44 },
-      { id: 'HEALTH', name: 'Health insurance & medications', group: 'Personal necessities', target: 300.00, octActual: 912.88, sepActual: 286.33 },
-      { id: 'GROC', name: 'Groceries & household', group: 'Personal necessities', target: 450.00, octActual: 985.58, sepActual: 669.39 },
-      { id: 'BARS', name: 'Bars & entertainment', group: 'Wants', target: 100.00, octActual: 539.31, sepActual: 702.62 },
-      { id: 'FUN', name: 'Other fun & lifestyle', group: 'Wants', target: 75.00, octActual: 433.89, sepActual: 1177.21 },
-      { id: 'DOGFOOD', name: 'Dog food & grooming', group: 'Personal necessities', target: 450.00, octActual: 627.40, sepActual: 659.01 },
-      { id: 'GAS', name: 'Gas', group: 'Personal necessities', target: 250.00, octActual: 374.66, sepActual: 196.62 },
-      { id: 'SAL_AD', name: 'Salon advertising', group: 'Salon expenses', target: 0.00, octActual: 54.00, sepActual: 43.20 },
-      { id: 'SAL_RENT', name: 'Salon rent', group: 'Salon expenses', target: 525.00, octActual: 525.00, sepActual: 525.00 },
-      { id: 'PHONE', name: 'Phone & essential subscriptions', group: 'Personal necessities', target: 150.00, octActual: 144.53, sepActual: 254.52 },
-      { id: 'PETINS', name: 'Pet insurance premiums', group: 'Personal necessities', target: 177.12, octActual: 164.35, sepActual: 0.00 },
-      { id: 'SAL_SUP', name: 'Salon color & products', group: 'Salon expenses', target: 300.00, octActual: 269.35, sepActual: 382.62 },
-      { id: 'SAL_BOOK', name: 'Salon booking system', group: 'Salon expenses', target: 51.70, octActual: 0.00, sepActual: 0.00 },
-      { id: 'AUTOINS', name: 'Car insurance', group: 'Personal necessities', target: 132.16, octActual: 0.00, sepActual: 0.00 },
-      { id: 'DOGEMERG', name: 'Dog emergency savings', group: 'Savings', target: 150.00, octActual: 0.00, sepActual: 0.00 },
-      { id: 'VET', name: 'Vet care & vet savings', group: 'Personal necessities', target: 275.00, octActual: 97.39, sepActual: 511.70 },
-      { id: 'RETIRE', name: 'Retirement investing', group: 'Savings', target: 200.00, octActual: 0.00, sepActual: 0.00 },
-      { id: 'EMERG', name: 'Personal emergency savings', group: 'Savings', target: 250.00, octActual: 0.00, sepActual: 0.00 },
-      { id: 'OTHERNEED', name: 'Other essentials & irregular bills', group: 'Personal necessities', target: 300.00, octActual: 0.00, sepActual: 110.37 },
-      { id: 'HOME', name: 'Home rent', group: 'Personal necessities', target: 600.00, octActual: 0.00, sepActual: 0.00 },
-      { id: 'DEBT', name: 'Credit card payments', group: 'Debt', target: 800.00, octActual: 0.00, sepActual: 0.00 },
-      { id: 'TAX', name: 'Tax reserve transfers', group: 'Taxes', target: 2000.00, octActual: 0.00, sepActual: 0.00 }
-    ];
-
-    // Exact Account Spend Totals from KTBudget_2_0 Google Sheet
-    const DEFAULT_ACCOUNTS = [
-      { name: 'Chase', oct: 5471.25, sep: 5123.10, balance: 0, apr: '' },
-      { name: 'Ulta', oct: 2626.09, sep: 1777.72, balance: 0, apr: '' },
-      { name: 'American Eagle', oct: 432.24, sep: 556.76, balance: 0, apr: '' },
-      { name: 'Venmo', oct: 949.35, sep: 1140.62, balance: 0, apr: '' },
-      { name: 'PayPal', oct: 118.47, sep: 315.61, balance: 0, apr: '' }
-    ];
-
-    // Exact 7 To-Do Items from KTBudget_2_0 Google Sheet
-    const DEFAULT_TODOS = [
-      { id: 'TASK-001', task: 'Review quarterly estimated taxes with accountant', type: 'Taxes', due: '2027-01-15', status: 'Not started', priority: 'High', notes: 'Confirm federal/Wisconsin dates' },
-      { id: 'TASK-002', task: 'Verify September photoshoot duplicates', type: 'Reconciliation', due: '2026-11-15', status: 'Not started', priority: 'High', notes: 'Venmo $695.25 and $139.05 appear on cards' },
-      { id: 'TASK-003', task: 'Review pet insurance overlap in budget', type: 'Budget', due: '2026-11-15', status: 'Not started', priority: 'High', notes: '$275 existing allowance plus $177.12 premiums' },
-      { id: 'TASK-004', task: 'Enter credit card balances, APRs and minimums', type: 'Debt', due: '2026-11-15', status: 'Not started', priority: 'High', notes: 'Balances unknown' },
-      { id: 'TASK-005', task: 'Reconcile October statements', type: 'Reconciliation', due: '2026-11-15', status: 'Not started', priority: 'Medium', notes: 'Mixed purchases require review' },
-      { id: 'TASK-006', task: 'Check monthly actuals versus budget', type: 'Monthly review', due: '2026-12-01', status: 'Not started', priority: 'Medium', notes: 'Repeat monthly' },
-      { id: 'TASK-007', task: 'Set up retirement account and transfer', type: 'Savings', due: '2026-12-01', status: 'Not started', priority: 'Medium', notes: 'Confirm account eligibility' }
-    ];
-
-    // Generate baseline transactions that reconcile 100% with the sheet's September & October category actuals
-    function buildBaselineTransactions(categories) {
-      const txns = [];
-      let counter = 1;
-      const acctCycle = ['Chase', 'Ulta', 'Venmo', 'American Eagle', 'PayPal'];
-      categories.forEach((cat, idx) => {
-        if (cat.octActual > 0) {
-          txns.push({
-            id: 'TXN-OCT-' + String(counter++).padStart(3, '0'),
-            month: '2026-10',
-            source: cat.id === 'SHOP' ? 'Ulta' : (cat.id === 'SAL_RENT' ? 'Venmo' : acctCycle[idx % acctCycle.length]),
-            merchant: cat.name + ' (Oct Sheet Summary)',
-            amount: cat.octActual,
-            categoryId: cat.id,
-            include: true
-          });
-        }
-        if (cat.sepActual > 0) {
-          txns.push({
-            id: 'TXN-SEP-' + String(counter++).padStart(3, '0'),
-            month: '2026-09',
-            source: cat.id === 'SHOP' ? 'Ulta' : (cat.id === 'SAL_RENT' ? 'Venmo' : acctCycle[idx % acctCycle.length]),
-            merchant: cat.name + ' (Sep Sheet Summary)',
-            amount: cat.sepActual,
-            categoryId: cat.id,
-            include: true
-          });
-        }
-      });
-      return txns;
-    }
-
-    let appState = {
+    let db = {
       selectedMonth: '2026-10',
-      sortMode: 'variance', // 'variance' | 'actual' | 'name'
-      ytdCalculated: false, // false = Sheet exact ($0.00), true = cumulative 2026
-      monthlyIncome: 8000.00,
-      categories: JSON.parse(JSON.stringify(DEFAULT_CATEGORIES)),
-      accounts: JSON.parse(JSON.stringify(DEFAULT_ACCOUNTS)),
-      todos: JSON.parse(JSON.stringify(DEFAULT_TODOS)),
-      transactions: []
-    };
-
-    function loadState() {
-      try {
-        const raw = localStorage.getItem(STORAGE_KEY);
-        if (raw) {
-          const parsed = JSON.parse(raw);
-          appState = Object.assign({}, appState, parsed);
-        } else {
-          appState.transactions = buildBaselineTransactions(appState.categories);
-          saveState();
-        }
-      } catch (e) {
-        console.warn('LocalStorage load fallback:', e);
-        appState.transactions = buildBaselineTransactions(appState.categories);
-      }
-    }
-
-    function saveState() {
-      try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(appState));
-      } catch (e) {
-        console.warn('LocalStorage save error:', e);
-      }
-    }
-
-    // Format Currency
-    function fmtCurrency(val, showPlus = false) {
-      const num = Number(val) || 0;
-      const absStr = '$' + Math.abs(num).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-      if (num < -0.004) return '-' + absStr;
-      if (num > 0.004 && showPlus) return '+' + absStr;
-      return absStr;
-    }
-
-    // Compute Category Actual for a given month from Transactions
-    function getCategoryActual(catId, month) {
-      return appState.transactions
-        .filter(t => t.include && t.categoryId === catId && t.month === month)
-        .reduce((sum, t) => sum + (Number(t.amount) || 0), 0);
-    }
-
-    function getPriorMonth(monthStr) {
-      if (monthStr === '2026-10') return '2026-09';
-      if (monthStr === '2026-09') return '2026-08';
-      return '2026-09';
-    }
-
-    // Group Badge Styling (Matches Google Sheet Canvas)
-    function getGroupBadgeClasses(group) {
-      switch (group) {
-        case 'Wants':
-          return 'bg-purple-100/90 text-purple-700 border border-purple-200';
-        case 'Personal necessities':
-          return 'bg-teal-100/80 text-teal-800 border border-teal-200';
-        case 'Salon expenses':
-          return 'bg-blue-100/80 text-blue-800 border border-blue-200';
-        case 'Savings':
-          return 'bg-emerald-100/80 text-emerald-800 border border-emerald-200';
-        case 'Debt':
-          return 'bg-amber-100/80 text-amber-800 border border-amber-200';
-        case 'Taxes':
-          return 'bg-slate-200 text-slate-800 border border-slate-300';
-        default:
-          return 'bg-slate-100 text-slate-700 border border-slate-200';
-      }
-    }
-
-    // Switch Top Navigation Tabs
-    function switchTab(tabId) {
-      ['bva', 'ledger', 'canvas', 'accounts'].forEach(id => {
-        const sec = document.getElementById('tab-' + id);
-        const btn = document.getElementById('tabBtn-' + id);
-        if (id === tabId) {
-          sec.classList.remove('hidden');
-          btn.className = 'tab-btn px-3.5 py-2 rounded-lg text-xs font-semibold flex items-center gap-2 transition whitespace-nowrap bg-[#252d5c] text-indigo-200 border border-indigo-500/40';
-        } else {
-          sec.classList.add('hidden');
-          btn.className = 'tab-btn px-3.5 py-2 rounded-lg text-xs font-semibold flex items-center gap-2 transition whitespace-nowrap text-slate-300 hover:bg-[#1e2548]';
-        }
-      });
-      renderAll();
-    }
-
-    function handleMonthChange(val) {
-      appState.selectedMonth = val;
-      saveState();
-      renderAll();
-    }
-
-    function filterByGroupQuick(groupName) {
-      document.getElementById('groupFilterSelect').value = groupName;
-      renderBudgetTable();
-    }
-
-    function cycleSortMode() {
-      const modes = ['variance', 'actual', 'name'];
-      const labels = { variance: 'Worst Variance', actual: 'Highest Spend', name: 'Category Name' };
-      const nextIdx = (modes.indexOf(appState.sortMode) + 1) % modes.length;
-      appState.sortMode = modes[nextIdx];
-      document.getElementById('sortModeLabel').textContent = labels[appState.sortMode];
-      renderBudgetTable();
-    }
-
-    function toggleYtdMode() {
-      appState.ytdCalculated = !appState.ytdCalculated;
-      document.getElementById('ytdModeLabel').textContent = appState.ytdCalculated ? 'Calculated (Sep+Oct)' : 'Sheet ($0.00)';
-      saveState();
-      renderBudgetTable();
-    }
-
-    // Master Render
-    function renderAll() {
-      document.getElementById('monthSelect').value = appState.selectedMonth;
-      document.getElementById('appVersionBadge').textContent = 'v' + APP_VERSION;
-      document.getElementById('modalVersionText').textContent = APP_VERSION;
-
-      const totalTxns = appState.transactions.length;
-      document.getElementById('navLedgerCount').textContent = totalTxns === 30 ? '287' : totalTxns;
-
-      renderTopKpisAndDrivers();
-      renderBudgetTable();
-      renderAccountFooter();
-      renderLedgerTable();
-      renderCanvasTab();
-      renderAccountsTab();
-      populateCategoryDropdowns();
-    }
-
-    function renderTopKpisAndDrivers() {
-      const curMonth = appState.selectedMonth;
-      const priMonth = getPriorMonth(curMonth);
-
-      let totalTarget = 0;
-      let totalCurrent = 0;
-      let totalPrior = 0;
-      const driverItems = [];
-
-      appState.categories.forEach(cat => {
-        const target = Number(cat.target) || 0;
-        const cur = getCategoryActual(cat.id, curMonth);
-        const pri = getCategoryActual(cat.id, priMonth);
-        const variance = target - cur; // Under budget is positive (+)
-
-        totalTarget += target;
-        totalCurrent += cur;
-        totalPrior += pri;
-
-        if (variance < -0.01) {
-          driverItems.push({ id: cat.id, name: cat.name, variance });
-        }
-      });
-
-      const netVariance = totalTarget - totalCurrent;
-      const utilPct = totalTarget > 0 ? Math.round((totalCurrent / totalTarget) * 100) : 0;
-
-      document.getElementById('kpiMonthlyTarget').textContent = fmtCurrency(totalTarget);
-      document.getElementById('kpiTargetSub').textContent = 'Month: ' + curMonth;
-      document.getElementById('kpiCurrentActual').textContent = fmtCurrency(totalCurrent);
-      document.getElementById('kpiPriorActualSub').textContent = 'Prior Actual: ' + fmtCurrency(totalPrior);
-
-      const varEl = document.getElementById('kpiVariance');
-      const varSub = document.getElementById('kpiVarianceSub');
-      const varBorder = document.getElementById('kpiVarianceBorder');
-      varEl.textContent = fmtCurrency(netVariance, true);
-
-      if (netVariance < 0) {
-        varEl.className = 'text-3xl font-extrabold text-rose-600 mt-2 font-mono-num';
-        varSub.className = 'text-xs font-medium text-rose-600 mt-2 flex items-center gap-1';
-        varSub.innerHTML = '<span>⚠ Over spending target</span>';
-        varBorder.className = 'border-r-4 border-rose-500 absolute right-0 top-0 bottom-0';
-      } else {
-        varEl.className = 'text-3xl font-extrabold text-emerald-600 mt-2 font-mono-num';
-        varSub.className = 'text-xs font-medium text-emerald-600 mt-2 flex items-center gap-1';
-        varSub.innerHTML = '<span>✓ Under spending target</span>';
-        varBorder.className = 'border-r-4 border-emerald-500 absolute right-0 top-0 bottom-0';
-      }
-
-      document.getElementById('kpiUtilization').textContent = utilPct + '%';
-      const bar = document.getElementById('kpiUtilizationBar');
-      bar.style.width = Math.min(utilPct, 100) + '%';
-      bar.className = (utilPct > 100 ? 'bg-rose-500' : 'bg-indigo-600') + ' h-full rounded-full transition-all';
-
-      // Render Top 5 Major Variance Drivers
-      document.getElementById('driverMonthLabel').textContent = curMonth;
-      driverItems.sort((a, b) => a.variance - b.variance);
-      const top5 = driverItems.slice(0, 5);
-      const driversContainer = document.getElementById('varianceDriversList');
-
-      if (top5.length === 0) {
-        driversContainer.innerHTML = '<span class="text-xs text-emerald-700 font-medium">All categories are currently within target!</span>';
-      } else {
-        driversContainer.innerHTML = top5.map(d => `
-          <button onclick="jumpToCategoryTxns('${d.id}')" class="bg-white hover:bg-rose-50 border border-rose-200/90 rounded-lg px-3 py-1.5 text-xs flex items-center gap-2 shadow-2xs transition">
-            <span class="font-semibold text-slate-800">${d.name}</span>
-            <span class="font-mono-num font-bold text-rose-600">${fmtCurrency(d.variance)}</span>
-            <span class="text-slate-300 text-[10px]">◎</span>
-          </button>
-        `).join('');
-      }
-    }
-
-    function renderBudgetTable() {
-      const curMonth = appState.selectedMonth;
-      const priMonth = getPriorMonth(curMonth);
-      const searchQ = (document.getElementById('catSearchInput')?.value || '').toLowerCase();
-      const groupFilter = document.getElementById('groupFilterSelect')?.value || 'All';
-
-      let rows = appState.categories.map(cat => {
-        const target = Number(cat.target) || 0;
-        const cur = getCategoryActual(cat.id, curMonth);
-        const pri = getCategoryActual(cat.id, priMonth);
-        const variance = target - cur;
-
-        const ytdTarget = appState.ytdCalculated ? target * 2 : 0;
-        const ytdActual = appState.ytdCalculated ? (getCategoryActual(cat.id, '2026-09') + getCategoryActual(cat.id, '2026-10')) : 0;
-        const ytdVariance = appState.ytdCalculated ? (ytdTarget - ytdActual) : 0;
-
-        const meterPct = target > 0 ? Math.round((cur / target) * 100) : (cur > 0 ? 100 : 0);
-
-        return {
-          ...cat,
-          target,
-          cur,
-          pri,
-          variance,
-          ytdTarget,
-          ytdActual,
-          ytdVariance,
-          meterPct
-        };
-      });
-
-      // Filter
-      if (groupFilter !== 'All') {
-        rows = rows.filter(r => r.group === groupFilter);
-      }
-      if (searchQ) {
-        rows = rows.filter(r => r.name.toLowerCase().includes(searchQ) || r.group.toLowerCase().includes(searchQ));
-      }
-
-      // Sort
-      if (appState.sortMode === 'variance') {
-        rows.sort((a, b) => a.variance - b.variance);
-      } else if (appState.sortMode === 'actual') {
-        rows.sort((a, b) => b.cur - a.cur);
-      } else {
-        rows.sort((a, b) => a.name.localeCompare(b.name));
-      }
-
-      document.getElementById('catCountLabel').textContent = rows.length;
-
-      const tbody = document.getElementById('budgetTableBody');
-      tbody.innerHTML = rows.map(r => {
-        let varCellHtml = '';
-        if (r.variance < -0.005) {
-          varCellHtml = `<span class="inline-block px-2 py-0.5 rounded bg-rose-50 text-rose-600 font-bold font-mono-num">${fmtCurrency(r.variance)}</span>`;
-        } else if (r.variance > 0.005) {
-          varCellHtml = `<span class="font-bold text-emerald-600 font-mono-num">${fmtCurrency(r.variance, true)}</span>`;
-        } else {
-          varCellHtml = `<span class="text-slate-400 font-mono-num">$0.00</span>`;
-        }
-
-        const barColor = r.meterPct > 100 ? 'bg-rose-500' : (r.meterPct >= 85 ? 'bg-amber-500' : 'bg-emerald-500');
-        const barWidth = Math.min(r.meterPct, 100);
-
-        return `
-          <tr class="hover:bg-slate-50/90 transition">
-            <td class="py-3.5 pl-5 pr-3 font-semibold text-slate-800">${r.name}</td>
-            <td class="py-3.5 px-3">
-              <span class="px-2.5 py-0.5 rounded-full text-[11px] font-semibold ${getGroupBadgeClasses(r.group)}">
-                ${r.group}
-              </span>
-            </td>
-            <td class="py-3.5 px-3 text-right font-mono-num text-slate-600">${fmtCurrency(r.target)}</td>
-            <td class="py-3.5 px-3 text-right font-mono-num font-bold text-slate-900">${fmtCurrency(r.cur)}</td>
-            <td class="py-3.5 px-3 text-right">${varCellHtml}</td>
-            <td class="py-3.5 px-3 text-right font-mono-num text-slate-500">${fmtCurrency(r.pri)}</td>
-            <td class="py-3.5 px-3 text-right font-mono-num text-slate-400">${fmtCurrency(r.ytdTarget)}</td>
-            <td class="py-3.5 px-3 text-right font-mono-num text-slate-500">${fmtCurrency(r.ytdActual)}</td>
-            <td class="py-3.5 px-3 text-right font-mono-num text-slate-400">${fmtCurrency(r.ytdVariance, true)}</td>
-            <td class="py-3.5 px-3">
-              <div class="flex items-center gap-2">
-                <span class="text-[10px] font-mono-num text-slate-500 w-9 text-right">${r.meterPct}%</span>
-                <div class="w-16 bg-slate-100 h-1.5 rounded-full overflow-hidden">
-                  <div class="${barColor} h-full rounded-full" style="width: ${barWidth}%"></div>
-                </div>
-              </div>
-            </td>
-            <td class="py-3.5 pl-3 pr-5 text-right">
-              <button onclick="jumpToCategoryTxns('${r.id}')" class="px-2.5 py-1 rounded border border-slate-200 hover:bg-indigo-50 hover:border-indigo-200 text-slate-600 hover:text-indigo-700 font-semibold text-[11px] transition">
-                Txns
-              </button>
-            </td>
-          </tr>
-        `;
-      }).join('');
-
-      // Totals Footer
-      const totTarget = rows.reduce((s, r) => s + r.target, 0);
-      const totCur = rows.reduce((s, r) => s + r.cur, 0);
-      const totVar = totTarget - totCur;
-      const totPri = rows.reduce((s, r) => s + r.pri, 0);
-      const totYtdT = rows.reduce((s, r) => s + r.ytdTarget, 0);
-      const totYtdA = rows.reduce((s, r) => s + r.ytdActual, 0);
-      const totYtdV = totYtdT - totYtdA;
-
-      document.getElementById('budgetTableFoot').innerHTML = `
-        <tr>
-          <td class="py-4 pl-5 pr-3 uppercase tracking-wider text-slate-300">Total Allocations</td>
-          <td class="py-4 px-3 text-slate-400 font-normal">Grand Total</td>
-          <td class="py-4 px-3 text-right font-mono-num">${fmtCurrency(totTarget)}</td>
-          <td class="py-4 px-3 text-right font-mono-num text-white">${fmtCurrency(totCur)}</td>
-          <td class="py-4 px-3 text-right font-mono-num ${totVar < 0 ? 'text-rose-400' : 'text-emerald-400'}">${fmtCurrency(totVar, true)}</td>
-          <td class="py-4 px-3 text-right font-mono-num text-slate-300">${fmtCurrency(totPri)}</td>
-          <td class="py-4 px-3 text-right font-mono-num text-slate-400">${fmtCurrency(totYtdT)}</td>
-          <td class="py-4 px-3 text-right font-mono-num text-slate-300">${fmtCurrency(totYtdA)}</td>
-          <td class="py-4 px-3 text-right font-mono-num text-slate-400">${fmtCurrency(totYtdV, true)}</td>
-          <td colspan="2" class="py-4 pl-3 pr-5 text-right text-[11px] text-slate-400 font-normal">Evaluated by KTBudget 2.0</td>
-        </tr>
-      `;
-    }
-
-    function renderAccountFooter() {
-      const container = document.getElementById('accountSummaryFooterGrid');
-      const isOct = appState.selectedMonth === '2026-10';
-      container.innerHTML = appState.accounts.map(acct => {
-        const curVal = isOct ? acct.oct : acct.sep;
-        const priVal = isOct ? acct.sep : acct.oct;
-        const priLabel = isOct ? 'Sept' : 'Oct';
-        return `
-          <div class="p-3.5 rounded-xl border border-slate-200/80 bg-slate-50/60 flex flex-col justify-between">
-            <div class="flex items-center justify-between">
-              <span class="text-xs font-bold text-slate-700">${acct.name}</span>
-              <span class="text-[10px] px-2 py-0.5 rounded bg-white border border-slate-200 text-slate-500 font-mono-num">${priLabel}: ${fmtCurrency(priVal)}</span>
-            </div>
-            <div class="text-lg font-extrabold text-slate-900 font-mono-num mt-2">${fmtCurrency(curVal)}</div>
-          </div>
-        `;
-      }).join('');
-    }
-
-    function jumpToCategoryTxns(catId) {
-      switchTab('ledger');
-      document.getElementById('ledgerCatFilter').value = catId;
-      renderLedgerTable();
-    }
-
-    function populateCategoryDropdowns() {
-      const ledgerSel = document.getElementById('ledgerCatFilter');
-      const modalSel = document.getElementById('newTxnCategory');
-      const curLedgerVal = ledgerSel.value;
-
-      ledgerSel.innerHTML = '<option value="All">All Categories</option>' +
-        appState.categories.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
-      ledgerSel.value = curLedgerVal || 'All';
-
-      modalSel.innerHTML = appState.categories.map(c => `<option value="${c.id}">${c.name} (${c.group})</option>`).join('');
-    }
-
-    function renderLedgerTable() {
-      const searchQ = (document.getElementById('ledgerSearch')?.value || '').toLowerCase();
-      const catFilter = document.getElementById('ledgerCatFilter')?.value || 'All';
-      const acctFilter = document.getElementById('ledgerAcctFilter')?.value || 'All';
-
-      let list = appState.transactions.filter(t => t.month === appState.selectedMonth);
-      if (catFilter !== 'All') list = list.filter(t => t.categoryId === catFilter);
-      if (acctFilter !== 'All') list = list.filter(t => t.source === acctFilter);
-      if (searchQ) {
-        list = list.filter(t =>
-          (t.merchant || '').toLowerCase().includes(searchQ) ||
-          (t.id || '').toLowerCase().includes(searchQ)
-        );
-      }
-
-      const catMap = {};
-      appState.categories.forEach(c => { catMap[c.id] = c; });
-
-      const tbody = document.getElementById('ledgerTableBody');
-      if (list.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="8" class="py-8 text-center text-slate-400">No transactions match the current filter for ${appState.selectedMonth}.</td></tr>`;
-        return;
-      }
-
-      tbody.innerHTML = list.map(t => {
-        const catObj = catMap[t.categoryId] || { name: t.categoryId, group: 'Wants' };
-        return `
-          <tr class="hover:bg-slate-50 ${!t.include ? 'opacity-50 bg-slate-50' : ''}">
-            <td class="py-3 pl-4 pr-2 font-mono-num text-[11px] text-slate-500">${t.id}</td>
-            <td class="py-3 px-2 font-mono-num text-slate-600">${t.month}</td>
-            <td class="py-3 px-2 font-semibold text-slate-700">${t.source}</td>
-            <td class="py-3 px-2 text-slate-800">${t.merchant}</td>
-            <td class="py-3 px-2">
-              <span class="px-2 py-0.5 rounded-full text-[10px] font-semibold ${getGroupBadgeClasses(catObj.group)}">
-                ${catObj.name}
-              </span>
-            </td>
-            <td class="py-3 px-2 text-right font-mono-num font-bold text-slate-900">${fmtCurrency(t.amount)}</td>
-            <td class="py-3 px-2 text-center">
-              <input type="checkbox" ${t.include ? 'checked' : ''} onchange="toggleTxnInclude('${t.id}')" class="rounded text-indigo-600 cursor-pointer" />
-            </td>
-            <td class="py-3 pl-2 pr-4 text-right">
-              <button onclick="deleteTransaction('${t.id}')" class="text-slate-400 hover:text-rose-600 font-bold">&times;</button>
-            </td>
-          </tr>
-        `;
-      }).join('');
-    }
-
-    function toggleTxnInclude(txnId) {
-      const t = appState.transactions.find(x => x.id === txnId);
-      if (t) {
-        t.include = !t.include;
-        saveState();
-        renderAll();
-      }
-    }
-
-    function deleteTransaction(txnId) {
-      appState.transactions = appState.transactions.filter(x => x.id !== txnId);
-      saveState();
-      renderAll();
-    }
-
-    // Render Tab 3: Budget Canvas & Goals
-    function renderCanvasTab() {
-      const curMonth = appState.selectedMonth;
-      const priMonth = getPriorMonth(curMonth);
-
-      document.getElementById('canvasMonthBadge').textContent = curMonth;
-      document.getElementById('takeawayMonthLabel').textContent = curMonth;
-      document.getElementById('incomeSalonInput').value = appState.monthlyIncome;
-
-      const totTarget = appState.categories.reduce((s, c) => s + (Number(c.target) || 0), 0);
-      const totActual = appState.categories.reduce((s, c) => s + getCategoryActual(c.id, curMonth), 0);
-      const unallocated = appState.monthlyIncome - totTarget;
-      const netFlow = appState.monthlyIncome - totActual;
-
-      document.getElementById('canvasTotalTarget').textContent = fmtCurrency(totTarget);
-      document.getElementById('canvasUnallocated').textContent = fmtCurrency(unallocated, true);
-      document.getElementById('canvasActualSpend').textContent = fmtCurrency(totActual);
-
-      const flowEl = document.getElementById('canvasNetCashflow');
-      flowEl.textContent = fmtCurrency(netFlow, true);
-      flowEl.className = 'font-mono-num font-bold ' + (netFlow < 0 ? 'text-rose-600' : 'text-emerald-600');
-
-      // Group Breakdown Cards (Salon expenses, Personal necessities, Wants, Savings/Debt/Taxes)
-      const groups = ['Salon expenses', 'Personal necessities', 'Wants', 'Savings', 'Debt', 'Taxes'];
-      const groupCardsHtml = groups.map(grp => {
-        const cats = appState.categories.filter(c => c.group === grp);
-        const gTarget = cats.reduce((s, c) => s + (Number(c.target) || 0), 0);
-        const gCur = cats.reduce((s, c) => s + getCategoryActual(c.id, curMonth), 0);
-        const gPri = cats.reduce((s, c) => s + getCategoryActual(c.id, priMonth), 0);
-        const gYtd = cats.reduce((s, c) => s + getCategoryActual(c.id, '2026-09') + getCategoryActual(c.id, '2026-10'), 0);
-        const gVar = gTarget - gCur;
-
-        return `
-          <div class="p-4 rounded-xl border border-slate-200/90 bg-slate-50/50 space-y-2.5">
-            <div class="flex items-center justify-between">
-              <span class="px-2.5 py-0.5 rounded-full text-xs font-bold ${getGroupBadgeClasses(grp)}">${grp}</span>
-              <span class="text-xs font-mono-num font-bold ${gVar < 0 ? 'text-rose-600' : 'text-emerald-600'}">
-                Var: ${fmtCurrency(gVar, true)}
-              </span>
-            </div>
-            <div class="grid grid-cols-4 gap-2 pt-1 text-center">
-              <div class="bg-white p-2 rounded-lg border border-slate-200/70">
-                <div class="text-[10px] text-slate-400 uppercase font-semibold">Target</div>
-                <div class="text-xs font-bold font-mono-num text-slate-800 mt-0.5">${fmtCurrency(gTarget)}</div>
-              </div>
-              <div class="bg-white p-2 rounded-lg border border-slate-200/70">
-                <div class="text-[10px] text-slate-400 uppercase font-semibold">Current</div>
-                <div class="text-xs font-bold font-mono-num text-slate-900 mt-0.5">${fmtCurrency(gCur)}</div>
-              </div>
-              <div class="bg-white p-2 rounded-lg border border-slate-200/70">
-                <div class="text-[10px] text-slate-400 uppercase font-semibold">Prior</div>
-                <div class="text-xs font-bold font-mono-num text-slate-600 mt-0.5">${fmtCurrency(gPri)}</div>
-              </div>
-              <div class="bg-white p-2 rounded-lg border border-slate-200/70">
-                <div class="text-[10px] text-slate-400 uppercase font-semibold">2026 YTD</div>
-                <div class="text-xs font-bold font-mono-num text-indigo-700 mt-0.5">${fmtCurrency(gYtd)}</div>
-              </div>
-            </div>
-          </div>
-        `;
-      }).join('');
-      document.getElementById('groupCanvasCards').innerHTML = groupCardsHtml;
-
-      // Dynamic Key Takeaways
-      const wantsCur = appState.categories.filter(c => c.group === 'Wants').reduce((s, c) => s + getCategoryActual(c.id, curMonth), 0);
-      const wantsTarget = appState.categories.filter(c => c.group === 'Wants').reduce((s, c) => s + (Number(c.target) || 0), 0);
-      const taxCur = getCategoryActual('TAX', curMonth);
-
-      document.getElementById('keyTakeawaysList').innerHTML = `
-        <li><strong>Wants / Lifestyle Spend:</strong> Currently at <strong>${fmtCurrency(wantsCur)}</strong> vs. a target of <strong>${fmtCurrency(wantsTarget)}</strong> (${fmtCurrency(wantsTarget - wantsCur)} variance), driven primarily by Clothing &amp; online shopping and Dining.</li>
-        <li><strong>Tax &amp; Savings Transfers:</strong> Recorded transfers for Tax Reserve ($2,000 target) and Savings ($600 total target) show <strong>${fmtCurrency(taxCur)}</strong> logged so far—verify transfer entries in the ledger.</li>
-        <li><strong>Pet Care Overlap:</strong> Pet insurance premiums ($164.35 actual) and Dog food/vet categories should be reviewed against TASK-003.</li>
-      `;
-
-      // Render Editable Category Goal Cards
-      document.getElementById('goalEditorGrid').innerHTML = appState.categories.map((cat, idx) => `
-        <div class="p-3 rounded-xl border border-slate-200 bg-slate-50/40 flex items-center justify-between gap-2">
-          <div class="min-w-0 flex-1">
-            <div class="flex items-center gap-1.5">
-              <span class="text-[10px] font-mono-num px-1.5 py-0.5 rounded bg-slate-200 text-slate-600">${cat.id}</span>
-              <input
-                type="text"
-                value="${cat.name}"
-                onchange="updateCategoryName(${idx}, this.value)"
-                class="text-xs font-semibold text-slate-800 bg-transparent border-b border-transparent hover:border-slate-300 focus:border-indigo-500 focus:outline-none truncate w-full"
-              />
-            </div>
-            <span class="text-[10px] text-slate-400">${cat.group}</span>
-          </div>
-          <div class="flex items-center gap-1 shrink-0">
-            <span class="text-xs text-slate-400">$</span>
-            <input
-              type="number"
-              step="5"
-              value="${cat.target}"
-              onchange="updateCategoryTarget(${idx}, this.value)"
-              class="w-20 text-right font-mono-num font-bold text-xs bg-white border border-slate-300 rounded-lg px-2 py-1 focus:outline-none focus:border-indigo-500"
-            />
-          </div>
-        </div>
-      `).join('');
-
-      // Render Budget To-Dos Table
-      const todoBody = document.getElementById('todoTableBody');
-      todoBody.innerHTML = appState.todos.map((td, idx) => {
-        const isDone = td.status === 'Completed';
-        const priBadge = td.priority === 'High'
-          ? 'bg-rose-100 text-rose-700 border-rose-200'
-          : (td.priority === 'Medium' ? 'bg-amber-100 text-amber-800 border-amber-200' : 'bg-slate-100 text-slate-600 border-slate-200');
-        return `
-          <tr class="hover:bg-slate-50 ${isDone ? 'opacity-50 line-through' : ''}">
-            <td class="py-3 pl-4 pr-2">
-              <input type="checkbox" ${isDone ? 'checked' : ''} onchange="toggleTodoStatus(${idx})" class="rounded text-indigo-600 cursor-pointer" />
-            </td>
-            <td class="py-3 px-2 font-mono-num text-[11px] text-slate-500">${td.id}</td>
-            <td class="py-3 px-2 font-semibold text-slate-800">${td.task}</td>
-            <td class="py-3 px-2"><span class="px-2 py-0.5 rounded bg-slate-100 text-slate-700 text-[11px]">${td.type}</span></td>
-            <td class="py-3 px-2 font-mono-num text-slate-600">${td.due}</td>
-            <td class="py-3 px-2"><span class="px-2 py-0.5 rounded border text-[10px] font-bold ${priBadge}">${td.priority}</span></td>
-            <td class="py-3 px-2 text-slate-500">${td.notes || ''}</td>
-            <td class="py-3 pl-2 pr-4 text-right">
-              <button onclick="deleteTodo(${idx})" class="text-slate-400 hover:text-rose-600 font-bold">&times;</button>
-            </td>
-          </tr>
-        `;
-      }).join('');
-    }
-
-    function updateIncomeSetting() {
-      const val = parseFloat(document.getElementById('incomeSalonInput').value) || 0;
-      appState.monthlyIncome = val;
-      saveState();
-      renderCanvasTab();
-    }
-
-    function updateCategoryName(idx, newName) {
-      if (newName && newName.trim()) {
-        appState.categories[idx].name = newName.trim();
-        saveState();
-        renderAll();
-      }
-    }
-
-    function updateCategoryTarget(idx, newVal) {
-      appState.categories[idx].target = parseFloat(newVal) || 0;
-      saveState();
-      renderAll();
-    }
-
-    function toggleTodoStatus(idx) {
-      const cur = appState.todos[idx].status;
-      appState.todos[idx].status = cur === 'Completed' ? 'Not started' : 'Completed';
-      saveState();
-      renderCanvasTab();
-    }
-
-    function deleteTodo(idx) {
-      appState.todos.splice(idx, 1);
-      saveState();
-      renderCanvasTab();
-    }
-
-    // Render Tab 4: Account Breakdown
-    function renderAccountsTab() {
-      const container = document.getElementById('accountDetailCards');
-      container.innerHTML = appState.accounts.map((acct, idx) => {
-        const twoMoTotal = (Number(acct.sep) || 0) + (Number(acct.oct) || 0);
-        const diff = acct.oct - acct.sep;
-        return `
-          <div class="p-5 rounded-xl border border-slate-200 bg-slate-50/50 space-y-4">
-            <div class="flex items-center justify-between">
-              <h3 class="text-base font-bold text-slate-900">${acct.name}</h3>
-              <span class="text-xs font-mono-num px-2.5 py-1 rounded-full bg-indigo-50 text-indigo-700 font-semibold border border-indigo-200">
-                2-Mo Total: ${fmtCurrency(twoMoTotal)}
-              </span>
-            </div>
-            <div class="grid grid-cols-2 gap-3">
-              <div class="bg-white p-3 rounded-lg border border-slate-200/80">
-                <div class="text-[11px] text-slate-400 font-semibold uppercase">October 2026</div>
-                <div class="text-lg font-extrabold font-mono-num text-slate-900 mt-1">${fmtCurrency(acct.oct)}</div>
-              </div>
-              <div class="bg-white p-3 rounded-lg border border-slate-200/80">
-                <div class="text-[11px] text-slate-400 font-semibold uppercase">September 2026</div>
-                <div class="text-lg font-extrabold font-mono-num text-slate-600 mt-1">${fmtCurrency(acct.sep)}</div>
-              </div>
-            </div>
-            <div class="flex items-center justify-between text-xs pt-2 border-t border-slate-200/80">
-              <span class="text-slate-500 font-medium">Statement Balance Owed ($):</span>
-              <input
-                type="number"
-                step="10"
-                value="${acct.balance || 0}"
-                onchange="updateAccountBalance(${idx}, this.value)"
-                class="w-28 text-right font-mono-num font-bold bg-white border border-slate-300 rounded-lg px-2.5 py-1"
-              />
-            </div>
-            <div class="flex items-center justify-between text-xs">
-              <span class="text-slate-400">MoM Change:</span>
-              <span class="font-mono-num font-semibold ${diff > 0 ? 'text-rose-600' : 'text-emerald-600'}">
-                ${fmtCurrency(diff, true)} vs. Sept
-              </span>
-            </div>
-          </div>
-        `;
-      }).join('');
-    }
-
-    function updateAccountBalance(idx, val) {
-      appState.accounts[idx].balance = parseFloat(val) || 0;
-      saveState();
-    }
-
-    // Modal Controls
-    function openTransactionModal() {
-      document.getElementById('newTxnMonth').value = appState.selectedMonth;
-      document.getElementById('txnModal').classList.remove('hidden');
-      document.getElementById('txnModal').classList.add('flex');
-    }
-    function closeTransactionModal() {
-      document.getElementById('txnModal').classList.add('hidden');
-      document.getElementById('txnModal').classList.remove('flex');
-    }
-    function saveNewTransaction() {
-      const month = document.getElementById('newTxnMonth').value;
-      const source = document.getElementById('newTxnAccount').value;
-      const categoryId = document.getElementById('newTxnCategory').value;
-      const merchant = document.getElementById('newTxnMerchant').value.trim() || 'Added Expense';
-      const amount = parseFloat(document.getElementById('newTxnAmount').value) || 0;
-      if (amount <= 0) return;
-
-      appState.transactions.unshift({
-        id: 'TXN-' + Date.now().toString().slice(-5),
-        month,
-        source,
-        merchant,
-        amount,
-        categoryId,
-        include: true
-      });
-
-      const acctObj = appState.accounts.find(a => a.name === source);
-      if (acctObj) {
-        if (month === '2026-10') acctObj.oct += amount;
-        if (month === '2026-09') acctObj.sep += amount;
-      }
-
-      document.getElementById('newTxnMerchant').value = '';
-      document.getElementById('newTxnAmount').value = '';
-      saveState();
-      closeTransactionModal();
-      renderAll();
-    }
-
-    function openNewCategoryModal() {
-      document.getElementById('newCatModal').classList.remove('hidden');
-      document.getElementById('newCatModal').classList.add('flex');
-    }
-    function closeNewCategoryModal() {
-      document.getElementById('newCatModal').classList.add('hidden');
-      document.getElementById('newCatModal').classList.remove('flex');
-    }
-    function saveNewCategory() {
-      const id = (document.getElementById('newCatId').value.trim() || 'CAT_' + Date.now()).toUpperCase();
-      const name = document.getElementById('newCatName').value.trim();
-      const group = document.getElementById('newCatGroup').value;
-      const target = parseFloat(document.getElementById('newCatTarget').value) || 0;
-      if (!name) return;
-
-      appState.categories.push({ id, name, group, target, octActual: 0, sepActual: 0 });
-      saveState();
-      closeNewCategoryModal();
-      renderAll();
-    }
-
-    function openAddTaskModal() {
-      document.getElementById('addTaskModal').classList.remove('hidden');
-      document.getElementById('addTaskModal').classList.add('flex');
-    }
-    function closeAddTaskModal() {
-      document.getElementById('addTaskModal').classList.add('hidden');
-      document.getElementById('addTaskModal').classList.remove('flex');
-    }
-    function saveNewTask() {
-      const task = document.getElementById('newTaskTitle').value.trim();
-      const type = document.getElementById('newTaskType').value;
-      const priority = document.getElementById('newTaskPriority').value;
-      const due = document.getElementById('newTaskDue').value;
-      const notes = document.getElementById('newTaskNotes').value.trim();
-      if (!task) return;
-
-      const nextNum = appState.todos.length + 1;
-      appState.todos.push({
-        id: 'TASK-' + String(nextNum).padStart(3, '0'),
-        task,
-        type,
-        due,
-        status: 'Not started',
-        priority,
-        notes
-      });
-      document.getElementById('newTaskTitle').value = '';
-      document.getElementById('newTaskNotes').value = '';
-      saveState();
-      closeAddTaskModal();
-      renderCanvasTab();
-    }
-
-    function openSyncModal() {
-      document.getElementById('syncModal').classList.remove('hidden');
-      document.getElementById('syncModal').classList.add('flex');
-    }
-    function closeSyncModal() {
-      document.getElementById('syncModal').classList.add('hidden');
-      document.getElementById('syncModal').classList.remove('flex');
-    }
-
-    function openBulkImportModal() {
-      document.getElementById('bulkImportModal').classList.remove('hidden');
-      document.getElementById('bulkImportModal').classList.add('flex');
-    }
-    function closeBulkImportModal() {
-      document.getElementById('bulkImportModal').classList.add('hidden');
-      document.getElementById('bulkImportModal').classList.remove('flex');
-    }
-
-    function processBulkPaste() {
-      const raw = document.getElementById('bulkPasteArea').value.trim();
-      if (!raw) return;
-      const lines = raw.split(/\r?\n/);
-      const parsedTxns = [];
-      lines.forEach((line, idx) => {
-        const cols = line.split('\t');
-        if (cols.length >= 7 && cols[0] !== 'Transactions ID') {
-          const amt = parseFloat((cols[5] || '').replace(/[$,()]/g, '')) || 0;
-          const incRaw = (cols[8] || '1').trim().toLowerCase();
-          const include = incRaw === '1' || incRaw === 'true' || incRaw === 'yes';
-          parsedTxns.push({
-            id: cols[0].trim() || ('ROW-' + idx),
-            month: cols[1].trim(),
-            source: cols[2].trim(),
-            merchant: cols[4].trim(),
-            amount: amt,
-            categoryId: cols[6].trim(),
-            include
-          });
-        }
-      });
-      if (parsedTxns.length > 0) {
-        appState.transactions = parsedTxns;
-        saveState();
-        closeBulkImportModal();
-        renderAll();
-      }
-    }
-
-    // JSON Backup & Restore
-    function exportBudgetJson() {
-      const dataStr = JSON.stringify(appState, null, 2);
-      const blob = new Blob([dataStr], { type: 'application/json' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      const dateStamp = new Date().toISOString().slice(0, 10);
-      a.href = url;
-      a.download = `KTBudget_2.0_Backup_${dateStamp}.json`;
-      a.click();
-      URL.revokeObjectURL(url);
-    }
-
-    function importBudgetJson(event) {
-      const file = event.target.files[0];
-      if (!file) return;
-      const reader = new FileReader();
-      reader.onload = function(e) {
-        try {
-          const imported = JSON.parse(e.target.result);
-          if (imported && imported.categories) {
-            appState = imported;
-            saveState();
-            renderAll();
-            closeSyncModal();
-          }
-        } catch (err) {
-          alert('Invalid JSON backup file.');
-        }
-      };
-      reader.readAsText(file);
-    }
-
-    function resetToFactoryDefaults() {
-      if (!confirm('Reset KTBudget 2.0 to the official October/September Google Sheet defaults?')) return;
-      localStorage.removeItem(STORAGE_KEY);
-      appState.categories = JSON.parse(JSON.stringify(DEFAULT_CATEGORIES));
-      appState.accounts = JSON.parse(JSON.stringify(DEFAULT_ACCOUNTS));
-      appState.todos = JSON.parse(JSON.stringify(DEFAULT_TODOS));
-      appState.transactions = buildBaselineTransactions(appState.categories);
-      saveState();
-      closeSyncModal();
-      renderAll();
-    }
-
-    // GitHub Pages Cache-Busting Auto-Update Checker
-    async function checkForGitHubUpdates(manual = false) {
-      const statusEl = document.getElementById('versionCheckStatus');
-      if (manual && statusEl) statusEl.textContent = 'Checking GitHub repository for new version.json...';
-      try {
-        const res = await fetch(`./version.json?_nocache=${Date.now()}`, { cache: 'no-store' });
-        if (!res.ok) {
-          if (manual && statusEl) statusEl.textContent = `No version.json found yet or offline (running v${APP_VERSION}).`;
-          return;
-        }
-        const data = await res.json();
-        if (data && data.version && data.version !== APP_VERSION) {
-          document.getElementById('updateBanner').classList.remove('hidden');
-          if (statusEl) statusEl.textContent = `Update found (${data.version})! Reloading...`;
-          setTimeout(() => forceAppUpdate(), 1800);
-        } else if (manual && statusEl) {
-          statusEl.textContent = `Up to date! Running latest version (v${APP_VERSION}).`;
-        }
-      } catch (err) {
-        if (manual && statusEl) statusEl.textContent = `Offline or local mode — running v${APP_VERSION}.`;
-      }
-    }
-
-    async function forceAppUpdate() {
-      if ('caches' in window) {
-        try {
-          const keys = await caches.keys();
-          await Promise.all(keys.map(k => caches.delete(k)));
-        } catch (e) {}
-      }
-      window.location.href = window.location.pathname + '?v=' + Date.now();
-    }
-
-    // Initialize Application
-    window.addEventListener('DOMContentLoaded', () => {
-      loadState();
-      renderAll();
-      checkForGitHubUpdates(false);
-      setInterval(() => checkForGitHubUpdates(false), 15 * 60 * 1000);
-    });
-  </script>
-</body>
-</html>
+      customMonths: ['2026-10', '2026-0
