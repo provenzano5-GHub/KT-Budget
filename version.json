@@ -1,5 +1,5 @@
 {
-  "version": "2.0.1",
-  "releaseDate": "2026-11-07"
-  "notes": "Full KTBudget 2.0 4-tab Financial Canvas update"
+  "version": "2.1.0",
+  "updated": "2026-11-08",
+  "notes": "Relational 8-CSV architecture with 12-month projections, split transactions, and Interactive Budget Canvas"
 }
