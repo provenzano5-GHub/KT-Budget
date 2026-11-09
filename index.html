@@ -36,10 +36,10 @@
           <div class="flex items-center gap-2.5 flex-wrap">
             <h1 class="text-xl font-extrabold tracking-tight text-white">KTBudget 2.0</h1>
             <span class="px-2.5 py-0.5 text-[11px] font-semibold rounded-full bg-indigo-950/90 text-indigo-300 border border-indigo-700/60">
-              Relational 8-Table Engine • v2.7.0
+              Relational 8-Table Engine • v2.8.0
             </span>
           </div>
-          <p class="text-xs text-slate-400 mt-0.5">Full Schema Editors • Multi-Category Txn Splits</p>
+          <p class="text-xs text-slate-400 mt-0.5">Category-Linked Goals • Account UI Cleanup</p>
         </div>
       </div>
 
@@ -260,7 +260,6 @@
   <div id="txnModal" class="fixed inset-0 bg-slate-900/60 hidden items-center justify-center p-4 z-50">
     <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4 text-xs">
       <h3 id="txnModalTitle" class="text-base font-bold">Add Transaction</h3>
-      
       <div class="space-y-1">
           <label class="text-[10px] text-slate-500 font-bold uppercase">Account (Source)</label>
           <select id="newTxnAccount" class="w-full border rounded px-3 py-2"><option value="" disabled selected>Select Source Account...</option></select>
@@ -269,10 +268,8 @@
           <label class="text-[10px] text-slate-500 font-bold uppercase">Group :: Category</label>
           <select id="newTxnCategory" class="w-full border rounded px-3 py-2"><option value="" disabled selected>Select Destination Category...</option></select>
       </div>
-      
       <input id="newTxnMerchant" type="text" placeholder="Merchant name..." class="w-full border rounded px-3 py-2" />
       <input id="newTxnAmount" type="number" step="0.01" placeholder="Amount ($)..." class="w-full border rounded px-3 py-2 font-mono-num" />
-      
       <div class="flex justify-end gap-2 pt-2">
         <button onclick="closeTransactionModal()" class="px-3 py-1.5 border rounded hover:bg-slate-50">Cancel</button>
         <button id="saveTxnBtn" onclick="saveNewTransaction()" class="px-3 py-1.5 bg-[#6c5ce7] hover:bg-[#5b4bc4] text-white rounded">Save</button>
@@ -288,13 +285,11 @@
           <p class="font-bold text-indigo-900" id="splitOrigTitle">Merchant</p>
           <p class="font-mono-num text-indigo-700">Total: $<span id="splitOrigTotal">0.00</span></p>
       </div>
-      
       <div class="space-y-2 border border-slate-200 p-3 rounded bg-slate-50">
           <h4 class="font-bold text-slate-700">Part A (ID-A)</h4>
           <select id="splitCatA" class="w-full border rounded px-3 py-2"><option value="" disabled selected>Select Group::Category A...</option></select>
           <input id="splitAmtA" type="number" step="0.01" placeholder="Amount A..." class="w-full border rounded px-3 py-2 font-mono-num" oninput="calculateSplitRemainder()" />
       </div>
-
       <div class="space-y-2 border border-slate-200 p-3 rounded bg-slate-50">
           <h4 class="font-bold text-slate-700">Part B (ID-B)</h4>
           <select id="splitCatB" class="w-full border rounded px-3 py-2"><option value="" disabled selected>Select Group::Category B...</option></select>
@@ -303,7 +298,6 @@
               <input id="splitAmtB" type="number" step="0.01" class="w-24 border rounded px-3 py-2 font-mono-num bg-slate-200 text-slate-600 cursor-not-allowed" readonly />
           </div>
       </div>
-      
       <div class="flex justify-end gap-2 pt-2 border-t pt-4">
         <button onclick="closeSplitModal()" class="px-3 py-1.5 border rounded hover:bg-slate-50">Cancel</button>
         <button onclick="processSplitTransaction()" class="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded font-bold">Process Split</button>
@@ -324,7 +318,6 @@
         <option value="Bill">Bill</option><option value="Investment">Investment</option><option value="other">Other</option>
       </select>
       <input id="newAccBalance" type="number" step="0.01" placeholder="Starting Balance ($)..." class="w-full border rounded px-3 py-2 font-mono-num" />
-      <p class="text-[10px] text-slate-400">Note: Default_GC_ID has been removed. Transactions define their own Group::Category.</p>
       <div class="flex justify-end gap-2 pt-2">
         <button onclick="closeAccountModal()" class="px-3 py-1.5 border rounded hover:bg-slate-50">Cancel</button>
         <button id="saveAccountBtn" onclick="saveAccount()" class="px-3 py-1.5 bg-slate-800 text-white rounded">Save Account</button>
@@ -364,9 +357,14 @@
       <h3 id="goalModalTitle" class="text-base font-bold">Add Goal</h3>
       <input id="newGoalName" type="text" placeholder="Goal Name..." class="w-full border rounded px-3 py-2" />
       <input id="newGoalDesc" type="text" placeholder="Description..." class="w-full border rounded px-3 py-2" />
-      <select id="newGoalAccount" class="w-full border rounded px-3 py-2">
-          <option value="" disabled selected>Strict Link to Account...</option>
-      </select>
+      <div class="space-y-1">
+          <label class="text-[10px] text-slate-500 font-bold uppercase">Funding Source</label>
+          <select id="newGoalAccount" class="w-full border rounded px-3 py-2"><option value="" disabled selected>Link to Account...</option></select>
+      </div>
+      <div class="space-y-1">
+          <label class="text-[10px] text-slate-500 font-bold uppercase">Budget Target Category</label>
+          <select id="newGoalCategory" class="w-full border rounded px-3 py-2"><option value="" disabled selected>Link to Group::Category...</option></select>
+      </div>
       <input id="newGoalAmount" type="number" step="0.01" placeholder="Target Value ($)..." class="w-full border rounded px-3 py-2 font-mono-num" />
       <div class="flex justify-end gap-2 pt-2">
         <button onclick="closeGoalModal()" class="px-3 py-1.5 border rounded hover:bg-slate-50">Cancel</button>
@@ -450,7 +448,7 @@
         reader.readAsText(file);
     }
 
-    // --- DEMO DATA SEEDING (UPDATED FOR NO DEFAULT_GC_ID) ---
+    // --- DEMO DATA SEEDING ---
     function getDemoData(table) {
         const demo = {
             groups: [{ Group_ID: 'G_WANTS', Name: 'Wants', Type: 'Flexible', Impact: 'personal', Budget: 'Yes' }, { Group_ID: 'G_NEC', Name: 'Personal necessities', Type: 'Fixed', Impact: 'personal', Budget: 'Yes' }],
@@ -461,7 +459,7 @@
                 { Budget_ID: 'B_001', Scope_Level: 'Category', Target_Ref_ID: 'C_CLOTH', Priority_Type: 'Want', Rule_Type: 'Each Month', Amount: '125.00', Start_Month: '2026-10', Target_Month: '', Is_Demo: '1', Notes: 'Standard allowance' },
                 { Budget_ID: 'B_002', Scope_Level: 'Category', Target_Ref_ID: 'C_GROC', Priority_Type: 'Necessity', Rule_Type: 'Annual', Amount: '6000.00', Start_Month: '2026-01', Target_Month: '', Is_Demo: '1', Notes: 'Averages 500/mo' }
             ],
-            goals: [{ Goal_ID: 'GL_1', Name: 'Vet Emergency', Description: 'Buffer for unexpected pet costs', Linked_Account: 'Savings_1', Target_Value: '500.00' }],
+            goals: [{ Goal_ID: 'GL_1', Name: 'Vet Emergency', Description: 'Buffer for unexpected pet costs', Linked_Account: 'Savings_1', Linked_GC_ID: 'C_GROC', Target_Value: '500.00' }],
             transactions: [{ Txn_ID: 'T001', Month: '2026-10', Account_ID: 'Chase', Merchant: 'Target Groceries', GC_ID: 'C_GROC', Amount: '145.20', Include: '1' }],
             todos: [{ Task: 'Update Salon Allocations', Type: 'Budgeting', Due_Date: '2026-10-31', Priority: 'High' }]
         };
@@ -532,9 +530,10 @@
         document.getElementById('newTxnCategory').innerHTML = '<option value="" disabled selected>Select Destination Category...</option>' + cats;
         document.getElementById('splitCatA').innerHTML = '<option value="" disabled selected>Select Group::Category A...</option>' + cats;
         document.getElementById('splitCatB').innerHTML = '<option value="" disabled selected>Select Group::Category B...</option>' + cats;
+        document.getElementById('newGoalCategory').innerHTML = '<option value="" disabled selected>Link to Group::Category...</option>' + cats;
 
         const accs = db.accounts.map(a => `<option value="${a.Account_ID}">${a.Name} (${a.Type})</option>`).join('');
-        document.getElementById('newGoalAccount').innerHTML = '<option value="" disabled selected>Strict Link to Account...</option>' + accs;
+        document.getElementById('newGoalAccount').innerHTML = '<option value="" disabled selected>Link to Account...</option>' + accs;
         document.getElementById('newTxnAccount').innerHTML = '<option value="" disabled selected>Select Source Account...</option>' + accs;
     }
 
@@ -635,17 +634,23 @@
           const rType = bg.Rule_Type || bg.Type || 'Each Month';
           const priorityBadge = bg.Priority_Type ? `<span class="mr-1 text-[9px] uppercase tracking-wider text-slate-400 font-bold">${bg.Priority_Type.substring(0,1)}</span>` : '';
           
+          // NUANCE 5 UPGRADED: Goal contributions roll up directly via Linked_GC_ID on the Goal itself
+          const linkedGoals = db.goals.filter(goal => goal.Linked_GC_ID === gc.Category_ID);
+          const goalExtra = linkedGoals.reduce((sum, goal) => sum + (Number(goal.Target_Value) || 0), 0);
+          target += goalExtra; 
+          
           const actual = db.transactions.filter(t => t.Include === '1' && t.GC_ID === gc.Category_ID && t.Month === appState.selectedMonth).reduce((s, t) => s + (Number(t.Amount) || 0), 0);
           const variance = target - actual;
           const priorActual = db.transactions.filter(t => t.Include === '1' && t.GC_ID === gc.Category_ID && t.Month === '2026-09').reduce((s, t) => s + (Number(t.Amount) || 0), 0);
           const ytdActual = db.transactions.filter(t => t.Include === '1' && t.GC_ID === gc.Category_ID && (t.Month || '').startsWith('2026')).reduce((s, t) => s + (Number(t.Amount) || 0), 0);
           const meter = target > 0 ? Math.round((actual / target) * 100) : 0;
+          const goalNote = goalExtra > 0 ? `<div class="text-[9px] text-emerald-600 font-bold mt-0.5">+${fmtCurrency(goalExtra)} Goal rollup</div>` : '';
 
           return `
             <tr class="hover:bg-slate-50">
               <td class="py-3 pl-6 pr-3 text-slate-800 font-medium">${priorityBadge}${gc.Display_Label.split('::')[1] || gc.Display_Label}</td>
               <td class="py-3 px-3"><span class="px-2 py-0.5 rounded text-[10px] bg-slate-100 text-slate-600">${rType}</span></td>
-              <td class="py-3 px-3 text-right font-mono-num">${fmtCurrency(target)}</td>
+              <td class="py-3 px-3 text-right font-mono-num">${fmtCurrency(target)}${goalNote}</td>
               <td class="py-3 px-3 text-right font-mono-num font-bold text-slate-900">${fmtCurrency(actual)}</td>
               <td class="py-3 px-3 text-right font-mono-num ${variance < 0 ? 'text-rose-600' : 'text-emerald-600'}">${fmtCurrency(variance, true)}</td>
               <td class="py-3 px-3 text-right font-mono-num text-slate-500">${fmtCurrency(priorActual)}</td>
@@ -690,15 +695,17 @@
       `).join('');
 
       document.getElementById('goalsGrid').innerHTML = db.goals.map((g, idx) => {
-         const linked = db.accounts.find(a => a.Account_ID === g.Linked_Account);
-         const linkedName = linked ? linked.Name : g.Linked_Account;
+         const linkedAcc = db.accounts.find(a => a.Account_ID === g.Linked_Account);
+         const accName = linkedAcc ? linkedAcc.Name : g.Linked_Account;
+         const linkedCat = db.categories.find(c => c.Category_ID === g.Linked_GC_ID);
+         const catName = linkedCat ? linkedCat.Name : g.Linked_GC_ID;
          return `
         <div class="p-4 rounded-xl border border-emerald-100 bg-emerald-50 space-y-2 relative group">
           <button onclick="openGoalModal(${idx})" class="absolute top-3 right-3 text-emerald-600 hover:text-emerald-800 text-xs font-bold opacity-0 group-hover:opacity-100 transition">✎ Edit</button>
           <div class="flex justify-between items-center pr-10"><h3 class="font-bold text-emerald-900">${g.Name}</h3><span class="text-[10px] uppercase tracking-wide font-bold text-emerald-600">${g.Goal_ID}</span></div>
           <p class="text-xs text-emerald-700">${g.Description}</p>
           <div class="text-lg font-bold font-mono-num text-emerald-800">Target: ${fmtCurrency(g.Target_Value)}</div>
-          <p class="text-[11px] text-emerald-600 font-semibold">Strict Link: ${linkedName}</p>
+          <p class="text-[11px] text-emerald-600 font-semibold leading-tight">Account: ${accName}<br/>Category: ${catName}</p>
         </div>
       `}).join('');
     }
@@ -733,7 +740,6 @@
     }
 
     // --- FULL CRUD MODAL LOGIC ---
-    // TRANSACTIONS
     let editingTxnIdx = -1;
     function openTransactionModal(idx = -1) {
         editingTxnIdx = idx;
@@ -778,19 +784,16 @@
         }
     }
 
-    // SPLIT TRANSACTIONS (ID-A, ID-B)
     let splittingTxnIdx = -1;
     function openSplitModal(idx) {
         splittingTxnIdx = idx;
         const t = db.transactions[idx];
         document.getElementById('splitOrigTitle').textContent = t.Merchant + ' (' + t.Month + ', ' + t.Account_ID + ')';
         document.getElementById('splitOrigTotal').textContent = parseFloat(t.Amount).toFixed(2);
-        
         document.getElementById('splitCatA').value = t.GC_ID; 
         document.getElementById('splitAmtA').value = '';
         document.getElementById('splitCatB').value = '';
         document.getElementById('splitAmtB').value = '';
-
         document.getElementById('splitModal').classList.remove('hidden'); document.getElementById('splitModal').classList.add('flex');
     }
     function calculateSplitRemainder() {
@@ -818,7 +821,6 @@
         saveDataToLocal(); closeSplitModal(); renderAll();
     }
 
-    // ACCOUNTS
     let editingAccountIdx = -1;
     function openAccountModal(idx = -1) { 
         editingAccountIdx = idx;
@@ -846,7 +848,6 @@
                 db.accounts[editingAccountIdx].Name = name;
                 db.accounts[editingAccountIdx].Type = type;
                 db.accounts[editingAccountIdx].Balance = balance;
-                // Note: Default_GC_ID intentionally removed
             } else {
                 db.accounts.push({ Account_ID: name.replace(/\s+/g, ''), Name: name, Type: type, Balance: balance });
             }
@@ -854,7 +855,6 @@
         }
     }
 
-    // GOALS
     let editingGoalIdx = -1;
     function openGoalModal(idx = -1) {
         editingGoalIdx = idx;
@@ -865,11 +865,13 @@
             document.getElementById('newGoalName').value = g.Name || '';
             document.getElementById('newGoalDesc').value = g.Description || '';
             document.getElementById('newGoalAccount').value = g.Linked_Account || '';
+            document.getElementById('newGoalCategory').value = g.Linked_GC_ID || '';
             document.getElementById('newGoalAmount').value = g.Target_Value || '';
         } else {
             document.getElementById('newGoalName').value = '';
             document.getElementById('newGoalDesc').value = '';
             document.getElementById('newGoalAccount').value = '';
+            document.getElementById('newGoalCategory').value = '';
             document.getElementById('newGoalAmount').value = '';
         }
         document.getElementById('goalModal').classList.remove('hidden'); document.getElementById('goalModal').classList.add('flex'); 
@@ -879,21 +881,24 @@
         const name = document.getElementById('newGoalName').value;
         const desc = document.getElementById('newGoalDesc').value;
         const acc = document.getElementById('newGoalAccount').value;
+        const cat = document.getElementById('newGoalCategory').value;
         const amt = document.getElementById('newGoalAmount').value;
-        if(name && acc && amt) {
+        if(name && acc && cat && amt) {
             if (editingGoalIdx >= 0) {
                 db.goals[editingGoalIdx].Name = name;
                 db.goals[editingGoalIdx].Description = desc;
                 db.goals[editingGoalIdx].Linked_Account = acc;
+                db.goals[editingGoalIdx].Linked_GC_ID = cat;
                 db.goals[editingGoalIdx].Target_Value = amt;
             } else {
-                db.goals.push({ Goal_ID: 'GL_' + Math.floor(Math.random()*100), Name: name, Description: desc, Linked_Account: acc, Target_Value: amt });
+                db.goals.push({ Goal_ID: 'GL_' + Math.floor(Math.random()*10000), Name: name, Description: desc, Linked_Account: acc, Linked_GC_ID: cat, Target_Value: amt });
             }
             saveDataToLocal(); renderAll(); closeGoalModal();
+        } else {
+            alert('Please complete all fields.');
         }
     }
 
-    // BUDGETS
     let editingBudgetIdx = -1;
     function openBudgetModal(idx = -1) { 
         editingBudgetIdx = idx;
@@ -948,6 +953,8 @@
                 db.budgets.push(bData);
             }
             saveDataToLocal(); renderAll(); closeBudgetModal();
+        } else {
+            alert('Please complete all fields.');
         }
     }
     function deleteBudget(idx) {
