@@ -1,5 +1,5 @@
 {
-  "version": "2.4.0",
+  "version": "2.5.0",
   "updated": "2026-11-08",
-  "notes": "Relational 8-Table Engine • v2.4.0"
+  "notes": "Relational 8-Table Engine • plus JSON backup, restore, admin menu v2.5.0"
 }
