@@ -24,10 +24,10 @@
           <div class="flex items-center gap-2.5 flex-wrap">
             <h1 class="text-xl font-extrabold tracking-tight text-white">KTBudget 2.0</h1>
             <span class="px-2.5 py-0.5 text-[11px] font-semibold rounded-full bg-indigo-950/90 text-indigo-300 border border-indigo-700/60">
-              Relational 8-Table Engine • v2.3.0
+              Relational 8-Table Engine • v2.4.0
             </span>
           </div>
-          <p class="text-xs text-slate-400 mt-0.5">GitHub CSV Sync • Budgets, Goals, &amp; Demo Data Engine</p>
+          <p class="text-xs text-slate-400 mt-0.5">Full 10-Attribute Schema • Dynamic Fractions & Goal Rollups</p>
         </div>
       </div>
 
@@ -60,7 +60,7 @@
 
     <!-- ALERT BANNER FOR DEMO DATA -->
     <div id="demoDataAlert" class="hidden bg-amber-50 border border-amber-200 text-amber-800 px-4 py-3 rounded-xl text-sm shadow-sm flex items-center justify-between">
-      <div><strong>Demo Data Loaded:</strong> Since no CSVs were found (or they were empty), default templates have been loaded. You can use these to test the app.</div>
+      <div><strong>Demo Data Loaded:</strong> Since no CSVs were found, default templates (including the 10-field budget schema) have been loaded.</div>
       <button onclick="document.getElementById('demoDataAlert').classList.add('hidden')" class="text-amber-600 hover:text-amber-900 text-xl font-bold">&times;</button>
     </div>
 
@@ -71,7 +71,7 @@
         <div class="bg-white rounded-xl p-5 border border-slate-200 shadow-sm relative overflow-hidden">
           <div class="text-xs font-bold uppercase tracking-wider text-slate-400">Monthly Target</div>
           <div id="kpiMonthlyTarget" class="text-3xl font-extrabold text-slate-900 mt-2 font-mono-num">$0.00</div>
-          <div id="kpiTargetSub" class="text-xs text-slate-400 mt-2">Based on setup targets</div>
+          <div id="kpiTargetSub" class="text-xs text-slate-400 mt-2">Includes Goal Rollups &amp; Fractions</div>
         </div>
         <div class="bg-white rounded-xl p-5 border border-slate-200 shadow-sm relative overflow-hidden">
           <div class="text-xs font-bold uppercase tracking-wider text-slate-400">Current Actual</div>
@@ -109,7 +109,7 @@
             <thead>
               <tr class="border-b border-slate-200 bg-slate-50 text-[11px] font-bold uppercase tracking-wider text-slate-400">
                 <th class="py-3.5 pl-5 pr-3">Group / Category</th>
-                <th class="py-3.5 px-3">Type / Impact</th>
+                <th class="py-3.5 px-3">Priority / Type</th>
                 <th class="py-3.5 px-3 text-right">Monthly Target</th>
                 <th class="py-3.5 px-3 text-right">Current Actual</th>
                 <th class="py-3.5 px-3 text-right">Variance</th>
@@ -157,17 +157,18 @@
       <div class="bg-white rounded-xl border border-slate-200 p-5 shadow-sm space-y-4">
         <div class="flex items-center justify-between border-b border-slate-100 pb-3">
             <h2 class="text-base font-bold text-slate-900">Budget Canvas (Setup &amp; Adjustments)</h2>
-            <button onclick="openBudgetModal()" class="bg-[#6c5ce7] hover:bg-[#5b4bc4] text-white text-xs font-semibold px-3.5 py-2 rounded-lg transition">+ Add Budget</button>
+            <button onclick="openBudgetModal(-1)" class="bg-[#6c5ce7] hover:bg-[#5b4bc4] text-white text-xs font-semibold px-3.5 py-2 rounded-lg transition">+ Add Budget</button>
         </div>
         
         <div class="overflow-x-auto">
-          <table class="w-full text-left border-collapse min-w-[700px]">
+          <table class="w-full text-left border-collapse min-w-[900px]">
             <thead>
               <tr class="border-b border-slate-200 bg-slate-50 text-[11px] font-bold uppercase tracking-wider text-slate-400">
                 <th class="py-3 pl-4">Group :: Category</th>
-                <th class="py-3">Budget Type</th>
-                <th class="py-3 text-right">Target Amount</th>
-                <th class="py-3 text-right">Annual Equivalent</th>
+                <th class="py-3">Priority</th>
+                <th class="py-3">Rule Type</th>
+                <th class="py-3 text-right">Base Amount</th>
+                <th class="py-3 text-center">Start &rarr; Target</th>
                 <th class="py-3 pl-2 pr-4 text-right">Actions</th>
               </tr>
             </thead>
@@ -214,7 +215,7 @@
   <div id="splitModal" class="fixed inset-0 bg-slate-900/60 hidden items-center justify-center p-4 z-50">
     <div class="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl space-y-4 text-xs">
       <h3 class="text-base font-bold">Split Transaction Across Accounts or Categories</h3>
-      <p class="text-slate-500">Divide any charge into two distinct account/category rows.</p>
+      <p class="text-slate-500">Note: Per architecture Nuance 1, this will generate multi-row entries in the ledger linked to destination accounts (coming in a future data-import update).</p>
       <div class="flex justify-end gap-2 pt-2">
         <button onclick="closeSplitModal()" class="px-3 py-1.5 border rounded">Cancel</button>
         <button onclick="alert('Split transaction recorded successfully.'); closeSplitModal();" class="px-3 py-1.5 bg-[#6c5ce7] text-white rounded">Process Split</button>
@@ -222,21 +223,16 @@
     </div>
   </div>
 
-  <!-- ADD ACCOUNT MODAL -->
   <div id="accountModal" class="fixed inset-0 bg-slate-900/60 hidden items-center justify-center p-4 z-50">
     <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4 text-xs">
       <h3 class="text-base font-bold">Add New Account</h3>
       <input id="newAccName" type="text" placeholder="Account Name (e.g. Chase Visa)" class="w-full border rounded px-3 py-2" />
       <select id="newAccType" class="w-full border rounded px-3 py-2">
         <option value="" disabled selected>Select Account Type...</option>
-        <option value="Loan">Loan</option>
-        <option value="Income">Income</option>
-        <option value="Savings">Savings</option>
-        <option value="Tax">Tax</option>
-        <option value="Payment">Payment</option>
-        <option value="CCard">CCard</option>
-        <option value="Bill">Bill</option>
-        <option value="Investment">Investment</option>
+        <option value="Loan">Loan</option><option value="Income">Income</option>
+        <option value="Savings">Savings</option><option value="Tax">Tax</option>
+        <option value="Payment">Payment</option><option value="CCard">CCard</option>
+        <option value="Bill">Bill</option><option value="Investment">Investment</option>
         <option value="other">Other</option>
       </select>
       <input id="newAccBalance" type="number" step="0.01" placeholder="Starting Balance ($)..." class="w-full border rounded px-3 py-2 font-mono-num" />
@@ -247,31 +243,45 @@
     </div>
   </div>
 
-  <!-- ADD BUDGET MODAL -->
+  <!-- FULL 10-ATTRIBUTE BUDGET MODAL -->
   <div id="budgetModal" class="fixed inset-0 bg-slate-900/60 hidden items-center justify-center p-4 z-50">
     <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4 text-xs">
-      <h3 class="text-base font-bold">Add Budget Target</h3>
+      <h3 id="budgetModalTitle" class="text-base font-bold">Add Budget Target</h3>
+      
       <select id="newBudgCategory" class="w-full border rounded px-3 py-2">
          <option value="" disabled selected>Select Group/Category...</option>
          <!-- Populated via JS -->
       </select>
+      <select id="newBudgPriority" class="w-full border rounded px-3 py-2">
+         <option value="" disabled selected>Priority Type...</option>
+         <option value="Necessity">Necessity</option>
+         <option value="Want">Want</option>
+      </select>
       <select id="newBudgType" class="w-full border rounded px-3 py-2" onchange="toggleBudgetTargetDate()">
-        <option value="" disabled selected>Select Budget Type...</option>
+        <option value="" disabled selected>Select Budget Rule Type...</option>
         <option value="Each Month">Each Month</option>
         <option value="Annual">Annual (divided by 12)</option>
         <option value="Target Month">Target Month</option>
       </select>
-      <input id="newBudgAmount" type="number" step="0.01" placeholder="Target Amount ($)..." class="w-full border rounded px-3 py-2 font-mono-num" />
-      <input id="newBudgDate" type="month" class="w-full border rounded px-3 py-2 hidden" title="Target Date" />
+      
+      <input id="newBudgAmount" type="number" step="0.01" placeholder="Target Value Amount ($)..." class="w-full border rounded px-3 py-2 font-mono-num" />
+      
+      <!-- Only shows if 'Target Month' is selected -->
+      <div id="targetMonthContainer" class="hidden space-y-1">
+        <label class="text-[10px] text-slate-500 font-bold uppercase">Target Deadline Month</label>
+        <input id="newBudgDate" type="month" class="w-full border rounded px-3 py-2" />
+        <p class="text-[10px] text-slate-400 leading-tight">Start_Month will be anchored to your currently selected dashboard month (${appState.selectedMonth}) to lock the fraction.</p>
+      </div>
+
+      <input id="newBudgNotes" type="text" placeholder="Notes (Optional)..." class="w-full border rounded px-3 py-2" />
       
       <div class="flex justify-end gap-2 pt-2">
         <button onclick="closeBudgetModal()" class="px-3 py-1.5 border rounded">Cancel</button>
-        <button onclick="saveBudget()" class="px-3 py-1.5 bg-[#6c5ce7] text-white rounded">Save Budget</button>
+        <button id="saveBudgetBtn" onclick="saveBudget()" class="px-3 py-1.5 bg-[#6c5ce7] text-white rounded">Save Budget</button>
       </div>
     </div>
   </div>
 
-  <!-- ADD GOAL MODAL -->
   <div id="goalModal" class="fixed inset-0 bg-slate-900/60 hidden items-center justify-center p-4 z-50">
     <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4 text-xs">
       <h3 class="text-base font-bold">Add Goal</h3>
@@ -279,7 +289,6 @@
       <input id="newGoalDesc" type="text" placeholder="Description..." class="w-full border rounded px-3 py-2" />
       <select id="newGoalAccount" class="w-full border rounded px-3 py-2">
           <option value="" disabled selected>Link to Account...</option>
-          <!-- Populated via JS -->
       </select>
       <input id="newGoalAmount" type="number" step="0.01" placeholder="Target Value ($)..." class="w-full border rounded px-3 py-2 font-mono-num" />
       
@@ -302,9 +311,12 @@
             groups: [{ Group_ID: 'G_WANTS', Name: 'Wants', Type: 'Flexible', Impact: 'personal', Budget: 'Yes' }, { Group_ID: 'G_NEC', Name: 'Personal necessities', Type: 'Fixed', Impact: 'personal', Budget: 'Yes' }],
             categories: [{ Category_ID: 'C_CLOTH', Name: 'Clothing & online shopping', Type: 'Flexible', Impact: 'personal', Budget: 'Yes' }, { Category_ID: 'C_GROC', Name: 'Groceries & household', Type: 'Flexible', Impact: 'personal', Budget: 'Yes' }],
             group_category: [{ GC_ID: 'GC_1', Group_ID: 'G_WANTS', Category_ID: 'C_CLOTH', Display_Label: 'Wants::Clothing & online shopping' }, { GC_ID: 'GC_2', Group_ID: 'G_NEC', Category_ID: 'C_GROC', Display_Label: 'Personal necessities::Groceries & household' }],
-            accounts: [{ Account_ID: 'Chase', Name: 'Chase Checking', Type: 'CCard', Balance: '5471.25', Default_GC_ID: 'C_GROC' }, { Account_ID: 'Savings_1', Name: 'Dog Emergency Fund', Type: 'Savings', Balance: '150.00', Default_GC_ID: '' }],
-            budgets: [{ Target_Ref_ID: 'C_CLOTH', Amount: '125.00', Type: 'Each Month' }, { Target_Ref_ID: 'C_GROC', Amount: '450.00', Type: 'Each Month' }],
-            goals: [{ Goal_ID: 'GL_1', Name: 'Vet Emergency', Description: 'Buffer for unexpected pet costs', Linked_Account: 'Savings_1', Target_Value: '500.00' }],
+            accounts: [{ Account_ID: 'Chase', Name: 'Chase Checking', Type: 'CCard', Balance: '5471.25', Default_GC_ID: 'C_GROC' }, { Account_ID: 'Savings_1', Name: 'Dog Emergency Fund', Type: 'Savings', Balance: '150.00', Default_GC_ID: 'C_GROC' }], // Savings_1 maps to C_GROC for demo goal test
+            budgets: [
+                { Budget_ID: 'B_001', Scope_Level: 'Category', Target_Ref_ID: 'C_CLOTH', Priority_Type: 'Want', Rule_Type: 'Each Month', Amount: '125.00', Start_Month: '2026-10', Target_Month: '', Is_Demo: '1', Notes: 'Standard allowance' },
+                { Budget_ID: 'B_002', Scope_Level: 'Category', Target_Ref_ID: 'C_GROC', Priority_Type: 'Necessity', Rule_Type: 'Annual', Amount: '6000.00', Start_Month: '2026-01', Target_Month: '', Is_Demo: '1', Notes: 'Averages 500/mo' }
+            ],
+            goals: [{ Goal_ID: 'GL_1', Name: 'Vet Emergency', Description: 'Buffer for unexpected pet costs', Linked_Account: 'Savings_1', Target_Value: '50.00' }], // This $50 will map to C_GROC
             transactions: [{ Txn_ID: 'T001', Month: '2026-10', Account_ID: 'Chase', Merchant: 'Target Groceries', GC_ID: 'C_GROC', Amount: '145.20', Include: '1' }],
             todos: [{ Task: 'Update Salon Allocations', Type: 'Budgeting', Due_Date: '2026-10-31', Priority: 'High' }]
         };
@@ -403,6 +415,22 @@
       renderBudgetTable();
     }
 
+    function getMonthlyTargetCalculation(bg) {
+        // NUANCE 3: TARGET MONTH & ANNUAL FRACTIONS
+        const baseAmt = Number(bg.Amount) || 0;
+        const rType = bg.Rule_Type || bg.Type || 'Each Month'; // Support legacy Type
+
+        if (rType === 'Annual') {
+            return baseAmt / 12;
+        } else if (rType === 'Target Month' && bg.Start_Month && bg.Target_Month) {
+            const [sy, sm] = bg.Start_Month.split('-').map(Number);
+            const [ty, tm] = bg.Target_Month.split('-').map(Number);
+            const span = ((ty - sy) * 12) + (tm - sm) + 1;
+            return span > 0 ? (baseAmt / span) : baseAmt;
+        }
+        return baseAmt;
+    }
+
     function renderAll() {
       const mSel = document.getElementById('monthSelect');
       mSel.innerHTML = appState.customMonths.map(m => `<option value="${m}">${m}</option>`).join('');
@@ -423,8 +451,11 @@
       const priorMo = appState.selectedMonth === '2026-10' ? '2026-09' : '2026-09';
 
       db.budgets.forEach(b => {
-        const t = Number(b.Amount) || 0;
-        totT += t; // In a full logic block, 'Annual' would be divided by 12 here
+          totT += getMonthlyTargetCalculation(b);
+      });
+      // Nuance 5: Goals roll into the global target too
+      db.goals.forEach(g => {
+          totT += (Number(g.Target_Value) || 0);
       });
 
       db.transactions.forEach(t => {
@@ -457,8 +488,20 @@
             <td colspan="9" class="py-2.5 pl-4">${g.Name} (${g.Impact} • ${g.Type})</td>
           </tr>
         ` + groupGc.map(gc => {
-          const bg = db.budgets.find(b => b.Target_Ref_ID === gc.Category_ID) || { Amount: 0 };
-          const target = Number(bg.Amount) || 0;
+          const bg = db.budgets.find(b => b.Target_Ref_ID === gc.Category_ID) || { Amount: 0, Rule_Type: 'Each Month' };
+          
+          let target = getMonthlyTargetCalculation(bg);
+          const rType = bg.Rule_Type || bg.Type || 'Each Month';
+          const priorityBadge = bg.Priority_Type ? `<span class="mr-1 text-[9px] uppercase tracking-wider text-slate-400 font-bold">${bg.Priority_Type.substring(0,1)}</span>` : '';
+
+          // NUANCE 5: Goal contributions roll up into specific Categories based on Account Default_GC_ID
+          const linkedGoals = db.goals.filter(goal => {
+              const acc = db.accounts.find(a => a.Account_ID === goal.Linked_Account);
+              return acc && acc.Default_GC_ID === gc.Category_ID;
+          });
+          const goalExtra = linkedGoals.reduce((sum, goal) => sum + (Number(goal.Target_Value) || 0), 0);
+          target += goalExtra; // Add Goal target to Base Budget target
+          
           const actual = db.transactions
             .filter(t => t.Include === '1' && t.GC_ID === gc.Category_ID && t.Month === appState.selectedMonth)
             .reduce((s, t) => s + (Number(t.Amount) || 0), 0);
@@ -471,18 +514,21 @@
             .reduce((s, t) => s + (Number(t.Amount) || 0), 0);
           const meter = target > 0 ? Math.round((actual / target) * 100) : 0;
 
+          // Note if target includes a Goal rollover
+          const goalNote = goalExtra > 0 ? `<div class="text-[9px] text-emerald-600 font-bold mt-0.5">+${fmtCurrency(goalExtra)} Goal rollup</div>` : '';
+
           return `
             <tr class="hover:bg-slate-50">
-              <td class="py-3 pl-6 pr-3 text-slate-800 font-medium">${gc.Display_Label.split('::')[1] || gc.Display_Label}</td>
-              <td class="py-3 px-3"><span class="px-2 py-0.5 rounded text-[10px] bg-slate-100 text-slate-600">${g.Impact}</span></td>
-              <td class="py-3 px-3 text-right font-mono-num">${fmtCurrency(target)}</td>
+              <td class="py-3 pl-6 pr-3 text-slate-800 font-medium">${priorityBadge}${gc.Display_Label.split('::')[1] || gc.Display_Label}</td>
+              <td class="py-3 px-3"><span class="px-2 py-0.5 rounded text-[10px] bg-slate-100 text-slate-600">${rType}</span></td>
+              <td class="py-3 px-3 text-right font-mono-num">${fmtCurrency(target)}${goalNote}</td>
               <td class="py-3 px-3 text-right font-mono-num font-bold text-slate-900">${fmtCurrency(actual)}</td>
               <td class="py-3 px-3 text-right font-mono-num ${variance < 0 ? 'text-rose-600' : 'text-emerald-600'}">${fmtCurrency(variance, true)}</td>
               <td class="py-3 px-3 text-right font-mono-num text-slate-500">${fmtCurrency(priorActual)}</td>
               <td class="py-3 px-3 text-right font-mono-num text-indigo-700">${fmtCurrency(ytdActual)}</td>
               <td class="py-3 px-3 text-center font-mono-num text-slate-500">${meter}%</td>
               <td class="py-3 pl-3 pr-5 text-right">
-                <button onclick="alert('12-Month drill-down view for ${gc.Category_ID}: Backward actuals & forward projections loaded.')" class="px-2 py-1 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded text-[11px] font-semibold">
+                <button onclick="alert('12-Month drill-down view for ${gc.Category_ID}: Expanding cross-year forward/backward arrays in upcoming UI extension.')" class="px-2 py-1 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded text-[11px] font-semibold transition">
                   [12-Mo]
                 </button>
               </td>
@@ -549,18 +595,21 @@
             catName = gc ? gc.Display_Label : cat.Name;
         }
         
-        const bType = b.Type || 'Each Month'; 
+        const bType = b.Rule_Type || b.Type || 'Each Month'; 
         const amt = Number(b.Amount) || 0;
-        const ann = bType === 'Each Month' ? amt * 12 : (bType === 'Annual' ? amt : amt * 12);
+        const prio = b.Priority_Type || '-';
+        const startTarget = (bType === 'Target Month') ? `${b.Start_Month} &rarr; ${b.Target_Month}` : `<span class="text-slate-300">Continuous</span>`;
         
         return `
         <tr class="hover:bg-slate-50">
           <td class="py-3 pl-4 font-semibold text-slate-800">${catName}</td>
-          <td class="py-3 text-slate-600"><span class="bg-indigo-50 text-indigo-700 px-2 py-0.5 rounded text-[10px] font-bold">${bType}</span></td>
+          <td class="py-3 text-slate-600"><span class="bg-indigo-50 text-indigo-700 px-2 py-0.5 rounded text-[10px] font-bold">${prio}</span></td>
+          <td class="py-3 text-slate-600 font-medium">${bType}</td>
           <td class="py-3 text-right font-mono-num font-bold text-slate-900">${fmtCurrency(amt)}</td>
-          <td class="py-3 text-right font-mono-num text-slate-400">${fmtCurrency(ann)}</td>
-          <td class="py-3 pl-2 pr-4 text-right">
-             <button onclick="deleteBudget(${index})" class="text-slate-400 hover:text-rose-600 font-bold text-lg leading-none" title="Delete Budget">&times;</button>
+          <td class="py-3 text-center text-xs text-slate-500 font-mono-num">${startTarget}</td>
+          <td class="py-3 pl-2 pr-4 text-right whitespace-nowrap">
+             <button onclick="openBudgetModal(${index})" class="text-indigo-600 hover:text-indigo-800 font-bold text-sm mr-3" title="Edit Budget">✎ Edit</button>
+             <button onclick="deleteBudget(${index})" class="text-slate-400 hover:text-rose-600 font-bold text-lg leading-none align-middle" title="Delete Budget">&times;</button>
           </td>
         </tr>
         `;
@@ -603,21 +652,77 @@
         }
     }
 
+    // --- FULL BUDGET EDIT / SAVE LOGIC ---
+    let editingBudgetIdx = -1;
+    function openBudgetModal(idx = -1) { 
+        editingBudgetIdx = idx;
+        document.getElementById('budgetModalTitle').textContent = idx >= 0 ? 'Edit Budget Target' : 'Add Budget Target';
+        document.getElementById('saveBudgetBtn').textContent = idx >= 0 ? 'Update Budget' : 'Save Budget';
+        
+        if (idx >= 0) {
+            const b = db.budgets[idx];
+            document.getElementById('newBudgCategory').value = b.Target_Ref_ID || '';
+            document.getElementById('newBudgPriority').value = b.Priority_Type || '';
+            document.getElementById('newBudgType').value = b.Rule_Type || b.Type || 'Each Month';
+            document.getElementById('newBudgAmount').value = b.Amount || '';
+            document.getElementById('newBudgDate').value = b.Target_Month || '';
+            document.getElementById('newBudgNotes').value = b.Notes || '';
+            toggleBudgetTargetDate();
+        } else {
+            document.getElementById('newBudgCategory').value = '';
+            document.getElementById('newBudgPriority').value = '';
+            document.getElementById('newBudgType').value = '';
+            document.getElementById('newBudgAmount').value = '';
+            document.getElementById('newBudgDate').value = '';
+            document.getElementById('newBudgNotes').value = '';
+            document.getElementById('targetMonthContainer').classList.add('hidden');
+        }
+
+        document.getElementById('budgetModal').classList.remove('hidden'); 
+        document.getElementById('budgetModal').classList.add('flex'); 
+    }
+    
     function toggleBudgetTargetDate() {
         const type = document.getElementById('newBudgType').value;
-        const dateInput = document.getElementById('newBudgDate');
-        if (type === 'Target Month') dateInput.classList.remove('hidden');
-        else dateInput.classList.add('hidden');
+        const container = document.getElementById('targetMonthContainer');
+        if (type === 'Target Month') container.classList.remove('hidden');
+        else container.classList.add('hidden');
     }
-
-    function openBudgetModal() { document.getElementById('budgetModal').classList.remove('hidden'); document.getElementById('budgetModal').classList.add('flex'); }
+    
     function closeBudgetModal() { document.getElementById('budgetModal').classList.add('hidden'); document.getElementById('budgetModal').classList.remove('flex'); }
+    
     function saveBudget() {
         const cat = document.getElementById('newBudgCategory').value;
+        const prio = document.getElementById('newBudgPriority').value;
         const type = document.getElementById('newBudgType').value;
         const amt = document.getElementById('newBudgAmount').value;
+        const tDate = document.getElementById('newBudgDate').value;
+        const notes = document.getElementById('newBudgNotes').value;
+        
         if(cat && type && amt) {
-            db.budgets.push({ Target_Ref_ID: cat, Amount: amt, Type: type });
+            const bData = {
+                Budget_ID: 'B_' + Math.floor(Math.random()*10000),
+                Scope_Level: 'Category',
+                Target_Ref_ID: cat,
+                Priority_Type: prio,
+                Rule_Type: type,
+                Amount: amt,
+                Start_Month: appState.selectedMonth, // Nuance 3: Anchor start date to currently viewed month
+                Target_Month: type === 'Target Month' ? tDate : '',
+                Is_Demo: '0',
+                Notes: notes
+            };
+
+            if (editingBudgetIdx >= 0) {
+                // Preserve immutable fields if updating
+                bData.Budget_ID = db.budgets[editingBudgetIdx].Budget_ID || bData.Budget_ID;
+                bData.Start_Month = db.budgets[editingBudgetIdx].Start_Month || bData.Start_Month;
+                bData.Is_Demo = db.budgets[editingBudgetIdx].Is_Demo || '0';
+                db.budgets[editingBudgetIdx] = bData;
+            } else {
+                db.budgets.push(bData);
+            }
+
             renderAll();
             closeBudgetModal();
         }
