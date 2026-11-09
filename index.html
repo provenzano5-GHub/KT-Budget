@@ -10,7 +10,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
 
-  <title>KTBudget 3.5: Relational Financial Canvas</title>
+  <title>KTBudget 4.0: Relational Financial Canvas</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -20,6 +20,7 @@
     .font-mono-num { font-family: 'JetBrains Mono', monospace; }
     .no-scrollbar::-webkit-scrollbar { display: none; }
     .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    .drag-over { border-color: #6c5ce7; background-color: #f5f3ff; }
   </style>
 </head>
 <body class="min-h-screen flex flex-col">
@@ -35,12 +36,12 @@
         <div class="w-11 h-11 rounded-xl bg-[#6c5ce7] flex items-center justify-center font-extrabold text-lg tracking-tight shadow-inner shrink-0">KT</div>
         <div>
           <div class="flex items-center gap-2.5 flex-wrap">
-            <h1 class="text-xl font-extrabold tracking-tight text-white">KTBudget 3.0</h1>
+            <h1 class="text-xl font-extrabold tracking-tight text-white">KTBudget 4.0</h1>
             <span class="px-2.5 py-0.5 text-[11px] font-semibold rounded-full bg-indigo-950/90 text-indigo-300 border border-indigo-700/60">
-              Relational 8-Table Engine • v3.5.0
+              Relational 8-Table Engine • v4.0.0
             </span>
           </div>
-          <p class="text-xs text-slate-400 mt-0.5">Persistent Install Shield • Effective Dating</p>
+          <p class="text-xs text-slate-400 mt-0.5">Native Bulk-Import Wizard • AI Prompt Generator</p>
         </div>
       </div>
 
@@ -61,6 +62,7 @@
       <button id="tabBtn-ledger" onclick="switchTab('ledger')" class="tab-btn px-3.5 py-2 rounded-lg text-xs font-semibold flex items-center gap-2 transition whitespace-nowrap text-slate-300 hover:bg-[#1e2548]">Transactions Ledger (<span id="ledgerCountBadge">0</span>)</button>
       <button id="tabBtn-canvas" onclick="switchTab('canvas')" class="tab-btn px-3.5 py-2 rounded-lg text-xs font-semibold flex items-center gap-2 transition whitespace-nowrap text-slate-300 hover:bg-[#1e2548]">Budget Canvas &amp; Goals</button>
       <button id="tabBtn-accounts" onclick="switchTab('accounts')" class="tab-btn px-3.5 py-2 rounded-lg text-xs font-semibold flex items-center gap-2 transition whitespace-nowrap text-slate-300 hover:bg-[#1e2548]">Accounts &amp; Goals</button>
+      <button id="tabBtn-importer" onclick="switchTab('importer')" class="tab-btn px-3.5 py-2 rounded-lg text-xs font-semibold flex items-center gap-2 transition whitespace-nowrap text-slate-300 hover:bg-[#1e2548]">📥 Data Importer</button>
       <button id="tabBtn-admin" onclick="switchTab('admin')" class="tab-btn px-3.5 py-2 rounded-lg text-xs font-semibold flex items-center gap-2 transition whitespace-nowrap text-slate-300 hover:bg-[#1e2548]">⚙️ Admin &amp; Backup</button>
     </div>
   </header>
@@ -193,8 +195,61 @@
       </div>
     </section>
 
-    <!-- TAB 5: ADMIN & BACKUP -->
+    <!-- TAB 5: DATA IMPORTER (NATIVE BULK WIZARD) -->
+    <section id="tab-importer" class="hidden space-y-6">
+      <div class="bg-white rounded-xl border border-slate-200 p-6 shadow-sm space-y-6">
+        <div class="border-b border-slate-100 pb-3">
+            <h2 class="text-lg font-bold text-slate-900">Native Bulk-Import Wizard</h2>
+            <p class="text-sm text-slate-500 mt-1">Drag and drop raw bank CSV files (Chase, PayPal, Venmo, etc.) here to auto-map and rapidly categorize transactions.</p>
+        </div>
+
+        <div id="dropZone" class="border-2 border-dashed border-slate-300 rounded-xl p-10 text-center transition hover:bg-slate-50 bg-slate-50/50">
+            <div class="text-4xl mb-3">📁</div>
+            <p class="text-sm text-slate-600 font-semibold mb-2">Drag & Drop raw Bank CSV file here</p>
+            <p class="text-xs text-slate-400 mb-4">Or click to browse your computer</p>
+            <input type="file" id="bankCsvInput" accept=".csv" class="hidden" onchange="handleBankCsvUpload(event)" />
+            <button onclick="document.getElementById('bankCsvInput').click()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-6 rounded-lg text-xs transition">Select CSV File</button>
+        </div>
+
+        <!-- Rapid Fire List (Hidden until file loaded) -->
+        <div id="importRapidFireUI" class="hidden space-y-4">
+            <div class="flex justify-between items-end border-b border-slate-200 pb-2 mt-8">
+                <h3 class="font-bold text-slate-800 text-base">Rapid-Fire Review</h3>
+                <button onclick="saveAllPendingImports()" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2 px-6 rounded-lg text-xs shadow transition">✓ Save All to Ledger</button>
+            </div>
+            <p class="text-xs text-slate-500 italic">The engine has attempted to auto-guess categories and accounts based on your ledger history. Adjust any rows and click Save All.</p>
+            
+            <div class="overflow-x-auto border border-slate-200 rounded-lg">
+                <table class="w-full text-left border-collapse">
+                    <thead class="bg-slate-100">
+                        <tr class="text-[10px] font-bold uppercase tracking-wider text-slate-500 border-b border-slate-200">
+                            <th class="py-3 px-4">Date (Month)</th>
+                            <th class="py-3 px-4">Parsed Merchant</th>
+                            <th class="py-3 px-4 text-right">Amount</th>
+                            <th class="py-3 px-4">Source Account</th>
+                            <th class="py-3 px-4">Destination Category</th>
+                            <th class="py-3 px-4 text-center">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="pendingImportsTableBody" class="divide-y divide-slate-100 text-xs"></tbody>
+                </table>
+            </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 6: ADMIN & BACKUP -->
     <section id="tab-admin" class="hidden space-y-6">
+      
+      <!-- Import Instructions Card -->
+      <div class="bg-indigo-900 rounded-xl p-6 shadow-sm text-indigo-50 flex flex-col md:flex-row gap-6 items-center justify-between">
+          <div class="space-y-2">
+              <h2 class="text-lg font-bold text-white">How to Account for Next Month's Actuals</h2>
+              <p class="text-sm text-indigo-200">Learn the two methods for rapidly importing transaction data without manual entry.</p>
+          </div>
+          <button onclick="openImportGuideModal()" class="bg-white text-indigo-900 hover:bg-indigo-50 font-bold py-2.5 px-6 rounded-lg text-sm shadow transition shrink-0">View Import Guide</button>
+      </div>
+
       <div class="bg-white rounded-xl border border-slate-200 p-6 shadow-sm space-y-6">
         <div class="border-b border-slate-100 pb-3">
             <h2 class="text-lg font-bold text-slate-900">System Admin &amp; Data Backup</h2>
@@ -251,6 +306,42 @@
     </div>
     <div class="mt-8 pt-6 border-t border-slate-700 max-w-md w-full">
        <button onclick="bypassInstallShield()" class="bg-slate-700 hover:bg-slate-600 text-white font-bold py-2.5 px-6 rounded-lg transition w-full">I have installed the app (Hide permanently)</button>
+    </div>
+  </div>
+
+  <!-- IMPORT GUIDE MODAL -->
+  <div id="importGuideModal" class="fixed inset-0 bg-slate-900/70 hidden items-center justify-center p-4 z-[60]">
+    <div class="bg-white rounded-2xl max-w-3xl w-full p-8 shadow-2xl space-y-6 text-sm flex flex-col max-h-[90vh] overflow-y-auto relative">
+      <button onclick="closeImportGuideModal()" class="absolute top-6 right-6 text-slate-400 hover:text-rose-600 font-bold text-3xl leading-none">&times;</button>
+      <h3 class="text-xl font-extrabold text-slate-900 border-b pb-4">How to Account for Next Month's Actuals</h3>
+      
+      <div class="space-y-4">
+          <h4 class="font-bold text-indigo-700 text-base">Method 1: The Native Bulk-Import Wizard (Recommended)</h4>
+          <p class="text-slate-600">This app is fully equipped to parse raw bank files directly on your device, ensuring privacy and speed.</p>
+          <ul class="list-decimal pl-5 text-slate-600 space-y-2">
+              <li>Log into your bank (Chase, PayPal, Venmo, etc.) and click <strong>"Download Activity as CSV"</strong>.</li>
+              <li>In this app, click the <strong>📥 Data Importer</strong> tab.</li>
+              <li>Drag and drop your raw bank CSV file into the designated zone.</li>
+              <li>The engine will instantly parse the file, flip expenses to positive values, and attempt to auto-guess the Categories and Accounts based on your past ledger entries.</li>
+              <li>Review the Rapid-Fire list, make any dropdown adjustments, and click <strong>Save All</strong>.</li>
+          </ul>
+      </div>
+
+      <div class="border-t border-slate-200 pt-6 space-y-4">
+          <h4 class="font-bold text-indigo-700 text-base">Method 2: AI Bulk Categorization (Alternative)</h4>
+          <p class="text-slate-600">If you have a massive batch of entirely new merchants and want an AI to do the categorization heavy lifting before importing, you can use a strict prompt in Gemini or ChatGPT.</p>
+          <ul class="list-decimal pl-5 text-slate-600 space-y-2">
+              <li>Download your bank CSV and copy all the text.</li>
+              <li>Click the button below to copy your custom **Master AI Prompt**, which injects your exact live database IDs.</li>
+              <li>Paste the prompt and your raw CSV text into Gemini/ChatGPT.</li>
+              <li>Save the AI's perfectly mapped CSV output and drop it into the Data Importer tab!</li>
+          </ul>
+          <button onclick="generateAIPrompt()" class="mt-4 bg-slate-800 hover:bg-slate-700 text-white font-bold py-2.5 px-6 rounded-lg text-xs transition">📋 Copy Master AI Prompt to Clipboard</button>
+      </div>
+
+      <div class="pt-4 text-right">
+        <button onclick="closeImportGuideModal()" class="px-5 py-2.5 bg-slate-200 text-slate-800 rounded-lg font-bold hover:bg-slate-300 transition">Close Guide</button>
+      </div>
     </div>
   </div>
 
@@ -355,7 +446,7 @@
          <option value="" disabled selected>Priority Type...</option>
          <option value="Necessity">Necessity</option><option value="Want">Want</option>
       </select>
-      <select id="newBudgType" class="w-full border rounded px-3 py-2">
+      <select id="newBudgType" class="w-full border rounded px-3 py-2" onchange="toggleBudgetTargetDate()">
         <option value="" disabled selected>Select Budget Rule Type...</option>
         <option value="Each Month">Each Month</option><option value="Annual">Annual (divided by 12)</option><option value="Target Month">Target Month</option>
       </select>
@@ -407,7 +498,9 @@
     const STORAGE_KEY = 'ktbudget_data_v2';
     let db = { groups: [], categories: [], group_category: [], accounts: [], budgets: [], goals: [], todos: [], transactions: [], lastModified: 0, lastBackup: 0 };
     let appState = { selectedMonth: '2026-10', customMonths: ['2026-10', '2026-09'], show12Mo: false };
+    let pendingImports = []; // Array to hold parsed CSV rows before saving
 
+    // --- INSTALL SHIELD ---
     function checkInstallMode() {
         const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
         if (!isStandalone && !localStorage.getItem('bypassedInstallShield')) {
@@ -421,6 +514,7 @@
         document.getElementById('installShieldOverlay').classList.remove('flex');
     }
 
+    // --- NAG & PERSISTENCE ---
     function checkBackupStatus() {
         const modTime = db.lastModified || 0;
         const backTime = db.lastBackup || 0;
@@ -475,6 +569,209 @@
         reader.readAsText(file);
     }
 
+    // --- DATA IMPORTER (CSV PARSER WIZARD) ---
+    function setupDragAndDrop() {
+        const dropZone = document.getElementById('dropZone');
+        dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('drag-over'); });
+        dropZone.addEventListener('dragleave', (e) => { e.preventDefault(); dropZone.classList.remove('drag-over'); });
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropZone.classList.remove('drag-over');
+            if(e.dataTransfer.files && e.dataTransfer.files[0]) processBankCsv(e.dataTransfer.files[0]);
+        });
+    }
+
+    function handleBankCsvUpload(event) {
+        if(event.target.files && event.target.files[0]) processBankCsv(event.target.files[0]);
+    }
+
+    function parseCsvLine(line) {
+        // Handle commas inside quotes
+        let result = []; let current = ''; let inQuotes = false;
+        for(let i=0; i<line.length; i++){
+            const char = line[i];
+            if (char === '"') inQuotes = !inQuotes;
+            else if (char === ',' && !inQuotes) { result.push(current.trim()); current = ''; }
+            else current += char;
+        }
+        result.push(current.trim());
+        return result;
+    }
+
+    function processBankCsv(file) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const text = e.target.result;
+            const lines = text.trim().split(/\r?\n/);
+            
+            // Auto-detect headers (look for 'Amount')
+            let headerIdx = -1;
+            let headers = [];
+            for(let i=0; i<Math.min(10, lines.length); i++){
+                const cols = parseCsvLine(lines[i]);
+                if(cols.some(c => c.toLowerCase().includes('amount'))) {
+                    headerIdx = i;
+                    headers = cols.map(c => c.toLowerCase());
+                    break;
+                }
+            }
+            if(headerIdx === -1) return alert("Could not auto-detect an 'Amount' column in this file. Please ensure it is a valid bank CSV.");
+
+            // Map core columns
+            const dateIdx = headers.findIndex(h => h.includes('date'));
+            const descIdx = headers.findIndex(h => h.includes('description') || h.includes('payee') || h.includes('name') || h.includes('merchant'));
+            const amtIdx = headers.findIndex(h => h === 'amount' || h.includes('amount'));
+
+            if(dateIdx===-1 || descIdx===-1 || amtIdx===-1) return alert("Missing required columns. The CSV must contain a Date, a Description/Merchant, and an Amount.");
+
+            pendingImports = [];
+            for(let i = headerIdx + 1; i < lines.length; i++) {
+                if(!lines[i].trim()) continue;
+                const cols = parseCsvLine(lines[i]);
+                if(cols.length <= Math.max(dateIdx, descIdx, amtIdx)) continue;
+
+                // Format Date to YYYY-MM
+                let monthStr = appState.selectedMonth; // Fallback
+                const dMatch = cols[dateIdx].match(/(\d{1,4})[\/\-](\d{1,2})[\/\-](\d{1,4})/);
+                if(dMatch) {
+                   let y = dMatch[3].length === 4 ? dMatch[3] : (dMatch[1].length === 4 ? dMatch[1] : '20'+dMatch[3]);
+                   let m = dMatch[1].length === 4 ? dMatch[2] : dMatch[1]; // Handle MM/DD/YYYY vs YYYY-MM-DD
+                   monthStr = `${y}-${m.padStart(2, '0')}`;
+                }
+
+                const rawAmt = parseFloat(cols[amtIdx].replace(/[^0-9.-]+/g,""));
+                if(isNaN(rawAmt)) continue;
+                // Treat negative bank logic (expense) as positive ledger logic, and vice versa
+                const amt = Math.abs(rawAmt); 
+                const merchant = cols[descIdx].replace(/^"|"$/g, '');
+
+                // Auto-Guess mapping based on historical ledger matches
+                let predAcc = '';
+                let predCat = '';
+                const historyMatch = db.transactions.find(t => t.Merchant.toLowerCase() === merchant.toLowerCase());
+                if(historyMatch) { 
+                    predAcc = historyMatch.Account_ID; 
+                    predCat = historyMatch.GC_ID; 
+                }
+
+                pendingImports.push({
+                    id: 'P_' + Math.random().toString(36).substr(2,9),
+                    Month: monthStr, Merchant: merchant, Amount: amt, Account_ID: predAcc, GC_ID: predCat
+                });
+            }
+            
+            if(pendingImports.length > 0) {
+                document.getElementById('importRapidFireUI').classList.remove('hidden');
+                renderPendingImports();
+            } else {
+                alert("No valid transactions found to import.");
+            }
+        };
+        reader.readAsText(file);
+    }
+
+    function renderPendingImports() {
+        const tbody = document.getElementById('pendingImportsTableBody');
+        
+        // Build dropdown templates once for performance
+        let catOptions = '<option value="" disabled>Select Category...</option>';
+        db.categories.forEach(c => {
+            const gc = db.group_category.find(g => g.Category_ID === c.Category_ID);
+            const label = gc ? gc.Display_Label : c.Name;
+            catOptions += `<option value="${c.Category_ID}">${label}</option>`;
+        });
+        
+        let accOptions = '<option value="" disabled>Select Source...</option>';
+        db.accounts.forEach(a => {
+            accOptions += `<option value="${a.Account_ID}">${a.Name} (${a.Type})</option>`;
+        });
+
+        tbody.innerHTML = pendingImports.map((p, idx) => {
+            // Auto-select predictions in the HTML string
+            const rowAccOptions = accOptions.replace(`value="${p.Account_ID}"`, `value="${p.Account_ID}" selected`);
+            const rowCatOptions = catOptions.replace(`value="${p.GC_ID}"`, `value="${p.GC_ID}" selected`);
+            
+            return `
+            <tr id="pendingRow_${p.id}" class="hover:bg-slate-50">
+              <td class="py-2 px-4 font-mono-num">${p.Month}</td>
+              <td class="py-2 px-4 font-semibold text-slate-800"><input type="text" id="impMerch_${p.id}" value="${p.Merchant.replace(/"/g, '&quot;')}" class="w-full bg-transparent border-b border-dashed border-slate-300 focus:border-indigo-500 focus:outline-none" /></td>
+              <td class="py-2 px-4 text-right font-mono-num font-bold text-slate-900">$${p.Amount.toFixed(2)}</td>
+              <td class="py-2 px-4"><select id="impAcc_${p.id}" class="w-full border rounded px-2 py-1 text-[11px] ${p.Account_ID ? 'bg-emerald-50 border-emerald-200' : 'bg-rose-50 border-rose-200'}">${rowAccOptions}</select></td>
+              <td class="py-2 px-4"><select id="impCat_${p.id}" class="w-full border rounded px-2 py-1 text-[11px] ${p.GC_ID ? 'bg-emerald-50 border-emerald-200' : 'bg-rose-50 border-rose-200'}">${rowCatOptions}</select></td>
+              <td class="py-2 px-4 text-center"><button onclick="removePendingImport('${p.id}')" class="text-slate-400 hover:text-rose-600 font-bold text-lg leading-none" title="Ignore/Remove">&times;</button></td>
+            </tr>
+            `;
+        }).join('');
+    }
+
+    function removePendingImport(id) {
+        pendingImports = pendingImports.filter(p => p.id !== id);
+        renderPendingImports();
+        if(pendingImports.length === 0) document.getElementById('importRapidFireUI').classList.add('hidden');
+    }
+
+    function saveAllPendingImports() {
+        let savedCount = 0;
+        let errorCount = 0;
+        
+        pendingImports.forEach(p => {
+            const accSelect = document.getElementById(`impAcc_${p.id}`);
+            const catSelect = document.getElementById(`impCat_${p.id}`);
+            const merchInput = document.getElementById(`impMerch_${p.id}`);
+            
+            if(accSelect.value && catSelect.value) {
+                db.transactions.push({
+                    Txn_ID: 'T' + Math.floor(Math.random()*100000),
+                    Month: p.Month,
+                    Account_ID: accSelect.value,
+                    Merchant: merchInput.value || p.Merchant,
+                    Amount: p.Amount,
+                    GC_ID: catSelect.value,
+                    Include: '1'
+                });
+                savedCount++;
+            } else {
+                errorCount++;
+            }
+        });
+
+        if(savedCount > 0) {
+            saveDataToLocal();
+            pendingImports = [];
+            document.getElementById('importRapidFireUI').classList.add('hidden');
+            document.getElementById('bankCsvInput').value = '';
+            
+            alert(`Successfully imported ${savedCount} transactions!${errorCount > 0 ? `\n\nSkipped ${errorCount} rows missing account/category assignments.` : ''}`);
+            renderAll();
+            switchTab('ledger'); // Auto jump to ledger to view
+        } else {
+            alert("No rows saved. Please ensure Account and Category are selected for rows you want to import.");
+        }
+    }
+
+    // --- AI PROMPT GENERATOR ---
+    function openImportGuideModal() {
+        document.getElementById('importGuideModal').classList.remove('hidden');
+        document.getElementById('importGuideModal').classList.add('flex');
+    }
+    function closeImportGuideModal() {
+        document.getElementById('importGuideModal').classList.add('hidden');
+        document.getElementById('importGuideModal').classList.remove('flex');
+    }
+    
+    function generateAIPrompt() {
+        const accs = db.accounts.map(a => a.Account_ID).join(', ');
+        const cats = db.categories.map(c => c.Category_ID).join(', ');
+        const prompt = `You are a financial data processor.\nHere is a list of my official Account IDs: [${accs}].\nHere is a list of my exact Category IDs: [${cats}].\n\nTake the following raw bank CSV data and return a newly mapped CSV. You must categorize every transaction as best as you can by matching the merchant to the most logical Category ID. If it is a credit card payment or transfer, use the most appropriate transfer category. Output ONLY the raw CSV text using exactly these headers: Txn_ID, Month, Account_ID, Merchant, GC_ID, Amount, Include.\n\nNote: Output expenses as positive amounts, use '1' for Include, make up sequential Txn_IDs (e.g. T9001), and format Month strictly as YYYY-MM.`;
+        
+        navigator.clipboard.writeText(prompt).then(() => {
+            alert('Prompt copied to clipboard! Paste this into Gemini/ChatGPT along with your raw bank CSV text.');
+        }).catch(err => {
+            alert('Failed to copy. Please manually select this text:\n\n' + prompt);
+        });
+    }
+
+    // --- DEMO DATA SEEDING ---
     function getDemoData(table) {
         const demo = {
             groups: [{ Group_ID: 'G_WANTS', Name: 'Wants', Type: 'Flexible', Impact: 'personal', Budget: 'Yes' }, { Group_ID: 'G_NEC', Name: 'Personal necessities', Type: 'Fixed', Impact: 'personal', Budget: 'Yes' }],
@@ -528,7 +825,6 @@
       db.todos = await loadCsv('todos.csv');
       db.transactions = await loadCsv('transactions.csv');
       
-      // Auto-heal missing data loops
       db.budgets.forEach(b => {
           if (!b.Scope_Level) {
               if (db.groups.some(g => g.Group_ID === b.Target_Ref_ID)) b.Scope_Level = 'Group';
@@ -544,6 +840,8 @@
 
     async function initApp() {
       checkInstallMode();
+      setupDragAndDrop();
+      
       const localData = localStorage.getItem(STORAGE_KEY);
       if (localData) {
           try { db = JSON.parse(localData); } catch (e) { await seedDatabase(); }
@@ -598,7 +896,7 @@
     }
 
     function switchTab(tabId) {
-      ['bva', 'ledger', 'canvas', 'accounts', 'admin'].forEach(id => {
+      ['bva', 'ledger', 'canvas', 'accounts', 'importer', 'admin'].forEach(id => {
         document.getElementById('tab-' + id).classList.toggle('hidden', id !== tabId);
         document.getElementById('tabBtn-' + id).className = id === tabId
           ? 'tab-btn px-3.5 py-2 rounded-lg text-xs font-semibold flex items-center gap-2 transition whitespace-nowrap bg-[#252d5c] text-indigo-200 border border-indigo-500/40'
@@ -956,6 +1254,7 @@
       }).join('');
     }
 
+    // --- FULL CRUD MODAL LOGIC ---
     let editingTxnIdx = -1;
     function openTransactionModal(idx = -1) {
         editingTxnIdx = idx;
