@@ -24,10 +24,10 @@
           <div class="flex items-center gap-2.5 flex-wrap">
             <h1 class="text-xl font-extrabold tracking-tight text-white">KTBudget 2.0</h1>
             <span class="px-2.5 py-0.5 text-[11px] font-semibold rounded-full bg-indigo-950/90 text-indigo-300 border border-indigo-700/60">
-              Relational 8-Table Engine • v2.1.0
+              Relational 8-Table Engine • v2.2.0
             </span>
           </div>
-          <p class="text-xs text-slate-400 mt-0.5">GitHub CSV Sync • 12-Month Projections &amp; Split Ledger</p>
+          <p class="text-xs text-slate-400 mt-0.5">GitHub CSV Sync • Budgets, Goals, &amp; Demo Data Engine</p>
         </div>
       </div>
 
@@ -58,6 +58,12 @@
   <!-- MAIN CONTAINER -->
   <main class="max-w-[1440px] w-full mx-auto px-4 sm:px-6 py-6 flex-1 space-y-6">
 
+    <!-- ALERT BANNER FOR DEMO DATA -->
+    <div id="demoDataAlert" class="hidden bg-amber-50 border border-amber-200 text-amber-800 px-4 py-3 rounded-xl text-sm shadow-sm flex items-center justify-between">
+      <div><strong>Demo Data Loaded:</strong> Since no CSVs were found, default templates have been loaded. You can use these to start budgeting or overwrite them when you connect your own data.</div>
+      <button onclick="document.getElementById('demoDataAlert').classList.add('hidden')" class="text-amber-600 hover:text-amber-900 text-xl font-bold">&times;</button>
+    </div>
+
     <!-- TAB 1: BUDGET VS ACTUAL -->
     <section id="tab-bva" class="space-y-6">
       <!-- 4 KPI CARDS -->
@@ -84,7 +90,7 @@
         </div>
       </div>
 
-      <!-- BUDGET TABLE WITH 12-MONTH DRILL-DOWN TOGGLE -->
+      <!-- BUDGET TABLE -->
       <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
         <div class="p-5 border-b border-slate-100 flex flex-col lg:flex-row lg:items-center justify-between gap-4">
           <div>
@@ -146,19 +152,34 @@
       </div>
     </section>
 
-    <!-- TAB 3: CANVAS & GOALS -->
+    <!-- TAB 3: CANVAS & GOALS (BUDGETS) -->
     <section id="tab-canvas" class="hidden space-y-6">
       <div class="bg-white rounded-xl border border-slate-200 p-5 shadow-sm space-y-4">
-        <h2 class="text-base font-bold text-slate-900">Budget Canvas &amp; To-Dos</h2>
+        <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+            <h2 class="text-base font-bold text-slate-900">Budget Canvas &amp; To-Dos</h2>
+            <button onclick="openBudgetModal()" class="bg-[#6c5ce7] hover:bg-[#5b4bc4] text-white text-xs font-semibold px-3.5 py-2 rounded-lg transition">+ Add Budget</button>
+        </div>
         <div id="todoTableBody" class="space-y-2 text-xs"></div>
+        <div id="budgetItemsList" class="mt-4 p-4 bg-slate-50 rounded border border-slate-200 text-sm">
+            <p class="text-slate-500 font-semibold mb-2">Active Budget Directives:</p>
+            <ul id="activeBudgetsUI" class="space-y-1 list-disc pl-5"></ul>
+        </div>
       </div>
     </section>
 
     <!-- TAB 4: ACCOUNTS & GOALS -->
     <section id="tab-accounts" class="hidden space-y-6">
       <div class="bg-white rounded-xl border border-slate-200 p-5 shadow-sm space-y-4">
-        <h2 class="text-base font-bold text-slate-900">Accounts &amp; Goal Balances (Synced from accounts.csv &amp; goals.csv)</h2>
+        <div class="flex items-center justify-between border-b border-slate-100 pb-3 flex-wrap gap-2">
+            <h2 class="text-base font-bold text-slate-900">Accounts &amp; Goal Balances</h2>
+            <div class="flex gap-2">
+                <button onclick="openAccountModal()" class="bg-slate-800 hover:bg-slate-700 text-white text-xs font-semibold px-3.5 py-2 rounded-lg transition">+ Add Account</button>
+                <button onclick="openGoalModal()" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold px-3.5 py-2 rounded-lg transition">+ Add Goal</button>
+            </div>
+        </div>
         <div id="accountsGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+        <h3 class="text-sm font-bold text-slate-900 mt-6 border-b border-slate-100 pb-2">Active Goals</h3>
+        <div id="goalsGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
       </div>
     </section>
 
@@ -188,20 +209,106 @@
     </div>
   </div>
 
+  <!-- ADD ACCOUNT MODAL -->
+  <div id="accountModal" class="fixed inset-0 bg-slate-900/60 hidden items-center justify-center p-4 z-50">
+    <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4 text-xs">
+      <h3 class="text-base font-bold">Add New Account</h3>
+      <input id="newAccName" type="text" placeholder="Account Name (e.g. Chase Visa)" class="w-full border rounded px-3 py-2" />
+      <select id="newAccType" class="w-full border rounded px-3 py-2">
+        <option value="" disabled selected>Select Account Type...</option>
+        <option value="Loan">Loan</option>
+        <option value="Income">Income</option>
+        <option value="Savings">Savings</option>
+        <option value="Tax">Tax</option>
+        <option value="Payment">Payment</option>
+        <option value="CCard">CCard</option>
+        <option value="Bill">Bill</option>
+        <option value="Investment">Investment</option>
+        <option value="other">Other</option>
+      </select>
+      <input id="newAccBalance" type="number" step="0.01" placeholder="Starting Balance ($)..." class="w-full border rounded px-3 py-2 font-mono-num" />
+      <div class="flex justify-end gap-2 pt-2">
+        <button onclick="closeAccountModal()" class="px-3 py-1.5 border rounded">Cancel</button>
+        <button onclick="saveAccount()" class="px-3 py-1.5 bg-slate-800 text-white rounded">Save Account</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ADD BUDGET MODAL -->
+  <div id="budgetModal" class="fixed inset-0 bg-slate-900/60 hidden items-center justify-center p-4 z-50">
+    <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4 text-xs">
+      <h3 class="text-base font-bold">Add Budget Target</h3>
+      <select id="newBudgCategory" class="w-full border rounded px-3 py-2">
+         <option value="" disabled selected>Select Group/Category...</option>
+         <!-- Populated via JS -->
+      </select>
+      <select id="newBudgType" class="w-full border rounded px-3 py-2" onchange="toggleBudgetTargetDate()">
+        <option value="" disabled selected>Select Budget Type...</option>
+        <option value="Each Month">Each Month</option>
+        <option value="Annual">Annual (divided by 12)</option>
+        <option value="Target Month">Target Month</option>
+      </select>
+      <input id="newBudgAmount" type="number" step="0.01" placeholder="Target Amount ($)..." class="w-full border rounded px-3 py-2 font-mono-num" />
+      <input id="newBudgDate" type="month" class="w-full border rounded px-3 py-2 hidden" title="Target Date" />
+      
+      <div class="flex justify-end gap-2 pt-2">
+        <button onclick="closeBudgetModal()" class="px-3 py-1.5 border rounded">Cancel</button>
+        <button onclick="saveBudget()" class="px-3 py-1.5 bg-[#6c5ce7] text-white rounded">Save Budget</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ADD GOAL MODAL -->
+  <div id="goalModal" class="fixed inset-0 bg-slate-900/60 hidden items-center justify-center p-4 z-50">
+    <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4 text-xs">
+      <h3 class="text-base font-bold">Add Goal</h3>
+      <input id="newGoalName" type="text" placeholder="Goal Name..." class="w-full border rounded px-3 py-2" />
+      <input id="newGoalDesc" type="text" placeholder="Description..." class="w-full border rounded px-3 py-2" />
+      <select id="newGoalAccount" class="w-full border rounded px-3 py-2">
+          <option value="" disabled selected>Link to Account...</option>
+          <!-- Populated via JS -->
+      </select>
+      <input id="newGoalAmount" type="number" step="0.01" placeholder="Target Value ($)..." class="w-full border rounded px-3 py-2 font-mono-num" />
+      
+      <div class="flex justify-end gap-2 pt-2">
+        <button onclick="closeGoalModal()" class="px-3 py-1.5 border rounded">Cancel</button>
+        <button onclick="saveGoal()" class="px-3 py-1.5 bg-emerald-600 text-white rounded">Save Goal</button>
+      </div>
+    </div>
+  </div>
+
   <!-- SCRIPT ENGINE: CSV LOADER & 8-TABLE RELATIONAL MODEL -->
   <script>
     let db = { groups: [], categories: [], group_category: [], accounts: [], budgets: [], goals: [], todos: [], transactions: [] };
     let appState = { selectedMonth: '2026-10', customMonths: ['2026-10', '2026-09'], show12Mo: false };
+
+    // --- DEMO DATA GENERATOR ---
+    function getDemoData(table) {
+        document.getElementById('demoDataAlert').classList.remove('hidden');
+        const demo = {
+            groups: [{ Group_ID: 'G_WANTS', Name: 'Wants', Type: 'Flexible', Impact: 'personal', Budget: 'Yes' }, { Group_ID: 'G_NEC', Name: 'Personal necessities', Type: 'Fixed', Impact: 'personal', Budget: 'Yes' }],
+            categories: [{ Category_ID: 'C_CLOTH', Name: 'Clothing & online shopping', Type: 'Flexible', Impact: 'personal', Budget: 'Yes' }, { Category_ID: 'C_GROC', Name: 'Groceries & household', Type: 'Flexible', Impact: 'personal', Budget: 'Yes' }],
+            group_category: [{ GC_ID: 'GC_1', Group_ID: 'G_WANTS', Category_ID: 'C_CLOTH', Display_Label: 'Wants::Clothing & online shopping' }, { GC_ID: 'GC_2', Group_ID: 'G_NEC', Category_ID: 'C_GROC', Display_Label: 'Personal necessities::Groceries & household' }],
+            accounts: [{ Account_ID: 'Chase', Name: 'Chase Checking', Type: 'CCard', Balance: '5471.25', Default_GC_ID: 'C_GROC' }, { Account_ID: 'Savings_1', Name: 'Dog Emergency Fund', Type: 'Savings', Balance: '150.00', Default_GC_ID: '' }],
+            budgets: [{ Target_Ref_ID: 'C_CLOTH', Amount: '125.00', Type: 'Each Month' }, { Target_Ref_ID: 'C_GROC', Amount: '450.00', Type: 'Each Month' }],
+            goals: [{ Goal_ID: 'GL_1', Name: 'Vet Emergency', Description: 'Buffer for unexpected pet costs', Linked_Account: 'Savings_1', Target_Value: '500.00' }],
+            transactions: [{ Txn_ID: 'T001', Month: '2026-10', Account_ID: 'Chase', Merchant: 'Target Groceries', GC_ID: 'C_GROC', Amount: '145.20', Include: '1' }],
+            todos: [{ Task: 'Update Salon Allocations', Type: 'Budgeting', Due_Date: '2026-10-31', Priority: 'High' }]
+        };
+        return demo[table.replace('.csv', '')] || [];
+    }
 
     async function loadCsv(filename) {
       try {
         const res = await fetch('./' + filename);
         if (!res.ok) throw new Error('Not found');
         const text = await res.text();
-        return parseCsv(text);
+        const data = parseCsv(text);
+        if(data.length === 0) return getDemoData(filename);
+        return data;
       } catch (e) {
-        console.warn(`Using fallback for ${filename}:`, e);
-        return [];
+        console.warn(`Using fallback demo data for ${filename}:`, e);
+        return getDemoData(filename);
       }
     }
 
@@ -233,7 +340,18 @@
       appState.customMonths = Array.from(mSet).sort().reverse();
       if (!appState.customMonths.includes(appState.selectedMonth)) appState.selectedMonth = appState.customMonths[0];
 
+      populateDropdowns();
       renderAll();
+    }
+
+    function populateDropdowns() {
+        const catSelect = document.getElementById('newBudgCategory');
+        catSelect.innerHTML = '<option value="" disabled selected>Select Group/Category...</option>' + 
+            db.categories.map(c => `<option value="${c.Category_ID}">${c.Name}</option>`).join('');
+
+        const accSelect = document.getElementById('newGoalAccount');
+        accSelect.innerHTML = '<option value="" disabled selected>Link to Account...</option>' + 
+            db.accounts.map(a => `<option value="${a.Account_ID}">${a.Name} (${a.Type})</option>`).join('');
     }
 
     function fmtCurrency(val, showPlus = false) {
@@ -282,7 +400,15 @@
       renderBudgetTable();
       renderLedger();
       renderTodos();
-      renderAccounts();
+      renderAccountsAndGoals();
+      
+      // Render simple Budget list
+      document.getElementById('activeBudgetsUI').innerHTML = db.budgets.map(b => {
+          let catName = b.Target_Ref_ID;
+          const cat = db.categories.find(c => c.Category_ID === b.Target_Ref_ID);
+          if (cat) catName = cat.Name;
+          return `<li><strong>${catName}:</strong> ${fmtCurrency(b.Amount)} (${b.Type})</li>`;
+      }).join('');
     }
 
     function renderKpis() {
@@ -291,7 +417,7 @@
 
       db.budgets.forEach(b => {
         const t = Number(b.Amount) || 0;
-        totT += t;
+        totT += t; // In a full logic block, 'Annual' would be divided by 12 here
       });
 
       db.transactions.forEach(t => {
@@ -384,28 +510,90 @@
       `).join('');
     }
 
-    function renderAccounts() {
+    function renderAccountsAndGoals() {
       document.getElementById('accountsGrid').innerHTML = db.accounts.map(a => `
         <div class="p-4 rounded-xl border border-slate-200 bg-slate-50 space-y-2">
-          <div class="flex justify-between items-center"><h3 class="font-bold text-slate-900">${a.Name}</h3><span class="text-xs px-2 py-0.5 rounded bg-indigo-50 text-indigo-700 font-semibold">${a.Type}</span></div>
+          <div class="flex justify-between items-center"><h3 class="font-bold text-slate-900">${a.Name}</h3><span class="text-xs px-2 py-0.5 rounded bg-slate-200 text-slate-800 font-semibold">${a.Type}</span></div>
           <div class="text-2xl font-extrabold font-mono-num text-slate-900">${fmtCurrency(a.Balance)}</div>
-          <p class="text-[11px] text-slate-400">Default Category: ${a.Default_GC_ID}</p>
+          <p class="text-[11px] text-slate-400">Default Category: ${a.Default_GC_ID || 'None'}</p>
         </div>
       `).join('');
+
+      document.getElementById('goalsGrid').innerHTML = db.goals.map(g => {
+         const linked = db.accounts.find(a => a.Account_ID === g.Linked_Account);
+         const linkedName = linked ? linked.Name : g.Linked_Account;
+         return `
+        <div class="p-4 rounded-xl border border-emerald-100 bg-emerald-50 space-y-2">
+          <div class="flex justify-between items-center"><h3 class="font-bold text-emerald-900">${g.Name}</h3><span class="text-[10px] uppercase tracking-wide font-bold text-emerald-600">${g.Goal_ID}</span></div>
+          <p class="text-xs text-emerald-700">${g.Description}</p>
+          <div class="text-lg font-bold font-mono-num text-emerald-800">Target: ${fmtCurrency(g.Target_Value)}</div>
+          <p class="text-[11px] text-emerald-600 font-semibold">Linked: ${linkedName}</p>
+        </div>
+      `}).join('');
     }
 
+    // Modal Control Functions
     function openTransactionModal() { document.getElementById('txnModal').classList.remove('hidden'); document.getElementById('txnModal').classList.add('flex'); }
     function closeTransactionModal() { document.getElementById('txnModal').classList.add('hidden'); document.getElementById('txnModal').classList.remove('flex'); }
     function saveNewTransaction() {
       const merchant = document.getElementById('newTxnMerchant').value.trim() || 'New Expense';
       const amount = parseFloat(document.getElementById('newTxnAmount').value) || 0;
       if (amount <= 0) return;
-      db.transactions.push({ Txn_ID: 'T9999', Month: appState.selectedMonth, Account_ID: 'Chase', Merchant: merchant, Amount: amount, GC_ID: 'FUN', Include: '1' });
+      db.transactions.push({ Txn_ID: 'T' + Math.floor(Math.random()*1000), Month: appState.selectedMonth, Account_ID: 'Chase', Merchant: merchant, Amount: amount, GC_ID: 'C_GROC', Include: '1' });
       document.getElementById('newTxnMerchant').value = ''; document.getElementById('newTxnAmount').value = '';
       closeTransactionModal(); renderAll();
     }
+    
     function openSplitModal() { document.getElementById('splitModal').classList.remove('hidden'); document.getElementById('splitModal').classList.add('flex'); }
     function closeSplitModal() { document.getElementById('splitModal').classList.add('hidden'); document.getElementById('splitModal').classList.remove('flex'); }
+
+    function openAccountModal() { document.getElementById('accountModal').classList.remove('hidden'); document.getElementById('accountModal').classList.add('flex'); }
+    function closeAccountModal() { document.getElementById('accountModal').classList.add('hidden'); document.getElementById('accountModal').classList.remove('flex'); }
+    function saveAccount() {
+        const name = document.getElementById('newAccName').value;
+        const type = document.getElementById('newAccType').value;
+        const balance = document.getElementById('newAccBalance').value;
+        if(name && type) {
+            db.accounts.push({ Account_ID: name.replace(/\s+/g, ''), Name: name, Type: type, Balance: balance, Default_GC_ID: '' });
+            populateDropdowns();
+            renderAll();
+            closeAccountModal();
+        }
+    }
+
+    function toggleBudgetTargetDate() {
+        const type = document.getElementById('newBudgType').value;
+        const dateInput = document.getElementById('newBudgDate');
+        if (type === 'Target Month') dateInput.classList.remove('hidden');
+        else dateInput.classList.add('hidden');
+    }
+
+    function openBudgetModal() { document.getElementById('budgetModal').classList.remove('hidden'); document.getElementById('budgetModal').classList.add('flex'); }
+    function closeBudgetModal() { document.getElementById('budgetModal').classList.add('hidden'); document.getElementById('budgetModal').classList.remove('flex'); }
+    function saveBudget() {
+        const cat = document.getElementById('newBudgCategory').value;
+        const type = document.getElementById('newBudgType').value;
+        const amt = document.getElementById('newBudgAmount').value;
+        if(cat && type && amt) {
+            db.budgets.push({ Target_Ref_ID: cat, Amount: amt, Type: type });
+            renderAll();
+            closeBudgetModal();
+        }
+    }
+
+    function openGoalModal() { document.getElementById('goalModal').classList.remove('hidden'); document.getElementById('goalModal').classList.add('flex'); }
+    function closeGoalModal() { document.getElementById('goalModal').classList.add('hidden'); document.getElementById('goalModal').classList.remove('flex'); }
+    function saveGoal() {
+        const name = document.getElementById('newGoalName').value;
+        const desc = document.getElementById('newGoalDesc').value;
+        const acc = document.getElementById('newGoalAccount').value;
+        const amt = document.getElementById('newGoalAmount').value;
+        if(name && acc && amt) {
+            db.goals.push({ Goal_ID: 'GL_' + Math.floor(Math.random()*100), Name: name, Description: desc, Linked_Account: acc, Target_Value: amt });
+            renderAll();
+            closeGoalModal();
+        }
+    }
 
     window.addEventListener('DOMContentLoaded', initApp);
   </script>
