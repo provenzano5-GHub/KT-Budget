@@ -3,6 +3,12 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  
+  <!-- Prevent browser caching of the HTML file so code updates push immediately -->
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+  <meta http-equiv="Pragma" content="no-cache" />
+  <meta http-equiv="Expires" content="0" />
+
   <title>KTBudget 2.0: Relational Financial Canvas</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -24,10 +30,10 @@
           <div class="flex items-center gap-2.5 flex-wrap">
             <h1 class="text-xl font-extrabold tracking-tight text-white">KTBudget 2.0</h1>
             <span class="px-2.5 py-0.5 text-[11px] font-semibold rounded-full bg-indigo-950/90 text-indigo-300 border border-indigo-700/60">
-              Relational 8-Table Engine • v2.4.0
+              Relational 8-Table Engine • v2.5.0
             </span>
           </div>
-          <p class="text-xs text-slate-400 mt-0.5">Full 10-Attribute Schema • Dynamic Fractions & Goal Rollups</p>
+          <p class="text-xs text-slate-400 mt-0.5">Local Storage Engine • JSON Backup/Restore</p>
         </div>
       </div>
 
@@ -52,6 +58,7 @@
       <button id="tabBtn-ledger" onclick="switchTab('ledger')" class="tab-btn px-3.5 py-2 rounded-lg text-xs font-semibold flex items-center gap-2 transition whitespace-nowrap text-slate-300 hover:bg-[#1e2548]">Transactions Ledger (<span id="ledgerCountBadge">0</span>)</button>
       <button id="tabBtn-canvas" onclick="switchTab('canvas')" class="tab-btn px-3.5 py-2 rounded-lg text-xs font-semibold flex items-center gap-2 transition whitespace-nowrap text-slate-300 hover:bg-[#1e2548]">Budget Canvas &amp; Goals</button>
       <button id="tabBtn-accounts" onclick="switchTab('accounts')" class="tab-btn px-3.5 py-2 rounded-lg text-xs font-semibold flex items-center gap-2 transition whitespace-nowrap text-slate-300 hover:bg-[#1e2548]">Accounts &amp; Goals</button>
+      <button id="tabBtn-admin" onclick="switchTab('admin')" class="tab-btn px-3.5 py-2 rounded-lg text-xs font-semibold flex items-center gap-2 transition whitespace-nowrap text-slate-300 hover:bg-[#1e2548]">⚙️ Admin &amp; Backup</button>
     </div>
   </header>
 
@@ -60,7 +67,7 @@
 
     <!-- ALERT BANNER FOR DEMO DATA -->
     <div id="demoDataAlert" class="hidden bg-amber-50 border border-amber-200 text-amber-800 px-4 py-3 rounded-xl text-sm shadow-sm flex items-center justify-between">
-      <div><strong>Demo Data Loaded:</strong> Since no CSVs were found, default templates (including the 10-field budget schema) have been loaded.</div>
+      <div><strong>Demo/Seed Data Loaded:</strong> Data was seeded from templates. Any changes you make will now save locally to this device.</div>
       <button onclick="document.getElementById('demoDataAlert').classList.add('hidden')" class="text-amber-600 hover:text-amber-900 text-xl font-bold">&times;</button>
     </div>
 
@@ -129,7 +136,7 @@
     <section id="tab-ledger" class="hidden space-y-6">
       <div class="bg-white rounded-xl border border-slate-200 p-5 shadow-sm space-y-4">
         <div class="flex items-center justify-between border-b border-slate-100 pb-3">
-          <h2 class="text-base font-bold text-slate-900">Transactions Ledger (Synced from transactions.csv)</h2>
+          <h2 class="text-base font-bold text-slate-900">Transactions Ledger</h2>
           <button onclick="openTransactionModal()" class="bg-[#6c5ce7] text-white text-xs font-semibold px-3.5 py-2 rounded-lg">+ Add Item</button>
         </div>
         <div class="overflow-x-auto">
@@ -197,6 +204,60 @@
       </div>
     </section>
 
+    <!-- TAB 5: ADMIN & BACKUP -->
+    <section id="tab-admin" class="hidden space-y-6">
+      <div class="bg-white rounded-xl border border-slate-200 p-6 shadow-sm space-y-6">
+        <div class="border-b border-slate-100 pb-3">
+            <h2 class="text-lg font-bold text-slate-900">System Admin &amp; Data Backup</h2>
+            <p class="text-sm text-slate-500 mt-1">Manage your local device data and app installation.</p>
+        </div>
+
+        <div class="bg-amber-50 border border-amber-200 p-4 rounded-lg flex items-start gap-4">
+            <div class="text-amber-500 text-2xl">⚠</div>
+            <div>
+                <h3 class="text-sm font-bold text-amber-900">Single Source of Truth: This Device</h3>
+                <p class="text-xs text-amber-800 mt-1 leading-relaxed">
+                    Your financial data is saved <strong>locally on this specific device's browser</strong>. It does not automatically sync to the cloud or other devices.
+                    If you want to switch to a new phone, use your desktop, or clear your browsing history, you <strong>must download a backup here</strong> and restore it on the new device.
+                </p>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <!-- EXPORT -->
+            <div class="border border-slate-200 rounded-lg p-5 space-y-4">
+                <div>
+                    <h3 class="font-bold text-slate-800 text-sm">Download Backup</h3>
+                    <p class="text-xs text-slate-500 mt-1">Save a JSON copy of all your accounts, budgets, goals, and transactions to your device.</p>
+                </div>
+                <button onclick="exportData()" class="bg-slate-800 hover:bg-slate-700 text-white text-xs font-semibold px-4 py-2.5 rounded transition w-full">
+                    ⬇️ Download Backup (JSON)
+                </button>
+            </div>
+            <!-- IMPORT -->
+            <div class="border border-slate-200 rounded-lg p-5 space-y-4">
+                <div>
+                    <h3 class="font-bold text-slate-800 text-sm">Restore Data</h3>
+                    <p class="text-xs text-slate-500 mt-1">Warning: Uploading a file will overwrite all current data on this device.</p>
+                </div>
+                <input type="file" id="importFile" accept=".json" class="text-xs w-full text-slate-600 file:mr-3 file:py-1.5 file:px-3 file:rounded file:border-0 file:text-xs file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100 cursor-pointer" />
+                <button onclick="importData()" class="bg-rose-600 hover:bg-rose-700 text-white text-xs font-semibold px-4 py-2.5 rounded transition w-full">
+                    ⬆️ Restore from File
+                </button>
+            </div>
+        </div>
+
+        <div class="border-t border-slate-100 pt-5 mt-6">
+            <h3 class="font-bold text-slate-800 text-sm mb-3">How to Install as an App</h3>
+            <ul class="text-xs text-slate-600 space-y-3 list-disc pl-5">
+                <li><strong>iPhone/iPad (Safari):</strong> Tap the <em>Share</em> icon (square with arrow pointing up) at the bottom of the screen, scroll down, and tap <strong>Add to Home Screen</strong>.</li>
+                <li><strong>Android (Chrome):</strong> Tap the 3-dot menu icon in the top right, then tap <strong>Add to Home screen</strong> or <strong>Install app</strong>.</li>
+                <li><strong>Desktop (Chrome/Edge):</strong> Click the install icon (monitor with a down arrow) on the far right side of the URL address bar, or go to the browser Menu &gt; Save and share &gt; <strong>Install page as app</strong>.</li>
+            </ul>
+        </div>
+      </div>
+    </section>
+
   </main>
 
   <!-- MODALS -->
@@ -243,19 +304,13 @@
     </div>
   </div>
 
-  <!-- FULL 10-ATTRIBUTE BUDGET MODAL -->
   <div id="budgetModal" class="fixed inset-0 bg-slate-900/60 hidden items-center justify-center p-4 z-50">
     <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4 text-xs">
       <h3 id="budgetModalTitle" class="text-base font-bold">Add Budget Target</h3>
-      
-      <select id="newBudgCategory" class="w-full border rounded px-3 py-2">
-         <option value="" disabled selected>Select Group/Category...</option>
-         <!-- Populated via JS -->
-      </select>
+      <select id="newBudgCategory" class="w-full border rounded px-3 py-2"><option value="" disabled selected>Select Group/Category...</option></select>
       <select id="newBudgPriority" class="w-full border rounded px-3 py-2">
          <option value="" disabled selected>Priority Type...</option>
-         <option value="Necessity">Necessity</option>
-         <option value="Want">Want</option>
+         <option value="Necessity">Necessity</option><option value="Want">Want</option>
       </select>
       <select id="newBudgType" class="w-full border rounded px-3 py-2" onchange="toggleBudgetTargetDate()">
         <option value="" disabled selected>Select Budget Rule Type...</option>
@@ -263,18 +318,15 @@
         <option value="Annual">Annual (divided by 12)</option>
         <option value="Target Month">Target Month</option>
       </select>
-      
       <input id="newBudgAmount" type="number" step="0.01" placeholder="Target Value Amount ($)..." class="w-full border rounded px-3 py-2 font-mono-num" />
       
-      <!-- Only shows if 'Target Month' is selected -->
       <div id="targetMonthContainer" class="hidden space-y-1">
         <label class="text-[10px] text-slate-500 font-bold uppercase">Target Deadline Month</label>
         <input id="newBudgDate" type="month" class="w-full border rounded px-3 py-2" />
-        <p class="text-[10px] text-slate-400 leading-tight">Start_Month will be anchored to your currently selected dashboard month (${appState.selectedMonth}) to lock the fraction.</p>
+        <p class="text-[10px] text-slate-400 leading-tight">Start_Month will be anchored to your currently selected dashboard month to lock the fraction.</p>
       </div>
 
       <input id="newBudgNotes" type="text" placeholder="Notes (Optional)..." class="w-full border rounded px-3 py-2" />
-      
       <div class="flex justify-end gap-2 pt-2">
         <button onclick="closeBudgetModal()" class="px-3 py-1.5 border rounded">Cancel</button>
         <button id="saveBudgetBtn" onclick="saveBudget()" class="px-3 py-1.5 bg-[#6c5ce7] text-white rounded">Save Budget</button>
@@ -287,11 +339,8 @@
       <h3 class="text-base font-bold">Add Goal</h3>
       <input id="newGoalName" type="text" placeholder="Goal Name..." class="w-full border rounded px-3 py-2" />
       <input id="newGoalDesc" type="text" placeholder="Description..." class="w-full border rounded px-3 py-2" />
-      <select id="newGoalAccount" class="w-full border rounded px-3 py-2">
-          <option value="" disabled selected>Link to Account...</option>
-      </select>
+      <select id="newGoalAccount" class="w-full border rounded px-3 py-2"><option value="" disabled selected>Link to Account...</option></select>
       <input id="newGoalAmount" type="number" step="0.01" placeholder="Target Value ($)..." class="w-full border rounded px-3 py-2 font-mono-num" />
-      
       <div class="flex justify-end gap-2 pt-2">
         <button onclick="closeGoalModal()" class="px-3 py-1.5 border rounded">Cancel</button>
         <button onclick="saveGoal()" class="px-3 py-1.5 bg-emerald-600 text-white rounded">Save Goal</button>
@@ -299,24 +348,61 @@
     </div>
   </div>
 
-  <!-- SCRIPT ENGINE: CSV LOADER & 8-TABLE RELATIONAL MODEL -->
+  <!-- SCRIPT ENGINE: LOCAL STORAGE, JSON BACKUP & 8-TABLE RELATIONAL MODEL -->
   <script>
+    const STORAGE_KEY = 'ktbudget_data_v2';
     let db = { groups: [], categories: [], group_category: [], accounts: [], budgets: [], goals: [], todos: [], transactions: [] };
     let appState = { selectedMonth: '2026-10', customMonths: ['2026-10', '2026-09'], show12Mo: false };
 
+    // --- DATA PERSISTENCE & BACKUP ---
+    function saveDataToLocal() {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(db));
+    }
+
+    function exportData() {
+        const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(db));
+        const downloadAnchorNode = document.createElement('a');
+        downloadAnchorNode.setAttribute("href", dataStr);
+        downloadAnchorNode.setAttribute("download", "ktbudget_backup_" + new Date().toISOString().slice(0,10) + ".json");
+        document.body.appendChild(downloadAnchorNode);
+        downloadAnchorNode.click();
+        downloadAnchorNode.remove();
+    }
+
+    function importData() {
+        const file = document.getElementById('importFile').files[0];
+        if (!file) return alert("Please select a JSON backup file first.");
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            try {
+                const importedDb = JSON.parse(e.target.result);
+                if(importedDb && importedDb.accounts && importedDb.transactions) {
+                    db = importedDb;
+                    saveDataToLocal();
+                    alert("Data successfully restored! The app will now reload.");
+                    location.reload();
+                } else {
+                    alert("Invalid backup file structure.");
+                }
+            } catch(err) {
+                alert("Error parsing JSON file.");
+            }
+        };
+        reader.readAsText(file);
+    }
+
     // --- DEMO DATA GENERATOR ---
     function getDemoData(table) {
-        document.getElementById('demoDataAlert').classList.remove('hidden');
         const demo = {
             groups: [{ Group_ID: 'G_WANTS', Name: 'Wants', Type: 'Flexible', Impact: 'personal', Budget: 'Yes' }, { Group_ID: 'G_NEC', Name: 'Personal necessities', Type: 'Fixed', Impact: 'personal', Budget: 'Yes' }],
             categories: [{ Category_ID: 'C_CLOTH', Name: 'Clothing & online shopping', Type: 'Flexible', Impact: 'personal', Budget: 'Yes' }, { Category_ID: 'C_GROC', Name: 'Groceries & household', Type: 'Flexible', Impact: 'personal', Budget: 'Yes' }],
             group_category: [{ GC_ID: 'GC_1', Group_ID: 'G_WANTS', Category_ID: 'C_CLOTH', Display_Label: 'Wants::Clothing & online shopping' }, { GC_ID: 'GC_2', Group_ID: 'G_NEC', Category_ID: 'C_GROC', Display_Label: 'Personal necessities::Groceries & household' }],
-            accounts: [{ Account_ID: 'Chase', Name: 'Chase Checking', Type: 'CCard', Balance: '5471.25', Default_GC_ID: 'C_GROC' }, { Account_ID: 'Savings_1', Name: 'Dog Emergency Fund', Type: 'Savings', Balance: '150.00', Default_GC_ID: 'C_GROC' }], // Savings_1 maps to C_GROC for demo goal test
+            accounts: [{ Account_ID: 'Chase', Name: 'Chase Checking', Type: 'CCard', Balance: '5471.25', Default_GC_ID: 'C_GROC' }, { Account_ID: 'Savings_1', Name: 'Dog Emergency Fund', Type: 'Savings', Balance: '150.00', Default_GC_ID: 'C_GROC' }],
             budgets: [
                 { Budget_ID: 'B_001', Scope_Level: 'Category', Target_Ref_ID: 'C_CLOTH', Priority_Type: 'Want', Rule_Type: 'Each Month', Amount: '125.00', Start_Month: '2026-10', Target_Month: '', Is_Demo: '1', Notes: 'Standard allowance' },
                 { Budget_ID: 'B_002', Scope_Level: 'Category', Target_Ref_ID: 'C_GROC', Priority_Type: 'Necessity', Rule_Type: 'Annual', Amount: '6000.00', Start_Month: '2026-01', Target_Month: '', Is_Demo: '1', Notes: 'Averages 500/mo' }
             ],
-            goals: [{ Goal_ID: 'GL_1', Name: 'Vet Emergency', Description: 'Buffer for unexpected pet costs', Linked_Account: 'Savings_1', Target_Value: '50.00' }], // This $50 will map to C_GROC
+            goals: [{ Goal_ID: 'GL_1', Name: 'Vet Emergency', Description: 'Buffer for unexpected pet costs', Linked_Account: 'Savings_1', Target_Value: '50.00' }],
             transactions: [{ Txn_ID: 'T001', Month: '2026-10', Account_ID: 'Chase', Merchant: 'Target Groceries', GC_ID: 'C_GROC', Amount: '145.20', Include: '1' }],
             todos: [{ Task: 'Update Salon Allocations', Type: 'Budgeting', Due_Date: '2026-10-31', Priority: 'High' }]
         };
@@ -325,7 +411,7 @@
 
     async function loadCsv(filename) {
       try {
-        const res = await fetch('./' + filename);
+        const res = await fetch('./' + filename + '?v=' + new Date().getTime());
         if (!res.ok) throw new Error('Not found');
         const text = await res.text();
         const data = parseCsv(text);
@@ -349,7 +435,7 @@
       });
     }
 
-    async function initApp() {
+    async function seedDatabase() {
       db.groups = await loadCsv('groups.csv');
       db.categories = await loadCsv('categories.csv');
       db.group_category = await loadCsv('group_category.csv');
@@ -358,6 +444,22 @@
       db.goals = await loadCsv('goals.csv');
       db.todos = await loadCsv('todos.csv');
       db.transactions = await loadCsv('transactions.csv');
+      saveDataToLocal(); // Save seed immediately
+      document.getElementById('demoDataAlert').classList.remove('hidden');
+    }
+
+    async function initApp() {
+      const localData = localStorage.getItem(STORAGE_KEY);
+      if (localData) {
+          try {
+              db = JSON.parse(localData);
+          } catch (e) {
+              console.error("Local data parse error, re-seeding.", e);
+              await seedDatabase();
+          }
+      } else {
+          await seedDatabase();
+      }
 
       // Sync months from transactions
       const mSet = new Set(appState.customMonths);
@@ -388,7 +490,7 @@
     }
 
     function switchTab(tabId) {
-      ['bva', 'ledger', 'canvas', 'accounts'].forEach(id => {
+      ['bva', 'ledger', 'canvas', 'accounts', 'admin'].forEach(id => {
         document.getElementById('tab-' + id).classList.toggle('hidden', id !== tabId);
         document.getElementById('tabBtn-' + id).className = id === tabId
           ? 'tab-btn px-3.5 py-2 rounded-lg text-xs font-semibold flex items-center gap-2 transition whitespace-nowrap bg-[#252d5c] text-indigo-200 border border-indigo-500/40'
@@ -416,10 +518,8 @@
     }
 
     function getMonthlyTargetCalculation(bg) {
-        // NUANCE 3: TARGET MONTH & ANNUAL FRACTIONS
         const baseAmt = Number(bg.Amount) || 0;
-        const rType = bg.Rule_Type || bg.Type || 'Each Month'; // Support legacy Type
-
+        const rType = bg.Rule_Type || bg.Type || 'Each Month'; 
         if (rType === 'Annual') {
             return baseAmt / 12;
         } else if (rType === 'Target Month' && bg.Start_Month && bg.Target_Month) {
@@ -450,13 +550,8 @@
       let totT = 0, totC = 0, totP = 0;
       const priorMo = appState.selectedMonth === '2026-10' ? '2026-09' : '2026-09';
 
-      db.budgets.forEach(b => {
-          totT += getMonthlyTargetCalculation(b);
-      });
-      // Nuance 5: Goals roll into the global target too
-      db.goals.forEach(g => {
-          totT += (Number(g.Target_Value) || 0);
-      });
+      db.budgets.forEach(b => { totT += getMonthlyTargetCalculation(b); });
+      db.goals.forEach(g => { totT += (Number(g.Target_Value) || 0); });
 
       db.transactions.forEach(t => {
         const amt = Number(t.Amount) || 0;
@@ -489,18 +584,16 @@
           </tr>
         ` + groupGc.map(gc => {
           const bg = db.budgets.find(b => b.Target_Ref_ID === gc.Category_ID) || { Amount: 0, Rule_Type: 'Each Month' };
-          
           let target = getMonthlyTargetCalculation(bg);
           const rType = bg.Rule_Type || bg.Type || 'Each Month';
           const priorityBadge = bg.Priority_Type ? `<span class="mr-1 text-[9px] uppercase tracking-wider text-slate-400 font-bold">${bg.Priority_Type.substring(0,1)}</span>` : '';
 
-          // NUANCE 5: Goal contributions roll up into specific Categories based on Account Default_GC_ID
           const linkedGoals = db.goals.filter(goal => {
               const acc = db.accounts.find(a => a.Account_ID === goal.Linked_Account);
               return acc && acc.Default_GC_ID === gc.Category_ID;
           });
           const goalExtra = linkedGoals.reduce((sum, goal) => sum + (Number(goal.Target_Value) || 0), 0);
-          target += goalExtra; // Add Goal target to Base Budget target
+          target += goalExtra; 
           
           const actual = db.transactions
             .filter(t => t.Include === '1' && t.GC_ID === gc.Category_ID && t.Month === appState.selectedMonth)
@@ -513,8 +606,6 @@
             .filter(t => t.Include === '1' && t.GC_ID === gc.Category_ID && (t.Month || '').startsWith('2026'))
             .reduce((s, t) => s + (Number(t.Amount) || 0), 0);
           const meter = target > 0 ? Math.round((actual / target) * 100) : 0;
-
-          // Note if target includes a Goal rollover
           const goalNote = goalExtra > 0 ? `<div class="text-[9px] text-emerald-600 font-bold mt-0.5">+${fmtCurrency(goalExtra)} Goal rollup</div>` : '';
 
           return `
@@ -540,7 +631,7 @@
 
     function renderLedger() {
       const tbody = document.getElementById('ledgerTableBody');
-      tbody.innerHTML = db.transactions.map(t => `
+      tbody.innerHTML = db.transactions.map((t, idx) => `
         <tr class="hover:bg-slate-50 ${t.Include !== '1' ? 'opacity-50' : ''}">
           <td class="py-3 pl-4"><input type="checkbox" ${t.Include === '1' ? 'checked' : ''} disabled /></td>
           <td class="py-3 font-mono-num text-[11px] text-slate-500">${t.Txn_ID}</td>
@@ -549,9 +640,17 @@
           <td class="py-3 text-slate-800">${t.Merchant}</td>
           <td class="py-3 font-mono-num text-slate-500">${t.GC_ID}</td>
           <td class="py-3 text-right font-mono-num font-bold">${fmtCurrency(t.Amount)}</td>
-          <td class="py-3 pl-2 pr-4 text-right text-slate-400">&times;</td>
+          <td class="py-3 pl-2 pr-4 text-right"><button onclick="deleteTransaction(${idx})" class="text-slate-400 hover:text-rose-600 font-bold text-lg leading-none">&times;</button></td>
         </tr>
       `).join('');
+    }
+
+    function deleteTransaction(idx) {
+        if(confirm('Delete transaction?')) {
+            db.transactions.splice(idx, 1);
+            saveDataToLocal();
+            renderAll();
+        }
     }
 
     function renderTodos() {
@@ -616,13 +715,6 @@
       }).join('');
     }
 
-    function deleteBudget(idx) {
-        if(confirm('Remove this budget item?')) {
-            db.budgets.splice(idx, 1);
-            renderAll();
-        }
-    }
-
     // Modal Control Functions
     function openTransactionModal() { document.getElementById('txnModal').classList.remove('hidden'); document.getElementById('txnModal').classList.add('flex'); }
     function closeTransactionModal() { document.getElementById('txnModal').classList.add('hidden'); document.getElementById('txnModal').classList.remove('flex'); }
@@ -632,6 +724,7 @@
       if (amount <= 0) return;
       db.transactions.push({ Txn_ID: 'T' + Math.floor(Math.random()*1000), Month: appState.selectedMonth, Account_ID: 'Chase', Merchant: merchant, Amount: amount, GC_ID: 'C_GROC', Include: '1' });
       document.getElementById('newTxnMerchant').value = ''; document.getElementById('newTxnAmount').value = '';
+      saveDataToLocal();
       closeTransactionModal(); renderAll();
     }
     
@@ -646,13 +739,13 @@
         const balance = document.getElementById('newAccBalance').value;
         if(name && type) {
             db.accounts.push({ Account_ID: name.replace(/\s+/g, ''), Name: name, Type: type, Balance: balance, Default_GC_ID: '' });
+            saveDataToLocal();
             populateDropdowns();
             renderAll();
             closeAccountModal();
         }
     }
 
-    // --- FULL BUDGET EDIT / SAVE LOGIC ---
     let editingBudgetIdx = -1;
     function openBudgetModal(idx = -1) { 
         editingBudgetIdx = idx;
@@ -677,7 +770,6 @@
             document.getElementById('newBudgNotes').value = '';
             document.getElementById('targetMonthContainer').classList.add('hidden');
         }
-
         document.getElementById('budgetModal').classList.remove('hidden'); 
         document.getElementById('budgetModal').classList.add('flex'); 
     }
@@ -707,14 +799,13 @@
                 Priority_Type: prio,
                 Rule_Type: type,
                 Amount: amt,
-                Start_Month: appState.selectedMonth, // Nuance 3: Anchor start date to currently viewed month
+                Start_Month: appState.selectedMonth, 
                 Target_Month: type === 'Target Month' ? tDate : '',
                 Is_Demo: '0',
                 Notes: notes
             };
 
             if (editingBudgetIdx >= 0) {
-                // Preserve immutable fields if updating
                 bData.Budget_ID = db.budgets[editingBudgetIdx].Budget_ID || bData.Budget_ID;
                 bData.Start_Month = db.budgets[editingBudgetIdx].Start_Month || bData.Start_Month;
                 bData.Is_Demo = db.budgets[editingBudgetIdx].Is_Demo || '0';
@@ -722,9 +813,17 @@
             } else {
                 db.budgets.push(bData);
             }
-
+            saveDataToLocal();
             renderAll();
             closeBudgetModal();
+        }
+    }
+
+    function deleteBudget(idx) {
+        if(confirm('Remove this budget item?')) {
+            db.budgets.splice(idx, 1);
+            saveDataToLocal();
+            renderAll();
         }
     }
 
@@ -737,6 +836,7 @@
         const amt = document.getElementById('newGoalAmount').value;
         if(name && acc && amt) {
             db.goals.push({ Goal_ID: 'GL_' + Math.floor(Math.random()*100), Name: name, Description: desc, Linked_Account: acc, Target_Value: amt });
+            saveDataToLocal();
             renderAll();
             closeGoalModal();
         }
