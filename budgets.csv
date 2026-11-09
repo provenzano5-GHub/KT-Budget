@@ -1,7 +1,7 @@
 Budget_ID,Scope_Level,Target_Ref_ID,Priority_Type,Rule_Type,Amount,Start_Month,Target_Month,Is_Demo,Notes
-B_001,Group, G_WANTS, Want, Each Month, 300.00, 2026-10, , 1, Overall Wants Group Budget
-B_002,Category, C_CLOTH, Want, Each Month, 125.00, 2026-10, , 1, Standard allowance
-B_003,Category, C_GROC, Necessity, Annual, 6000.00, 2026-01, , 1, Averages 500/mo
+B_001,Group,G_WANTS,Want,Each Month,300.00,2026-10,2026-01,1,Overall Wants Group Budget
+B_002,Category,C_CLOTH,Want,Each Month,125.00,2026-10,2026-01,1,Standard allowance
+B_003,Category,C_GROC,Necessity,Annual,6000.00,2026-01,2026-01,1,Averages 500/mo
 BDG_001,Group_Category,SAL_RENT,Necessity,Each Month,525.00,2026-01,2026-12,1,Fixed monthly salon booth rent
 BDG_002,Group_Category,SAL_SUP,Necessity,Each Month,300.00,2026-01,2026-12,1,Monthly color and backbar product allowance
 BDG_003,Group_Category,SAL_BOOK,Necessity,Each Month,51.70,2026-01,2026-12,1,Monthly booking software fee
