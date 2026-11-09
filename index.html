@@ -4,10 +4,14 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   
-  <!-- Prevent browser caching of the HTML file so code updates push immediately -->
+  <!-- Prevent browser caching of the HTML shell -->
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
   <meta http-equiv="Pragma" content="no-cache" />
   <meta http-equiv="Expires" content="0" />
+  
+  <!-- iOS specific tags for Web App Standalone Mode -->
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
 
   <title>KTBudget 2.0: Relational Financial Canvas</title>
   <script src="https://cdn.tailwindcss.com"></script>
@@ -21,8 +25,14 @@
 </head>
 <body class="min-h-screen flex flex-col">
 
+  <!-- UNSAVED CHANGES NAG BANNER -->
+  <div id="backupNagBanner" class="hidden bg-rose-600 text-white px-4 py-2 text-xs font-bold items-center justify-center gap-3 shadow-md z-50 sticky top-0">
+    <span>⚠ You have unsaved changes! Your data is at risk of being cleared by the browser.</span>
+    <button onclick="switchTab('admin');" class="bg-white text-rose-700 px-3 py-1 rounded shadow-sm hover:bg-rose-50 transition">Go to Backup Tab</button>
+  </div>
+
   <!-- TOP NAV & HEADER -->
-  <header class="bg-[#141936] text-white border-b border-slate-800 sticky top-0 z-40 shadow-lg">
+  <header class="bg-[#141936] text-white border-b border-slate-800 shadow-lg">
     <div class="max-w-[1440px] mx-auto px-4 sm:px-6 pt-4 pb-3 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
       <div class="flex items-center gap-3.5">
         <div class="w-11 h-11 rounded-xl bg-[#6c5ce7] flex items-center justify-center font-extrabold text-lg tracking-tight shadow-inner shrink-0">KT</div>
@@ -30,10 +40,10 @@
           <div class="flex items-center gap-2.5 flex-wrap">
             <h1 class="text-xl font-extrabold tracking-tight text-white">KTBudget 2.0</h1>
             <span class="px-2.5 py-0.5 text-[11px] font-semibold rounded-full bg-indigo-950/90 text-indigo-300 border border-indigo-700/60">
-              Relational 8-Table Engine • v2.5.0
+              Relational 8-Table Engine • v2.6.0
             </span>
           </div>
-          <p class="text-xs text-slate-400 mt-0.5">Local Storage Engine • JSON Backup/Restore</p>
+          <p class="text-xs text-slate-400 mt-0.5">App Shield • Persistent Backup Monitor</p>
         </div>
       </div>
 
@@ -45,9 +55,6 @@
         </div>
         <button onclick="openTransactionModal()" class="bg-[#6c5ce7] hover:bg-[#5b4bc4] text-white font-semibold text-xs px-4 py-2.5 rounded-lg shadow transition flex items-center gap-1.5">
           <span class="text-base leading-none">+</span> Add Transaction
-        </button>
-        <button onclick="openSplitModal()" class="bg-[#1e2548] hover:bg-slate-700 text-indigo-200 border border-indigo-500/40 text-xs px-3.5 py-2.5 rounded-lg transition font-semibold">
-          ✂ Split Transaction
         </button>
       </div>
     </div>
@@ -63,7 +70,7 @@
   </header>
 
   <!-- MAIN CONTAINER -->
-  <main class="max-w-[1440px] w-full mx-auto px-4 sm:px-6 py-6 flex-1 space-y-6">
+  <main class="max-w-[1440px] w-full mx-auto px-4 sm:px-6 py-6 flex-1 space-y-6 relative">
 
     <!-- ALERT BANNER FOR DEMO DATA -->
     <div id="demoDataAlert" class="hidden bg-amber-50 border border-amber-200 text-amber-800 px-4 py-3 rounded-xl text-sm shadow-sm flex items-center justify-between">
@@ -103,11 +110,6 @@
           <div>
             <h2 class="text-base font-bold text-slate-900">Relational Group &amp; Category Budget Allocations</h2>
             <p class="text-xs text-slate-400">Click <strong>[12-Mo]</strong> on any row to open the 12-month backward history and forward projection trend view.</p>
-          </div>
-          <div class="flex items-center gap-2">
-            <button onclick="toggleGlobal12MonthView()" id="global12MoBtn" class="text-xs bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-semibold px-3.5 py-2 rounded-lg border border-indigo-200 transition">
-              📅 Expand All 12-Month Columns
-            </button>
           </div>
         </div>
 
@@ -166,7 +168,6 @@
             <h2 class="text-base font-bold text-slate-900">Budget Canvas (Setup &amp; Adjustments)</h2>
             <button onclick="openBudgetModal(-1)" class="bg-[#6c5ce7] hover:bg-[#5b4bc4] text-white text-xs font-semibold px-3.5 py-2 rounded-lg transition">+ Add Budget</button>
         </div>
-        
         <div class="overflow-x-auto">
           <table class="w-full text-left border-collapse min-w-[900px]">
             <thead>
@@ -182,9 +183,6 @@
             <tbody id="budgetSetupTableBody" class="divide-y divide-slate-100 text-xs"></tbody>
           </table>
         </div>
-        
-        <h3 class="text-sm font-bold text-slate-900 mt-6 border-b border-slate-100 pb-2">To-Dos &amp; Reminders</h3>
-        <div id="todoTableBody" class="space-y-2 text-xs"></div>
       </div>
     </section>
 
@@ -211,7 +209,6 @@
             <h2 class="text-lg font-bold text-slate-900">System Admin &amp; Data Backup</h2>
             <p class="text-sm text-slate-500 mt-1">Manage your local device data and app installation.</p>
         </div>
-
         <div class="bg-amber-50 border border-amber-200 p-4 rounded-lg flex items-start gap-4">
             <div class="text-amber-500 text-2xl">⚠</div>
             <div>
@@ -224,7 +221,6 @@
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <!-- EXPORT -->
             <div class="border border-slate-200 rounded-lg p-5 space-y-4">
                 <div>
                     <h3 class="font-bold text-slate-800 text-sm">Download Backup</h3>
@@ -234,7 +230,6 @@
                     ⬇️ Download Backup (JSON)
                 </button>
             </div>
-            <!-- IMPORT -->
             <div class="border border-slate-200 rounded-lg p-5 space-y-4">
                 <div>
                     <h3 class="font-bold text-slate-800 text-sm">Restore Data</h3>
@@ -246,19 +241,27 @@
                 </button>
             </div>
         </div>
-
-        <div class="border-t border-slate-100 pt-5 mt-6">
-            <h3 class="font-bold text-slate-800 text-sm mb-3">How to Install as an App</h3>
-            <ul class="text-xs text-slate-600 space-y-3 list-disc pl-5">
-                <li><strong>iPhone/iPad (Safari):</strong> Tap the <em>Share</em> icon (square with arrow pointing up) at the bottom of the screen, scroll down, and tap <strong>Add to Home Screen</strong>.</li>
-                <li><strong>Android (Chrome):</strong> Tap the 3-dot menu icon in the top right, then tap <strong>Add to Home screen</strong> or <strong>Install app</strong>.</li>
-                <li><strong>Desktop (Chrome/Edge):</strong> Click the install icon (monitor with a down arrow) on the far right side of the URL address bar, or go to the browser Menu &gt; Save and share &gt; <strong>Install page as app</strong>.</li>
-            </ul>
-        </div>
       </div>
     </section>
 
   </main>
+
+  <!-- APP INSTALL SHIELD OVERLAY -->
+  <div id="installShieldOverlay" class="fixed inset-0 bg-[#141936] z-[100] hidden flex-col items-center justify-center p-6 text-white text-center">
+    <div class="w-16 h-16 rounded-2xl bg-[#6c5ce7] flex items-center justify-center font-extrabold text-3xl tracking-tight shadow-inner mb-6">KT</div>
+    <h2 class="text-2xl font-bold mb-3">Install App to Secure Data</h2>
+    <p class="text-slate-300 max-w-md text-sm leading-relaxed mb-6">
+      Mobile operating systems will silently delete browser data to free up space. To prevent your financial data from being wiped, you must install this app to your Home Screen.
+    </p>
+    <div class="bg-[#1e2548] border border-slate-700 p-5 rounded-xl max-w-md text-left text-sm space-y-3 w-full shadow-lg">
+      <p><strong>iOS (Safari):</strong> Tap the <em>Share</em> icon at the bottom, scroll down, and tap <strong>Add to Home Screen</strong>.</p>
+      <p><strong>Android (Chrome):</strong> Tap the 3-dot menu, then tap <strong>Add to Home screen</strong>.</p>
+      <p><strong>Desktop:</strong> Click the monitor/install icon in the address bar.</p>
+    </div>
+    <div class="mt-8 pt-6 border-t border-slate-700 max-w-md w-full">
+       <button onclick="bypassInstallShield()" class="text-xs text-slate-500 hover:text-slate-300 underline">I understand the risks, continue in browser (Not Recommended)</button>
+    </div>
+  </div>
 
   <!-- MODALS -->
   <div id="txnModal" class="fixed inset-0 bg-slate-900/60 hidden items-center justify-center p-4 z-50">
@@ -273,17 +276,6 @@
     </div>
   </div>
 
-  <div id="splitModal" class="fixed inset-0 bg-slate-900/60 hidden items-center justify-center p-4 z-50">
-    <div class="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl space-y-4 text-xs">
-      <h3 class="text-base font-bold">Split Transaction Across Accounts or Categories</h3>
-      <p class="text-slate-500">Note: Per architecture Nuance 1, this will generate multi-row entries in the ledger linked to destination accounts (coming in a future data-import update).</p>
-      <div class="flex justify-end gap-2 pt-2">
-        <button onclick="closeSplitModal()" class="px-3 py-1.5 border rounded">Cancel</button>
-        <button onclick="alert('Split transaction recorded successfully.'); closeSplitModal();" class="px-3 py-1.5 bg-[#6c5ce7] text-white rounded">Process Split</button>
-      </div>
-    </div>
-  </div>
-
   <div id="accountModal" class="fixed inset-0 bg-slate-900/60 hidden items-center justify-center p-4 z-50">
     <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4 text-xs">
       <h3 class="text-base font-bold">Add New Account</h3>
@@ -293,8 +285,7 @@
         <option value="Loan">Loan</option><option value="Income">Income</option>
         <option value="Savings">Savings</option><option value="Tax">Tax</option>
         <option value="Payment">Payment</option><option value="CCard">CCard</option>
-        <option value="Bill">Bill</option><option value="Investment">Investment</option>
-        <option value="other">Other</option>
+        <option value="Bill">Bill</option><option value="Investment">Investment</option><option value="other">Other</option>
       </select>
       <input id="newAccBalance" type="number" step="0.01" placeholder="Starting Balance ($)..." class="w-full border rounded px-3 py-2 font-mono-num" />
       <div class="flex justify-end gap-2 pt-2">
@@ -314,18 +305,13 @@
       </select>
       <select id="newBudgType" class="w-full border rounded px-3 py-2" onchange="toggleBudgetTargetDate()">
         <option value="" disabled selected>Select Budget Rule Type...</option>
-        <option value="Each Month">Each Month</option>
-        <option value="Annual">Annual (divided by 12)</option>
-        <option value="Target Month">Target Month</option>
+        <option value="Each Month">Each Month</option><option value="Annual">Annual (divided by 12)</option><option value="Target Month">Target Month</option>
       </select>
       <input id="newBudgAmount" type="number" step="0.01" placeholder="Target Value Amount ($)..." class="w-full border rounded px-3 py-2 font-mono-num" />
-      
       <div id="targetMonthContainer" class="hidden space-y-1">
         <label class="text-[10px] text-slate-500 font-bold uppercase">Target Deadline Month</label>
         <input id="newBudgDate" type="month" class="w-full border rounded px-3 py-2" />
-        <p class="text-[10px] text-slate-400 leading-tight">Start_Month will be anchored to your currently selected dashboard month to lock the fraction.</p>
       </div>
-
       <input id="newBudgNotes" type="text" placeholder="Notes (Optional)..." class="w-full border rounded px-3 py-2" />
       <div class="flex justify-end gap-2 pt-2">
         <button onclick="closeBudgetModal()" class="px-3 py-1.5 border rounded">Cancel</button>
@@ -348,18 +334,52 @@
     </div>
   </div>
 
-  <!-- SCRIPT ENGINE: LOCAL STORAGE, JSON BACKUP & 8-TABLE RELATIONAL MODEL -->
+  <!-- SCRIPT ENGINE: LOCAL STORAGE, JSON BACKUP, INSTALL SHIELD -->
   <script>
     const STORAGE_KEY = 'ktbudget_data_v2';
-    let db = { groups: [], categories: [], group_category: [], accounts: [], budgets: [], goals: [], todos: [], transactions: [] };
+    let db = { groups: [], categories: [], group_category: [], accounts: [], budgets: [], goals: [], todos: [], transactions: [], lastModified: 0, lastBackup: 0 };
     let appState = { selectedMonth: '2026-10', customMonths: ['2026-10', '2026-09'], show12Mo: false };
+
+    // --- INSTALL SHIELD ENFORCEMENT ---
+    function checkInstallMode() {
+        // Detects if app is running in Standalone (installed) mode on iOS, Android, Desktop
+        const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+        if (!isStandalone && !sessionStorage.getItem('bypassedInstallShield')) {
+            document.getElementById('installShieldOverlay').classList.remove('hidden');
+            document.getElementById('installShieldOverlay').classList.add('flex');
+        }
+    }
+    
+    function bypassInstallShield() {
+        sessionStorage.setItem('bypassedInstallShield', 'true');
+        document.getElementById('installShieldOverlay').classList.add('hidden');
+        document.getElementById('installShieldOverlay').classList.remove('flex');
+    }
+
+    // --- PERSISTENT BACKUP NAG LOGIC ---
+    function checkBackupStatus() {
+        const modTime = db.lastModified || 0;
+        const backTime = db.lastBackup || 0;
+        if (modTime > backTime && backTime > 0) {
+            document.getElementById('backupNagBanner').classList.remove('hidden');
+            document.getElementById('backupNagBanner').classList.add('flex');
+        } else {
+            document.getElementById('backupNagBanner').classList.add('hidden');
+            document.getElementById('backupNagBanner').classList.remove('flex');
+        }
+    }
 
     // --- DATA PERSISTENCE & BACKUP ---
     function saveDataToLocal() {
+        db.lastModified = Date.now(); // Stamp time on every change
         localStorage.setItem(STORAGE_KEY, JSON.stringify(db));
+        checkBackupStatus();
     }
 
     function exportData() {
+        db.lastBackup = Date.now(); // Stamp time of backup
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(db)); // Save timestamp to memory
+        
         const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(db));
         const downloadAnchorNode = document.createElement('a');
         downloadAnchorNode.setAttribute("href", dataStr);
@@ -367,6 +387,8 @@
         document.body.appendChild(downloadAnchorNode);
         downloadAnchorNode.click();
         downloadAnchorNode.remove();
+        
+        checkBackupStatus();
     }
 
     function importData() {
@@ -378,6 +400,7 @@
                 const importedDb = JSON.parse(e.target.result);
                 if(importedDb && importedDb.accounts && importedDb.transactions) {
                     db = importedDb;
+                    db.lastBackup = Date.now(); // Reset nag on fresh import
                     saveDataToLocal();
                     alert("Data successfully restored! The app will now reload.");
                     location.reload();
@@ -418,7 +441,6 @@
         if(data.length === 0) return getDemoData(filename);
         return data;
       } catch (e) {
-        console.warn(`Using fallback demo data for ${filename}:`, e);
         return getDemoData(filename);
       }
     }
@@ -444,24 +466,27 @@
       db.goals = await loadCsv('goals.csv');
       db.todos = await loadCsv('todos.csv');
       db.transactions = await loadCsv('transactions.csv');
-      saveDataToLocal(); // Save seed immediately
+      db.lastBackup = Date.now(); // First time counts as baseline
+      saveDataToLocal(); 
       document.getElementById('demoDataAlert').classList.remove('hidden');
     }
 
     async function initApp() {
+      checkInstallMode();
+        
       const localData = localStorage.getItem(STORAGE_KEY);
       if (localData) {
           try {
               db = JSON.parse(localData);
           } catch (e) {
-              console.error("Local data parse error, re-seeding.", e);
               await seedDatabase();
           }
       } else {
           await seedDatabase();
       }
 
-      // Sync months from transactions
+      checkBackupStatus();
+
       const mSet = new Set(appState.customMonths);
       db.transactions.forEach(t => { if (t.Month) mSet.add(t.Month); });
       appState.customMonths = Array.from(mSet).sort().reverse();
@@ -535,15 +560,8 @@
       const mSel = document.getElementById('monthSelect');
       mSel.innerHTML = appState.customMonths.map(m => `<option value="${m}">${m}</option>`).join('');
       mSel.value = appState.selectedMonth;
-
       document.getElementById('ledgerCountBadge').textContent = db.transactions.length;
-
-      renderKpis();
-      renderBudgetTable();
-      renderLedger();
-      renderTodos();
-      renderAccountsAndGoals();
-      renderBudgetSetup();
+      renderKpis(); renderBudgetTable(); renderLedger(); renderAccountsAndGoals(); renderBudgetSetup();
     }
 
     function renderKpis() {
@@ -619,7 +637,7 @@
               <td class="py-3 px-3 text-right font-mono-num text-indigo-700">${fmtCurrency(ytdActual)}</td>
               <td class="py-3 px-3 text-center font-mono-num text-slate-500">${meter}%</td>
               <td class="py-3 pl-3 pr-5 text-right">
-                <button onclick="alert('12-Month drill-down view for ${gc.Category_ID}: Expanding cross-year forward/backward arrays in upcoming UI extension.')" class="px-2 py-1 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded text-[11px] font-semibold transition">
+                <button onclick="alert('12-Month view coming soon.')" class="px-2 py-1 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded text-[11px] font-semibold transition">
                   [12-Mo]
                 </button>
               </td>
@@ -651,15 +669,6 @@
             saveDataToLocal();
             renderAll();
         }
-    }
-
-    function renderTodos() {
-      document.getElementById('todoTableBody').innerHTML = db.todos.map(td => `
-        <div class="p-3 bg-slate-50 rounded-lg border border-slate-200 flex justify-between items-center">
-          <div><span class="font-bold text-slate-800">${td.Task}</span> <span class="text-slate-400 text-[11px]">(${td.Type} • Due ${td.Due_Date})</span></div>
-          <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-800">${td.Priority}</span>
-        </div>
-      `).join('');
     }
 
     function renderAccountsAndGoals() {
@@ -728,9 +737,6 @@
       closeTransactionModal(); renderAll();
     }
     
-    function openSplitModal() { document.getElementById('splitModal').classList.remove('hidden'); document.getElementById('splitModal').classList.add('flex'); }
-    function closeSplitModal() { document.getElementById('splitModal').classList.add('hidden'); document.getElementById('splitModal').classList.remove('flex'); }
-
     function openAccountModal() { document.getElementById('accountModal').classList.remove('hidden'); document.getElementById('accountModal').classList.add('flex'); }
     function closeAccountModal() { document.getElementById('accountModal').classList.add('hidden'); document.getElementById('accountModal').classList.remove('flex'); }
     function saveAccount() {
