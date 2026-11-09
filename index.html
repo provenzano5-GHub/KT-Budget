@@ -10,7 +10,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
 
-  <title>KTBudget 3.1: Relational Financial Canvas</title>
+  <title>KTBudget 3.2: Relational Financial Canvas</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -18,20 +18,17 @@
   <style>
     body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; background-color: #f8fafc; color: #0f172a; }
     .font-mono-num { font-family: 'JetBrains Mono', monospace; }
-    /* Hide scrollbar for tabs */
     .no-scrollbar::-webkit-scrollbar { display: none; }
     .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
   </style>
 </head>
 <body class="min-h-screen flex flex-col">
 
-  <!-- UNSAVED CHANGES NAG BANNER -->
   <div id="backupNagBanner" class="hidden bg-rose-600 text-white px-4 py-2 text-xs font-bold items-center justify-center gap-3 shadow-md z-50 sticky top-0">
     <span>⚠ You have unsaved changes! Your data is at risk of being cleared by the browser.</span>
     <button onclick="switchTab('admin');" class="bg-white text-rose-700 px-3 py-1 rounded shadow-sm hover:bg-rose-50 transition">Go to Backup Tab</button>
   </div>
 
-  <!-- TOP NAV & HEADER -->
   <header class="bg-[#141936] text-white border-b border-slate-800 shadow-lg">
     <div class="max-w-[1440px] mx-auto px-4 sm:px-6 pt-4 pb-3 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
       <div class="flex items-center gap-3.5">
@@ -40,10 +37,10 @@
           <div class="flex items-center gap-2.5 flex-wrap">
             <h1 class="text-xl font-extrabold tracking-tight text-white">KTBudget 3.0</h1>
             <span class="px-2.5 py-0.5 text-[11px] font-semibold rounded-full bg-indigo-950/90 text-indigo-300 border border-indigo-700/60">
-              Relational 8-Table Engine • v3.1.0
+              Relational 8-Table Engine • v3.2.0
             </span>
           </div>
-          <p class="text-xs text-slate-400 mt-0.5">Legacy CSV Auto-Healing • 12-Month Drill-Down</p>
+          <p class="text-xs text-slate-400 mt-0.5">Effective Dating Engine • UI Data Healing</p>
         </div>
       </div>
 
@@ -59,7 +56,6 @@
       </div>
     </div>
 
-    <!-- TABS -->
     <div class="max-w-[1440px] mx-auto px-4 sm:px-6 pb-3 pt-1 flex items-center gap-2 overflow-x-auto no-scrollbar border-t border-slate-800/80">
       <button id="tabBtn-bva" onclick="switchTab('bva')" class="tab-btn px-3.5 py-2 rounded-lg text-xs font-semibold flex items-center gap-2 transition whitespace-nowrap bg-[#252d5c] text-indigo-200 border border-indigo-500/40">Budget vs Actual</button>
       <button id="tabBtn-ledger" onclick="switchTab('ledger')" class="tab-btn px-3.5 py-2 rounded-lg text-xs font-semibold flex items-center gap-2 transition whitespace-nowrap text-slate-300 hover:bg-[#1e2548]">Transactions Ledger (<span id="ledgerCountBadge">0</span>)</button>
@@ -69,7 +65,6 @@
     </div>
   </header>
 
-  <!-- MAIN CONTAINER -->
   <main class="max-w-[1440px] w-full mx-auto px-4 sm:px-6 py-6 flex-1 space-y-6 relative">
 
     <div id="demoDataAlert" class="hidden bg-amber-50 border border-amber-200 text-amber-800 px-4 py-3 rounded-xl text-sm shadow-sm flex items-center justify-between">
@@ -172,7 +167,7 @@
                 <th class="py-3">Priority</th>
                 <th class="py-3">Rule Type</th>
                 <th class="py-3 text-right">Base Amount</th>
-                <th class="py-3 text-center">Start &rarr; Target</th>
+                <th class="py-3 text-center">Start &rarr; End (Effective Dates)</th>
                 <th class="py-3 pl-2 pr-4 text-right">Actions</th>
               </tr>
             </thead>
@@ -354,23 +349,26 @@
 
   <div id="budgetModal" class="fixed inset-0 bg-slate-900/60 hidden items-center justify-center p-4 z-50">
     <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4 text-xs">
-      <h3 id="budgetModalTitle" class="text-base font-bold">Add Budget Target</h3>
+      <h3 id="budgetModalTitle" class="text-base font-bold">Add/Edit Budget Target</h3>
       <select id="newBudgCategory" class="w-full border rounded px-3 py-2"><option value="" disabled selected>Select Scope (Group or Category)...</option></select>
       <select id="newBudgPriority" class="w-full border rounded px-3 py-2">
          <option value="" disabled selected>Priority Type...</option>
          <option value="Necessity">Necessity</option><option value="Want">Want</option>
       </select>
-      <select id="newBudgType" class="w-full border rounded px-3 py-2" onchange="toggleBudgetTargetDate()">
+      <select id="newBudgType" class="w-full border rounded px-3 py-2">
         <option value="" disabled selected>Select Budget Rule Type...</option>
         <option value="Each Month">Each Month</option><option value="Annual">Annual (divided by 12)</option><option value="Target Month">Target Month</option>
       </select>
       <input id="newBudgAmount" type="number" step="0.01" placeholder="Target Value Amount ($)..." class="w-full border rounded px-3 py-2 font-mono-num" />
-      <div id="targetMonthContainer" class="hidden space-y-1">
-        <label class="text-[10px] text-slate-500 font-bold uppercase">Target Deadline Month</label>
+      
+      <div id="targetMonthContainer" class="space-y-1 mt-2">
+        <label class="text-[10px] text-slate-500 font-bold uppercase">End Month / Deadline (Optional)</label>
         <input id="newBudgDate" type="month" class="w-full border rounded px-3 py-2" />
+        <p class="text-[10px] text-slate-400 leading-tight">Leave blank for continuous. Used to close old budgets without breaking history (e.g. Rent change).</p>
       </div>
-      <input id="newBudgNotes" type="text" placeholder="Notes (Optional)..." class="w-full border rounded px-3 py-2" />
-      <div class="flex justify-end gap-2 pt-2">
+
+      <input id="newBudgNotes" type="text" placeholder="Notes (Optional)..." class="w-full border rounded px-3 py-2 mt-2" />
+      <div class="flex justify-end gap-2 pt-3 border-t mt-3">
         <button onclick="closeBudgetModal()" class="px-3 py-1.5 border rounded hover:bg-slate-50">Cancel</button>
         <button id="saveBudgetBtn" onclick="saveBudget()" class="px-3 py-1.5 bg-[#6c5ce7] text-white rounded">Save Budget</button>
       </div>
@@ -398,13 +396,12 @@
     </div>
   </div>
 
-  <!-- SCRIPT ENGINE: LOCAL STORAGE, JSON BACKUP, FULL CRUD & CROSS-YEAR MATH -->
+  <!-- SCRIPT ENGINE -->
   <script>
     const STORAGE_KEY = 'ktbudget_data_v2';
     let db = { groups: [], categories: [], group_category: [], accounts: [], budgets: [], goals: [], todos: [], transactions: [], lastModified: 0, lastBackup: 0 };
     let appState = { selectedMonth: '2026-10', customMonths: ['2026-10', '2026-09'], show12Mo: false };
 
-    // --- INSTALL SHIELD ---
     function checkInstallMode() {
         const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
         if (!isStandalone && !sessionStorage.getItem('bypassedInstallShield')) {
@@ -418,7 +415,6 @@
         document.getElementById('installShieldOverlay').classList.remove('flex');
     }
 
-    // --- NAG & PERSISTENCE ---
     function checkBackupStatus() {
         const modTime = db.lastModified || 0;
         const backTime = db.lastBackup || 0;
@@ -473,7 +469,6 @@
         reader.readAsText(file);
     }
 
-    // --- DEMO DATA SEEDING ---
     function getDemoData(table) {
         const demo = {
             groups: [{ Group_ID: 'G_WANTS', Name: 'Wants', Type: 'Flexible', Impact: 'personal', Budget: 'Yes' }, { Group_ID: 'G_NEC', Name: 'Personal necessities', Type: 'Fixed', Impact: 'personal', Budget: 'Yes' }],
@@ -527,7 +522,6 @@
       db.todos = await loadCsv('todos.csv');
       db.transactions = await loadCsv('transactions.csv');
       
-      // Auto-heal legacy budget items missing Scope_Level
       db.budgets.forEach(b => {
           if (!b.Scope_Level) {
               if (db.groups.some(g => g.Group_ID === b.Target_Ref_ID)) b.Scope_Level = 'Group';
@@ -548,8 +542,8 @@
       } else {
           await seedDatabase();
       }
-
       checkBackupStatus();
+
       const mSet = new Set(appState.customMonths);
       db.transactions.forEach(t => { if (t.Month) mSet.add(t.Month); });
       appState.customMonths = Array.from(mSet).sort().reverse();
@@ -623,7 +617,7 @@
       renderBudgetTable();
     }
 
-    // --- DYNAMIC DATE MATH ---
+    // --- DYNAMIC EFFECTIVE DATE MATH (V3.2.0 UPGRADE) ---
     function getPriorMonth(yyyy_mm) {
         let [y, m] = yyyy_mm.split('-').map(Number);
         m -= 1;
@@ -633,11 +627,16 @@
 
     function getMonthlyTargetCalculation(bg, calcMonthStr) {
         if (!bg) return 0;
+        
+        // Strict Effective Dating Boundaries
+        if (bg.Start_Month && calcMonthStr < bg.Start_Month) return 0;
+        if (bg.Target_Month && calcMonthStr > bg.Target_Month) return 0;
+
         const baseAmt = Number(bg.Amount) || 0;
         const rType = bg.Rule_Type || bg.Type || 'Each Month'; 
+        
         if (rType === 'Annual') return baseAmt / 12;
         if (rType === 'Target Month' && bg.Start_Month && bg.Target_Month) {
-            if (calcMonthStr < bg.Start_Month || calcMonthStr > bg.Target_Month) return 0; 
             const [sy, sm] = bg.Start_Month.split('-').map(Number);
             const [ty, tm] = bg.Target_Month.split('-').map(Number);
             const span = ((ty - sy) * 12) + (tm - sm) + 1;
@@ -652,7 +651,6 @@
       mSel.value = appState.selectedMonth;
       document.getElementById('ledgerCountBadge').textContent = db.transactions.length;
       
-      // Ensure all budgets have Scope_Level for robust mapping (Auto-healing step)
       db.budgets.forEach(b => {
           if (!b.Scope_Level) {
               if (db.groups.some(g => g.Group_ID === b.Target_Ref_ID)) b.Scope_Level = 'Group';
@@ -797,7 +795,6 @@
       }).join('');
     }
 
-    // --- 12-MONTH DRILL-DOWN LOGIC ---
     function openDrillDown(scope, refId, displayName) {
         document.getElementById('drillDownTitle').textContent = `12-Month Trend: ${displayName}`;
         const currYear = appState.selectedMonth.split('-')[0];
@@ -867,15 +864,19 @@
         document.getElementById('drillDownModal').classList.remove('flex');
     }
 
-    // CRUD RENDERS
     function renderLedger() {
       const tbody = document.getElementById('ledgerTableBody');
-      tbody.innerHTML = db.transactions.map((t, idx) => `
+      tbody.innerHTML = db.transactions.map((t, idx) => {
+        // UI Fix: Display actual account name instead of raw ID
+        const accObj = db.accounts.find(a => a.Account_ID === t.Account_ID);
+        const accDisplay = accObj ? accObj.Name : `<span class="text-rose-600" title="Unlinked ID: ${t.Account_ID}">⚠ ${t.Account_ID}</span>`;
+
+        return `
         <tr class="hover:bg-slate-50 ${t.Include !== '1' ? 'opacity-50' : ''}">
           <td class="py-3 pl-4"><input type="checkbox" ${t.Include === '1' ? 'checked' : ''} disabled /></td>
           <td class="py-3 font-mono-num text-[11px] text-slate-500">${t.Txn_ID}</td>
           <td class="py-3 font-mono-num text-slate-600">${t.Month}</td>
-          <td class="py-3 font-semibold text-slate-700">${t.Account_ID}</td>
+          <td class="py-3 font-semibold text-slate-700">${accDisplay}</td>
           <td class="py-3 text-slate-800">${t.Merchant}</td>
           <td class="py-3 font-mono-num text-slate-500">${t.GC_ID}</td>
           <td class="py-3 text-right font-mono-num font-bold">${fmtCurrency(t.Amount)}</td>
@@ -885,7 +886,7 @@
              <button onclick="deleteTransaction(${idx})" class="text-slate-400 hover:text-rose-600 font-bold text-lg leading-none align-middle" title="Delete">&times;</button>
           </td>
         </tr>
-      `).join('');
+      `}).join('');
     }
 
     function renderAccountsAndGoals() {
@@ -917,8 +918,6 @@
       const tbody = document.getElementById('budgetSetupTableBody');
       tbody.innerHTML = db.budgets.map((b, index) => {
         let dispName = b.Target_Ref_ID;
-        
-        // Auto-detect Scope for robust display (fixes legacy missing Scope_Level)
         if (b.Scope_Level === 'Group' || db.groups.some(g => g.Group_ID === b.Target_Ref_ID)) {
             const g = db.groups.find(x => x.Group_ID === b.Target_Ref_ID);
             dispName = g ? `📁 GROUP: ${g.Name}` : dispName;
@@ -933,7 +932,7 @@
         const bType = b.Rule_Type || b.Type || 'Each Month'; 
         const amt = Number(b.Amount) || 0;
         const prio = b.Priority_Type || '-';
-        const startTarget = (bType === 'Target Month') ? `${b.Start_Month} &rarr; ${b.Target_Month}` : `<span class="text-slate-300">Continuous</span>`;
+        const startTarget = `${b.Start_Month} &rarr; ${b.Target_Month ? b.Target_Month : '<span class="text-slate-300 italic">Continuous</span>'}`;
         
         return `
         <tr class="hover:bg-slate-50">
@@ -951,7 +950,6 @@
       }).join('');
     }
 
-    // --- FULL CRUD MODAL LOGIC ---
     let editingTxnIdx = -1;
     function openTransactionModal(idx = -1) {
         editingTxnIdx = idx;
@@ -959,6 +957,15 @@
         document.getElementById('saveTxnBtn').textContent = idx >= 0 ? 'Update' : 'Save';
         if (idx >= 0) {
             const t = db.transactions[idx];
+            
+            // UI Healing: If the transaction has an unmapped ID, inject it so the dropdown doesn't blank out
+            if (t.Account_ID && !db.accounts.some(a => a.Account_ID === t.Account_ID)) {
+                const sel = document.getElementById('newTxnAccount');
+                if(!sel.querySelector(`option[value="${t.Account_ID}"]`)) {
+                    sel.innerHTML += `<option value="${t.Account_ID}" class="text-rose-600">⚠ ${t.Account_ID} (Unlinked)</option>`;
+                }
+            }
+
             document.getElementById('newTxnAccount').value = t.Account_ID || '';
             document.getElementById('newTxnCategory').value = t.GC_ID || '';
             document.getElementById('newTxnMerchant').value = t.Merchant || '';
@@ -1125,7 +1132,6 @@
             document.getElementById('newBudgAmount').value = b.Amount || '';
             document.getElementById('newBudgDate').value = b.Target_Month || '';
             document.getElementById('newBudgNotes').value = b.Notes || '';
-            toggleBudgetTargetDate();
         } else {
             document.getElementById('newBudgCategory').value = '';
             document.getElementById('newBudgPriority').value = '';
@@ -1133,16 +1139,12 @@
             document.getElementById('newBudgAmount').value = '';
             document.getElementById('newBudgDate').value = '';
             document.getElementById('newBudgNotes').value = '';
-            document.getElementById('targetMonthContainer').classList.add('hidden');
         }
         document.getElementById('budgetModal').classList.remove('hidden'); document.getElementById('budgetModal').classList.add('flex'); 
     }
-    function toggleBudgetTargetDate() {
-        const type = document.getElementById('newBudgType').value;
-        const container = document.getElementById('targetMonthContainer');
-        if (type === 'Target Month') container.classList.remove('hidden'); else container.classList.add('hidden');
-    }
+
     function closeBudgetModal() { document.getElementById('budgetModal').classList.add('hidden'); document.getElementById('budgetModal').classList.remove('flex'); }
+    
     function saveBudget() {
         const selection = document.getElementById('newBudgCategory').value;
         const prio = document.getElementById('newBudgPriority').value;
@@ -1155,7 +1157,7 @@
             const [scope, targetRef] = selection.split('|');
             const bData = {
                 Budget_ID: 'B_' + Math.floor(Math.random()*10000), Scope_Level: scope, Target_Ref_ID: targetRef, Priority_Type: prio, Rule_Type: type, Amount: amt,
-                Start_Month: appState.selectedMonth, Target_Month: type === 'Target Month' ? tDate : '', Is_Demo: '0', Notes: notes
+                Start_Month: appState.selectedMonth, Target_Month: tDate, Is_Demo: '0', Notes: notes
             };
             if (editingBudgetIdx >= 0) {
                 bData.Budget_ID = db.budgets[editingBudgetIdx].Budget_ID || bData.Budget_ID;
