@@ -3,13 +3,9 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  
-  <!-- Prevent browser caching of the HTML shell -->
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
   <meta http-equiv="Pragma" content="no-cache" />
   <meta http-equiv="Expires" content="0" />
-  
-  <!-- iOS specific tags for Web App Standalone Mode -->
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
 
@@ -40,10 +36,10 @@
           <div class="flex items-center gap-2.5 flex-wrap">
             <h1 class="text-xl font-extrabold tracking-tight text-white">KTBudget 2.0</h1>
             <span class="px-2.5 py-0.5 text-[11px] font-semibold rounded-full bg-indigo-950/90 text-indigo-300 border border-indigo-700/60">
-              Relational 8-Table Engine • v2.6.0
+              Relational 8-Table Engine • v2.7.0
             </span>
           </div>
-          <p class="text-xs text-slate-400 mt-0.5">App Shield • Persistent Backup Monitor</p>
+          <p class="text-xs text-slate-400 mt-0.5">Full Schema Editors • Multi-Category Txn Splits</p>
         </div>
       </div>
 
@@ -53,7 +49,7 @@
           <select id="monthSelect" onchange="handleMonthChange(this.value)" class="bg-transparent text-white font-semibold focus:outline-none cursor-pointer pr-1"></select>
           <button onclick="promptAddMonth()" class="ml-2 pl-2 border-l border-slate-700 text-indigo-300 hover:text-white font-bold text-[11px]">+ Month</button>
         </div>
-        <button onclick="openTransactionModal()" class="bg-[#6c5ce7] hover:bg-[#5b4bc4] text-white font-semibold text-xs px-4 py-2.5 rounded-lg shadow transition flex items-center gap-1.5">
+        <button onclick="openTransactionModal(-1)" class="bg-[#6c5ce7] hover:bg-[#5b4bc4] text-white font-semibold text-xs px-4 py-2.5 rounded-lg shadow transition flex items-center gap-1.5">
           <span class="text-base leading-none">+</span> Add Transaction
         </button>
       </div>
@@ -72,7 +68,6 @@
   <!-- MAIN CONTAINER -->
   <main class="max-w-[1440px] w-full mx-auto px-4 sm:px-6 py-6 flex-1 space-y-6 relative">
 
-    <!-- ALERT BANNER FOR DEMO DATA -->
     <div id="demoDataAlert" class="hidden bg-amber-50 border border-amber-200 text-amber-800 px-4 py-3 rounded-xl text-sm shadow-sm flex items-center justify-between">
       <div><strong>Demo/Seed Data Loaded:</strong> Data was seeded from templates. Any changes you make will now save locally to this device.</div>
       <button onclick="document.getElementById('demoDataAlert').classList.add('hidden')" class="text-amber-600 hover:text-amber-900 text-xl font-bold">&times;</button>
@@ -80,12 +75,11 @@
 
     <!-- TAB 1: BUDGET VS ACTUAL -->
     <section id="tab-bva" class="space-y-6">
-      <!-- 4 KPI CARDS -->
       <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <div class="bg-white rounded-xl p-5 border border-slate-200 shadow-sm relative overflow-hidden">
           <div class="text-xs font-bold uppercase tracking-wider text-slate-400">Monthly Target</div>
           <div id="kpiMonthlyTarget" class="text-3xl font-extrabold text-slate-900 mt-2 font-mono-num">$0.00</div>
-          <div id="kpiTargetSub" class="text-xs text-slate-400 mt-2">Includes Goal Rollups &amp; Fractions</div>
+          <div id="kpiTargetSub" class="text-xs text-slate-400 mt-2">Based on active Budget Rules</div>
         </div>
         <div class="bg-white rounded-xl p-5 border border-slate-200 shadow-sm relative overflow-hidden">
           <div class="text-xs font-bold uppercase tracking-wider text-slate-400">Current Actual</div>
@@ -104,7 +98,6 @@
         </div>
       </div>
 
-      <!-- BUDGET TABLE -->
       <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
         <div class="p-5 border-b border-slate-100 flex flex-col lg:flex-row lg:items-center justify-between gap-4">
           <div>
@@ -112,7 +105,6 @@
             <p class="text-xs text-slate-400">Click <strong>[12-Mo]</strong> on any row to open the 12-month backward history and forward projection trend view.</p>
           </div>
         </div>
-
         <div class="overflow-x-auto">
           <table class="w-full text-left border-collapse min-w-[1050px]">
             <thead>
@@ -139,7 +131,7 @@
       <div class="bg-white rounded-xl border border-slate-200 p-5 shadow-sm space-y-4">
         <div class="flex items-center justify-between border-b border-slate-100 pb-3">
           <h2 class="text-base font-bold text-slate-900">Transactions Ledger</h2>
-          <button onclick="openTransactionModal()" class="bg-[#6c5ce7] text-white text-xs font-semibold px-3.5 py-2 rounded-lg">+ Add Item</button>
+          <button onclick="openTransactionModal(-1)" class="bg-[#6c5ce7] hover:bg-[#5b4bc4] text-white text-xs font-semibold px-3.5 py-2 rounded-lg">+ Add Item</button>
         </div>
         <div class="overflow-x-auto">
           <table class="w-full text-left border-collapse min-w-[900px]">
@@ -148,11 +140,11 @@
                 <th class="py-3 pl-4">Inc.</th>
                 <th class="py-3">ID</th>
                 <th class="py-3">Month</th>
-                <th class="py-3">Account</th>
+                <th class="py-3">Account (Source)</th>
                 <th class="py-3">Merchant</th>
                 <th class="py-3">Group :: Category</th>
                 <th class="py-3 text-right">Amount</th>
-                <th class="py-3 pl-2 pr-4 text-right">Delete</th>
+                <th class="py-3 pl-2 pr-4 text-right">Actions</th>
               </tr>
             </thead>
             <tbody id="ledgerTableBody" class="divide-y divide-slate-100 text-xs"></tbody>
@@ -192,8 +184,8 @@
         <div class="flex items-center justify-between border-b border-slate-100 pb-3 flex-wrap gap-2">
             <h2 class="text-base font-bold text-slate-900">Accounts &amp; Goal Balances</h2>
             <div class="flex gap-2">
-                <button onclick="openAccountModal()" class="bg-slate-800 hover:bg-slate-700 text-white text-xs font-semibold px-3.5 py-2 rounded-lg transition">+ Add Account</button>
-                <button onclick="openGoalModal()" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold px-3.5 py-2 rounded-lg transition">+ Add Goal</button>
+                <button onclick="openAccountModal(-1)" class="bg-slate-800 hover:bg-slate-700 text-white text-xs font-semibold px-3.5 py-2 rounded-lg transition">+ Add Account</button>
+                <button onclick="openGoalModal(-1)" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold px-3.5 py-2 rounded-lg transition">+ Add Goal</button>
             </div>
         </div>
         <div id="accountsGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
@@ -263,22 +255,66 @@
     </div>
   </div>
 
-  <!-- MODALS -->
+  <!-- ALL CRUD MODALS -->
+  <!-- TRANSACTION MODAL -->
   <div id="txnModal" class="fixed inset-0 bg-slate-900/60 hidden items-center justify-center p-4 z-50">
     <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4 text-xs">
-      <h3 class="text-base font-bold">Add Transaction</h3>
+      <h3 id="txnModalTitle" class="text-base font-bold">Add Transaction</h3>
+      
+      <div class="space-y-1">
+          <label class="text-[10px] text-slate-500 font-bold uppercase">Account (Source)</label>
+          <select id="newTxnAccount" class="w-full border rounded px-3 py-2"><option value="" disabled selected>Select Source Account...</option></select>
+      </div>
+      <div class="space-y-1">
+          <label class="text-[10px] text-slate-500 font-bold uppercase">Group :: Category</label>
+          <select id="newTxnCategory" class="w-full border rounded px-3 py-2"><option value="" disabled selected>Select Destination Category...</option></select>
+      </div>
+      
       <input id="newTxnMerchant" type="text" placeholder="Merchant name..." class="w-full border rounded px-3 py-2" />
       <input id="newTxnAmount" type="number" step="0.01" placeholder="Amount ($)..." class="w-full border rounded px-3 py-2 font-mono-num" />
+      
       <div class="flex justify-end gap-2 pt-2">
-        <button onclick="closeTransactionModal()" class="px-3 py-1.5 border rounded">Cancel</button>
-        <button onclick="saveNewTransaction()" class="px-3 py-1.5 bg-[#6c5ce7] text-white rounded">Save</button>
+        <button onclick="closeTransactionModal()" class="px-3 py-1.5 border rounded hover:bg-slate-50">Cancel</button>
+        <button id="saveTxnBtn" onclick="saveNewTransaction()" class="px-3 py-1.5 bg-[#6c5ce7] hover:bg-[#5b4bc4] text-white rounded">Save</button>
       </div>
     </div>
   </div>
 
+  <!-- SPLIT TRANSACTION MODAL -->
+  <div id="splitModal" class="fixed inset-0 bg-slate-900/60 hidden items-center justify-center p-4 z-50">
+    <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4 text-xs">
+      <h3 class="text-base font-bold text-indigo-900 border-b pb-2">✂ Split Transaction</h3>
+      <div class="bg-indigo-50 p-3 rounded-lg border border-indigo-100">
+          <p class="font-bold text-indigo-900" id="splitOrigTitle">Merchant</p>
+          <p class="font-mono-num text-indigo-700">Total: $<span id="splitOrigTotal">0.00</span></p>
+      </div>
+      
+      <div class="space-y-2 border border-slate-200 p-3 rounded bg-slate-50">
+          <h4 class="font-bold text-slate-700">Part A (ID-A)</h4>
+          <select id="splitCatA" class="w-full border rounded px-3 py-2"><option value="" disabled selected>Select Group::Category A...</option></select>
+          <input id="splitAmtA" type="number" step="0.01" placeholder="Amount A..." class="w-full border rounded px-3 py-2 font-mono-num" oninput="calculateSplitRemainder()" />
+      </div>
+
+      <div class="space-y-2 border border-slate-200 p-3 rounded bg-slate-50">
+          <h4 class="font-bold text-slate-700">Part B (ID-B)</h4>
+          <select id="splitCatB" class="w-full border rounded px-3 py-2"><option value="" disabled selected>Select Group::Category B...</option></select>
+          <div class="flex items-center gap-2">
+              <span class="text-slate-500 font-bold flex-1 text-right">Auto-Calculated Remainder:</span>
+              <input id="splitAmtB" type="number" step="0.01" class="w-24 border rounded px-3 py-2 font-mono-num bg-slate-200 text-slate-600 cursor-not-allowed" readonly />
+          </div>
+      </div>
+      
+      <div class="flex justify-end gap-2 pt-2 border-t pt-4">
+        <button onclick="closeSplitModal()" class="px-3 py-1.5 border rounded hover:bg-slate-50">Cancel</button>
+        <button onclick="processSplitTransaction()" class="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded font-bold">Process Split</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ACCOUNT MODAL -->
   <div id="accountModal" class="fixed inset-0 bg-slate-900/60 hidden items-center justify-center p-4 z-50">
     <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4 text-xs">
-      <h3 class="text-base font-bold">Add New Account</h3>
+      <h3 id="accountModalTitle" class="text-base font-bold">Add New Account</h3>
       <input id="newAccName" type="text" placeholder="Account Name (e.g. Chase Visa)" class="w-full border rounded px-3 py-2" />
       <select id="newAccType" class="w-full border rounded px-3 py-2">
         <option value="" disabled selected>Select Account Type...</option>
@@ -288,13 +324,15 @@
         <option value="Bill">Bill</option><option value="Investment">Investment</option><option value="other">Other</option>
       </select>
       <input id="newAccBalance" type="number" step="0.01" placeholder="Starting Balance ($)..." class="w-full border rounded px-3 py-2 font-mono-num" />
+      <p class="text-[10px] text-slate-400">Note: Default_GC_ID has been removed. Transactions define their own Group::Category.</p>
       <div class="flex justify-end gap-2 pt-2">
-        <button onclick="closeAccountModal()" class="px-3 py-1.5 border rounded">Cancel</button>
-        <button onclick="saveAccount()" class="px-3 py-1.5 bg-slate-800 text-white rounded">Save Account</button>
+        <button onclick="closeAccountModal()" class="px-3 py-1.5 border rounded hover:bg-slate-50">Cancel</button>
+        <button id="saveAccountBtn" onclick="saveAccount()" class="px-3 py-1.5 bg-slate-800 text-white rounded">Save Account</button>
       </div>
     </div>
   </div>
 
+  <!-- BUDGET MODAL -->
   <div id="budgetModal" class="fixed inset-0 bg-slate-900/60 hidden items-center justify-center p-4 z-50">
     <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4 text-xs">
       <h3 id="budgetModalTitle" class="text-base font-bold">Add Budget Target</h3>
@@ -314,49 +352,50 @@
       </div>
       <input id="newBudgNotes" type="text" placeholder="Notes (Optional)..." class="w-full border rounded px-3 py-2" />
       <div class="flex justify-end gap-2 pt-2">
-        <button onclick="closeBudgetModal()" class="px-3 py-1.5 border rounded">Cancel</button>
+        <button onclick="closeBudgetModal()" class="px-3 py-1.5 border rounded hover:bg-slate-50">Cancel</button>
         <button id="saveBudgetBtn" onclick="saveBudget()" class="px-3 py-1.5 bg-[#6c5ce7] text-white rounded">Save Budget</button>
       </div>
     </div>
   </div>
 
+  <!-- GOAL MODAL -->
   <div id="goalModal" class="fixed inset-0 bg-slate-900/60 hidden items-center justify-center p-4 z-50">
     <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4 text-xs">
-      <h3 class="text-base font-bold">Add Goal</h3>
+      <h3 id="goalModalTitle" class="text-base font-bold">Add Goal</h3>
       <input id="newGoalName" type="text" placeholder="Goal Name..." class="w-full border rounded px-3 py-2" />
       <input id="newGoalDesc" type="text" placeholder="Description..." class="w-full border rounded px-3 py-2" />
-      <select id="newGoalAccount" class="w-full border rounded px-3 py-2"><option value="" disabled selected>Link to Account...</option></select>
+      <select id="newGoalAccount" class="w-full border rounded px-3 py-2">
+          <option value="" disabled selected>Strict Link to Account...</option>
+      </select>
       <input id="newGoalAmount" type="number" step="0.01" placeholder="Target Value ($)..." class="w-full border rounded px-3 py-2 font-mono-num" />
       <div class="flex justify-end gap-2 pt-2">
-        <button onclick="closeGoalModal()" class="px-3 py-1.5 border rounded">Cancel</button>
-        <button onclick="saveGoal()" class="px-3 py-1.5 bg-emerald-600 text-white rounded">Save Goal</button>
+        <button onclick="closeGoalModal()" class="px-3 py-1.5 border rounded hover:bg-slate-50">Cancel</button>
+        <button id="saveGoalBtn" onclick="saveGoal()" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded">Save Goal</button>
       </div>
     </div>
   </div>
 
-  <!-- SCRIPT ENGINE: LOCAL STORAGE, JSON BACKUP, INSTALL SHIELD -->
+  <!-- SCRIPT ENGINE: LOCAL STORAGE, JSON BACKUP, FULL CRUD & SPLIT -->
   <script>
     const STORAGE_KEY = 'ktbudget_data_v2';
     let db = { groups: [], categories: [], group_category: [], accounts: [], budgets: [], goals: [], todos: [], transactions: [], lastModified: 0, lastBackup: 0 };
     let appState = { selectedMonth: '2026-10', customMonths: ['2026-10', '2026-09'], show12Mo: false };
 
-    // --- INSTALL SHIELD ENFORCEMENT ---
+    // --- INSTALL SHIELD ---
     function checkInstallMode() {
-        // Detects if app is running in Standalone (installed) mode on iOS, Android, Desktop
         const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
         if (!isStandalone && !sessionStorage.getItem('bypassedInstallShield')) {
             document.getElementById('installShieldOverlay').classList.remove('hidden');
             document.getElementById('installShieldOverlay').classList.add('flex');
         }
     }
-    
     function bypassInstallShield() {
         sessionStorage.setItem('bypassedInstallShield', 'true');
         document.getElementById('installShieldOverlay').classList.add('hidden');
         document.getElementById('installShieldOverlay').classList.remove('flex');
     }
 
-    // --- PERSISTENT BACKUP NAG LOGIC ---
+    // --- NAG & PERSISTENCE ---
     function checkBackupStatus() {
         const modTime = db.lastModified || 0;
         const backTime = db.lastBackup || 0;
@@ -369,17 +408,15 @@
         }
     }
 
-    // --- DATA PERSISTENCE & BACKUP ---
     function saveDataToLocal() {
-        db.lastModified = Date.now(); // Stamp time on every change
+        db.lastModified = Date.now();
         localStorage.setItem(STORAGE_KEY, JSON.stringify(db));
         checkBackupStatus();
     }
 
     function exportData() {
-        db.lastBackup = Date.now(); // Stamp time of backup
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(db)); // Save timestamp to memory
-        
+        db.lastBackup = Date.now();
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(db)); 
         const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(db));
         const downloadAnchorNode = document.createElement('a');
         downloadAnchorNode.setAttribute("href", dataStr);
@@ -387,7 +424,6 @@
         document.body.appendChild(downloadAnchorNode);
         downloadAnchorNode.click();
         downloadAnchorNode.remove();
-        
         checkBackupStatus();
     }
 
@@ -400,7 +436,7 @@
                 const importedDb = JSON.parse(e.target.result);
                 if(importedDb && importedDb.accounts && importedDb.transactions) {
                     db = importedDb;
-                    db.lastBackup = Date.now(); // Reset nag on fresh import
+                    db.lastBackup = Date.now();
                     saveDataToLocal();
                     alert("Data successfully restored! The app will now reload.");
                     location.reload();
@@ -414,18 +450,18 @@
         reader.readAsText(file);
     }
 
-    // --- DEMO DATA GENERATOR ---
+    // --- DEMO DATA SEEDING (UPDATED FOR NO DEFAULT_GC_ID) ---
     function getDemoData(table) {
         const demo = {
             groups: [{ Group_ID: 'G_WANTS', Name: 'Wants', Type: 'Flexible', Impact: 'personal', Budget: 'Yes' }, { Group_ID: 'G_NEC', Name: 'Personal necessities', Type: 'Fixed', Impact: 'personal', Budget: 'Yes' }],
             categories: [{ Category_ID: 'C_CLOTH', Name: 'Clothing & online shopping', Type: 'Flexible', Impact: 'personal', Budget: 'Yes' }, { Category_ID: 'C_GROC', Name: 'Groceries & household', Type: 'Flexible', Impact: 'personal', Budget: 'Yes' }],
             group_category: [{ GC_ID: 'GC_1', Group_ID: 'G_WANTS', Category_ID: 'C_CLOTH', Display_Label: 'Wants::Clothing & online shopping' }, { GC_ID: 'GC_2', Group_ID: 'G_NEC', Category_ID: 'C_GROC', Display_Label: 'Personal necessities::Groceries & household' }],
-            accounts: [{ Account_ID: 'Chase', Name: 'Chase Checking', Type: 'CCard', Balance: '5471.25', Default_GC_ID: 'C_GROC' }, { Account_ID: 'Savings_1', Name: 'Dog Emergency Fund', Type: 'Savings', Balance: '150.00', Default_GC_ID: 'C_GROC' }],
+            accounts: [{ Account_ID: 'Chase', Name: 'Chase Checking', Type: 'CCard', Balance: '5471.25' }, { Account_ID: 'Savings_1', Name: 'Dog Emergency Fund', Type: 'Savings', Balance: '150.00' }],
             budgets: [
                 { Budget_ID: 'B_001', Scope_Level: 'Category', Target_Ref_ID: 'C_CLOTH', Priority_Type: 'Want', Rule_Type: 'Each Month', Amount: '125.00', Start_Month: '2026-10', Target_Month: '', Is_Demo: '1', Notes: 'Standard allowance' },
                 { Budget_ID: 'B_002', Scope_Level: 'Category', Target_Ref_ID: 'C_GROC', Priority_Type: 'Necessity', Rule_Type: 'Annual', Amount: '6000.00', Start_Month: '2026-01', Target_Month: '', Is_Demo: '1', Notes: 'Averages 500/mo' }
             ],
-            goals: [{ Goal_ID: 'GL_1', Name: 'Vet Emergency', Description: 'Buffer for unexpected pet costs', Linked_Account: 'Savings_1', Target_Value: '50.00' }],
+            goals: [{ Goal_ID: 'GL_1', Name: 'Vet Emergency', Description: 'Buffer for unexpected pet costs', Linked_Account: 'Savings_1', Target_Value: '500.00' }],
             transactions: [{ Txn_ID: 'T001', Month: '2026-10', Account_ID: 'Chase', Merchant: 'Target Groceries', GC_ID: 'C_GROC', Amount: '145.20', Include: '1' }],
             todos: [{ Task: 'Update Salon Allocations', Type: 'Budgeting', Due_Date: '2026-10-31', Priority: 'High' }]
         };
@@ -466,27 +502,21 @@
       db.goals = await loadCsv('goals.csv');
       db.todos = await loadCsv('todos.csv');
       db.transactions = await loadCsv('transactions.csv');
-      db.lastBackup = Date.now(); // First time counts as baseline
+      db.lastBackup = Date.now(); 
       saveDataToLocal(); 
       document.getElementById('demoDataAlert').classList.remove('hidden');
     }
 
     async function initApp() {
       checkInstallMode();
-        
       const localData = localStorage.getItem(STORAGE_KEY);
       if (localData) {
-          try {
-              db = JSON.parse(localData);
-          } catch (e) {
-              await seedDatabase();
-          }
+          try { db = JSON.parse(localData); } catch (e) { await seedDatabase(); }
       } else {
           await seedDatabase();
       }
 
       checkBackupStatus();
-
       const mSet = new Set(appState.customMonths);
       db.transactions.forEach(t => { if (t.Month) mSet.add(t.Month); });
       appState.customMonths = Array.from(mSet).sort().reverse();
@@ -497,13 +527,15 @@
     }
 
     function populateDropdowns() {
-        const catSelect = document.getElementById('newBudgCategory');
-        catSelect.innerHTML = '<option value="" disabled selected>Select Group/Category...</option>' + 
-            db.categories.map(c => `<option value="${c.Category_ID}">${c.Name}</option>`).join('');
+        const cats = db.categories.map(c => `<option value="${c.Category_ID}">${c.Name}</option>`).join('');
+        document.getElementById('newBudgCategory').innerHTML = '<option value="" disabled selected>Select Group/Category...</option>' + cats;
+        document.getElementById('newTxnCategory').innerHTML = '<option value="" disabled selected>Select Destination Category...</option>' + cats;
+        document.getElementById('splitCatA').innerHTML = '<option value="" disabled selected>Select Group::Category A...</option>' + cats;
+        document.getElementById('splitCatB').innerHTML = '<option value="" disabled selected>Select Group::Category B...</option>' + cats;
 
-        const accSelect = document.getElementById('newGoalAccount');
-        accSelect.innerHTML = '<option value="" disabled selected>Link to Account...</option>' + 
-            db.accounts.map(a => `<option value="${a.Account_ID}">${a.Name} (${a.Type})</option>`).join('');
+        const accs = db.accounts.map(a => `<option value="${a.Account_ID}">${a.Name} (${a.Type})</option>`).join('');
+        document.getElementById('newGoalAccount').innerHTML = '<option value="" disabled selected>Strict Link to Account...</option>' + accs;
+        document.getElementById('newTxnAccount').innerHTML = '<option value="" disabled selected>Select Source Account...</option>' + accs;
     }
 
     function fmtCurrency(val, showPlus = false) {
@@ -545,9 +577,8 @@
     function getMonthlyTargetCalculation(bg) {
         const baseAmt = Number(bg.Amount) || 0;
         const rType = bg.Rule_Type || bg.Type || 'Each Month'; 
-        if (rType === 'Annual') {
-            return baseAmt / 12;
-        } else if (rType === 'Target Month' && bg.Start_Month && bg.Target_Month) {
+        if (rType === 'Annual') return baseAmt / 12;
+        if (rType === 'Target Month' && bg.Start_Month && bg.Target_Month) {
             const [sy, sm] = bg.Start_Month.split('-').map(Number);
             const [ty, tm] = bg.Target_Month.split('-').map(Number);
             const span = ((ty - sy) * 12) + (tm - sm) + 1;
@@ -567,9 +598,7 @@
     function renderKpis() {
       let totT = 0, totC = 0, totP = 0;
       const priorMo = appState.selectedMonth === '2026-10' ? '2026-09' : '2026-09';
-
       db.budgets.forEach(b => { totT += getMonthlyTargetCalculation(b); });
-      db.goals.forEach(g => { totT += (Number(g.Target_Value) || 0); });
 
       db.transactions.forEach(t => {
         const amt = Number(t.Amount) || 0;
@@ -605,41 +634,25 @@
           let target = getMonthlyTargetCalculation(bg);
           const rType = bg.Rule_Type || bg.Type || 'Each Month';
           const priorityBadge = bg.Priority_Type ? `<span class="mr-1 text-[9px] uppercase tracking-wider text-slate-400 font-bold">${bg.Priority_Type.substring(0,1)}</span>` : '';
-
-          const linkedGoals = db.goals.filter(goal => {
-              const acc = db.accounts.find(a => a.Account_ID === goal.Linked_Account);
-              return acc && acc.Default_GC_ID === gc.Category_ID;
-          });
-          const goalExtra = linkedGoals.reduce((sum, goal) => sum + (Number(goal.Target_Value) || 0), 0);
-          target += goalExtra; 
           
-          const actual = db.transactions
-            .filter(t => t.Include === '1' && t.GC_ID === gc.Category_ID && t.Month === appState.selectedMonth)
-            .reduce((s, t) => s + (Number(t.Amount) || 0), 0);
+          const actual = db.transactions.filter(t => t.Include === '1' && t.GC_ID === gc.Category_ID && t.Month === appState.selectedMonth).reduce((s, t) => s + (Number(t.Amount) || 0), 0);
           const variance = target - actual;
-          const priorActual = db.transactions
-            .filter(t => t.Include === '1' && t.GC_ID === gc.Category_ID && t.Month === '2026-09')
-            .reduce((s, t) => s + (Number(t.Amount) || 0), 0);
-          const ytdActual = db.transactions
-            .filter(t => t.Include === '1' && t.GC_ID === gc.Category_ID && (t.Month || '').startsWith('2026'))
-            .reduce((s, t) => s + (Number(t.Amount) || 0), 0);
+          const priorActual = db.transactions.filter(t => t.Include === '1' && t.GC_ID === gc.Category_ID && t.Month === '2026-09').reduce((s, t) => s + (Number(t.Amount) || 0), 0);
+          const ytdActual = db.transactions.filter(t => t.Include === '1' && t.GC_ID === gc.Category_ID && (t.Month || '').startsWith('2026')).reduce((s, t) => s + (Number(t.Amount) || 0), 0);
           const meter = target > 0 ? Math.round((actual / target) * 100) : 0;
-          const goalNote = goalExtra > 0 ? `<div class="text-[9px] text-emerald-600 font-bold mt-0.5">+${fmtCurrency(goalExtra)} Goal rollup</div>` : '';
 
           return `
             <tr class="hover:bg-slate-50">
               <td class="py-3 pl-6 pr-3 text-slate-800 font-medium">${priorityBadge}${gc.Display_Label.split('::')[1] || gc.Display_Label}</td>
               <td class="py-3 px-3"><span class="px-2 py-0.5 rounded text-[10px] bg-slate-100 text-slate-600">${rType}</span></td>
-              <td class="py-3 px-3 text-right font-mono-num">${fmtCurrency(target)}${goalNote}</td>
+              <td class="py-3 px-3 text-right font-mono-num">${fmtCurrency(target)}</td>
               <td class="py-3 px-3 text-right font-mono-num font-bold text-slate-900">${fmtCurrency(actual)}</td>
               <td class="py-3 px-3 text-right font-mono-num ${variance < 0 ? 'text-rose-600' : 'text-emerald-600'}">${fmtCurrency(variance, true)}</td>
               <td class="py-3 px-3 text-right font-mono-num text-slate-500">${fmtCurrency(priorActual)}</td>
               <td class="py-3 px-3 text-right font-mono-num text-indigo-700">${fmtCurrency(ytdActual)}</td>
               <td class="py-3 px-3 text-center font-mono-num text-slate-500">${meter}%</td>
               <td class="py-3 pl-3 pr-5 text-right">
-                <button onclick="alert('12-Month view coming soon.')" class="px-2 py-1 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded text-[11px] font-semibold transition">
-                  [12-Mo]
-                </button>
+                <button onclick="alert('12-Month view coming soon.')" class="px-2 py-1 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded text-[11px] font-semibold transition">[12-Mo]</button>
               </td>
             </tr>
           `;
@@ -658,37 +671,34 @@
           <td class="py-3 text-slate-800">${t.Merchant}</td>
           <td class="py-3 font-mono-num text-slate-500">${t.GC_ID}</td>
           <td class="py-3 text-right font-mono-num font-bold">${fmtCurrency(t.Amount)}</td>
-          <td class="py-3 pl-2 pr-4 text-right"><button onclick="deleteTransaction(${idx})" class="text-slate-400 hover:text-rose-600 font-bold text-lg leading-none">&times;</button></td>
+          <td class="py-3 pl-2 pr-4 text-right whitespace-nowrap">
+             <button onclick="openTransactionModal(${idx})" class="text-indigo-600 hover:text-indigo-800 font-bold text-sm mr-2" title="Edit">✎</button>
+             <button onclick="openSplitModal(${idx})" class="text-slate-500 hover:text-slate-700 font-bold text-sm mr-2" title="Split">✂</button>
+             <button onclick="deleteTransaction(${idx})" class="text-slate-400 hover:text-rose-600 font-bold text-lg leading-none align-middle" title="Delete">&times;</button>
+          </td>
         </tr>
       `).join('');
     }
 
-    function deleteTransaction(idx) {
-        if(confirm('Delete transaction?')) {
-            db.transactions.splice(idx, 1);
-            saveDataToLocal();
-            renderAll();
-        }
-    }
-
     function renderAccountsAndGoals() {
-      document.getElementById('accountsGrid').innerHTML = db.accounts.map(a => `
-        <div class="p-4 rounded-xl border border-slate-200 bg-slate-50 space-y-2">
-          <div class="flex justify-between items-center"><h3 class="font-bold text-slate-900">${a.Name}</h3><span class="text-xs px-2 py-0.5 rounded bg-slate-200 text-slate-800 font-semibold">${a.Type}</span></div>
+      document.getElementById('accountsGrid').innerHTML = db.accounts.map((a, idx) => `
+        <div class="p-4 rounded-xl border border-slate-200 bg-slate-50 space-y-2 relative group">
+          <button onclick="openAccountModal(${idx})" class="absolute top-3 right-3 text-indigo-500 hover:text-indigo-700 text-xs font-bold opacity-0 group-hover:opacity-100 transition">✎ Edit</button>
+          <div class="flex justify-between items-center pr-10"><h3 class="font-bold text-slate-900">${a.Name}</h3><span class="text-xs px-2 py-0.5 rounded bg-slate-200 text-slate-800 font-semibold">${a.Type}</span></div>
           <div class="text-2xl font-extrabold font-mono-num text-slate-900">${fmtCurrency(a.Balance)}</div>
-          <p class="text-[11px] text-slate-400">Default Category: ${a.Default_GC_ID || 'None'}</p>
         </div>
       `).join('');
 
-      document.getElementById('goalsGrid').innerHTML = db.goals.map(g => {
+      document.getElementById('goalsGrid').innerHTML = db.goals.map((g, idx) => {
          const linked = db.accounts.find(a => a.Account_ID === g.Linked_Account);
          const linkedName = linked ? linked.Name : g.Linked_Account;
          return `
-        <div class="p-4 rounded-xl border border-emerald-100 bg-emerald-50 space-y-2">
-          <div class="flex justify-between items-center"><h3 class="font-bold text-emerald-900">${g.Name}</h3><span class="text-[10px] uppercase tracking-wide font-bold text-emerald-600">${g.Goal_ID}</span></div>
+        <div class="p-4 rounded-xl border border-emerald-100 bg-emerald-50 space-y-2 relative group">
+          <button onclick="openGoalModal(${idx})" class="absolute top-3 right-3 text-emerald-600 hover:text-emerald-800 text-xs font-bold opacity-0 group-hover:opacity-100 transition">✎ Edit</button>
+          <div class="flex justify-between items-center pr-10"><h3 class="font-bold text-emerald-900">${g.Name}</h3><span class="text-[10px] uppercase tracking-wide font-bold text-emerald-600">${g.Goal_ID}</span></div>
           <p class="text-xs text-emerald-700">${g.Description}</p>
           <div class="text-lg font-bold font-mono-num text-emerald-800">Target: ${fmtCurrency(g.Target_Value)}</div>
-          <p class="text-[11px] text-emerald-600 font-semibold">Linked: ${linkedName}</p>
+          <p class="text-[11px] text-emerald-600 font-semibold">Strict Link: ${linkedName}</p>
         </div>
       `}).join('');
     }
@@ -702,12 +712,10 @@
             const gc = db.group_category.find(g => g.Category_ID === cat.Category_ID);
             catName = gc ? gc.Display_Label : cat.Name;
         }
-        
         const bType = b.Rule_Type || b.Type || 'Each Month'; 
         const amt = Number(b.Amount) || 0;
         const prio = b.Priority_Type || '-';
         const startTarget = (bType === 'Target Month') ? `${b.Start_Month} &rarr; ${b.Target_Month}` : `<span class="text-slate-300">Continuous</span>`;
-        
         return `
         <tr class="hover:bg-slate-50">
           <td class="py-3 pl-4 font-semibold text-slate-800">${catName}</td>
@@ -724,34 +732,168 @@
       }).join('');
     }
 
-    // Modal Control Functions
-    function openTransactionModal() { document.getElementById('txnModal').classList.remove('hidden'); document.getElementById('txnModal').classList.add('flex'); }
+    // --- FULL CRUD MODAL LOGIC ---
+    // TRANSACTIONS
+    let editingTxnIdx = -1;
+    function openTransactionModal(idx = -1) {
+        editingTxnIdx = idx;
+        document.getElementById('txnModalTitle').textContent = idx >= 0 ? 'Edit Transaction' : 'Add Transaction';
+        document.getElementById('saveTxnBtn').textContent = idx >= 0 ? 'Update' : 'Save';
+        if (idx >= 0) {
+            const t = db.transactions[idx];
+            document.getElementById('newTxnAccount').value = t.Account_ID || '';
+            document.getElementById('newTxnCategory').value = t.GC_ID || '';
+            document.getElementById('newTxnMerchant').value = t.Merchant || '';
+            document.getElementById('newTxnAmount').value = t.Amount || '';
+        } else {
+            document.getElementById('newTxnAccount').value = '';
+            document.getElementById('newTxnCategory').value = '';
+            document.getElementById('newTxnMerchant').value = '';
+            document.getElementById('newTxnAmount').value = '';
+        }
+        document.getElementById('txnModal').classList.remove('hidden'); document.getElementById('txnModal').classList.add('flex');
+    }
     function closeTransactionModal() { document.getElementById('txnModal').classList.add('hidden'); document.getElementById('txnModal').classList.remove('flex'); }
     function saveNewTransaction() {
-      const merchant = document.getElementById('newTxnMerchant').value.trim() || 'New Expense';
-      const amount = parseFloat(document.getElementById('newTxnAmount').value) || 0;
-      if (amount <= 0) return;
-      db.transactions.push({ Txn_ID: 'T' + Math.floor(Math.random()*1000), Month: appState.selectedMonth, Account_ID: 'Chase', Merchant: merchant, Amount: amount, GC_ID: 'C_GROC', Include: '1' });
-      document.getElementById('newTxnMerchant').value = ''; document.getElementById('newTxnAmount').value = '';
-      saveDataToLocal();
-      closeTransactionModal(); renderAll();
+        const acc = document.getElementById('newTxnAccount').value;
+        const cat = document.getElementById('newTxnCategory').value;
+        const merchant = document.getElementById('newTxnMerchant').value.trim() || 'New Expense';
+        const amount = parseFloat(document.getElementById('newTxnAmount').value) || 0;
+        if (!acc || !cat || amount <= 0) return alert('Please complete all fields.');
+        
+        if (editingTxnIdx >= 0) {
+            db.transactions[editingTxnIdx].Account_ID = acc;
+            db.transactions[editingTxnIdx].GC_ID = cat;
+            db.transactions[editingTxnIdx].Merchant = merchant;
+            db.transactions[editingTxnIdx].Amount = amount;
+        } else {
+            db.transactions.push({ Txn_ID: 'T' + Math.floor(Math.random()*10000), Month: appState.selectedMonth, Account_ID: acc, Merchant: merchant, Amount: amount, GC_ID: cat, Include: '1' });
+        }
+        saveDataToLocal(); closeTransactionModal(); renderAll();
     }
-    
-    function openAccountModal() { document.getElementById('accountModal').classList.remove('hidden'); document.getElementById('accountModal').classList.add('flex'); }
+    function deleteTransaction(idx) {
+        if(confirm('Delete transaction?')) {
+            db.transactions.splice(idx, 1);
+            saveDataToLocal(); renderAll();
+        }
+    }
+
+    // SPLIT TRANSACTIONS (ID-A, ID-B)
+    let splittingTxnIdx = -1;
+    function openSplitModal(idx) {
+        splittingTxnIdx = idx;
+        const t = db.transactions[idx];
+        document.getElementById('splitOrigTitle').textContent = t.Merchant + ' (' + t.Month + ', ' + t.Account_ID + ')';
+        document.getElementById('splitOrigTotal').textContent = parseFloat(t.Amount).toFixed(2);
+        
+        document.getElementById('splitCatA').value = t.GC_ID; 
+        document.getElementById('splitAmtA').value = '';
+        document.getElementById('splitCatB').value = '';
+        document.getElementById('splitAmtB').value = '';
+
+        document.getElementById('splitModal').classList.remove('hidden'); document.getElementById('splitModal').classList.add('flex');
+    }
+    function calculateSplitRemainder() {
+        if(splittingTxnIdx < 0) return;
+        const origTotal = parseFloat(db.transactions[splittingTxnIdx].Amount);
+        const partA = parseFloat(document.getElementById('splitAmtA').value) || 0;
+        document.getElementById('splitAmtB').value = Math.max(0, origTotal - partA).toFixed(2);
+    }
+    function closeSplitModal() { document.getElementById('splitModal').classList.add('hidden'); document.getElementById('splitModal').classList.remove('flex'); }
+    function processSplitTransaction() {
+        const orig = db.transactions[splittingTxnIdx];
+        const catA = document.getElementById('splitCatA').value;
+        const amtA = parseFloat(document.getElementById('splitAmtA').value);
+        const catB = document.getElementById('splitCatB').value;
+        const amtB = parseFloat(document.getElementById('splitAmtB').value);
+
+        if (!catA || !catB || !amtA || !amtB || (amtA + amtB).toFixed(2) !== parseFloat(orig.Amount).toFixed(2)) {
+            return alert('Please select categories and ensure amounts equal the original total.');
+        }
+
+        const txnA = { ...orig, Txn_ID: orig.Txn_ID + '-A', Amount: amtA, GC_ID: catA };
+        const txnB = { ...orig, Txn_ID: orig.Txn_ID + '-B', Amount: amtB, GC_ID: catB };
+        
+        db.transactions.splice(splittingTxnIdx, 1, txnA, txnB);
+        saveDataToLocal(); closeSplitModal(); renderAll();
+    }
+
+    // ACCOUNTS
+    let editingAccountIdx = -1;
+    function openAccountModal(idx = -1) { 
+        editingAccountIdx = idx;
+        document.getElementById('accountModalTitle').textContent = idx >= 0 ? 'Edit Account' : 'Add New Account';
+        document.getElementById('saveAccountBtn').textContent = idx >= 0 ? 'Update Account' : 'Save Account';
+        if (idx >= 0) {
+            const a = db.accounts[idx];
+            document.getElementById('newAccName').value = a.Name || '';
+            document.getElementById('newAccType').value = a.Type || '';
+            document.getElementById('newAccBalance').value = a.Balance || '';
+        } else {
+            document.getElementById('newAccName').value = '';
+            document.getElementById('newAccType').value = '';
+            document.getElementById('newAccBalance').value = '';
+        }
+        document.getElementById('accountModal').classList.remove('hidden'); document.getElementById('accountModal').classList.add('flex'); 
+    }
     function closeAccountModal() { document.getElementById('accountModal').classList.add('hidden'); document.getElementById('accountModal').classList.remove('flex'); }
     function saveAccount() {
         const name = document.getElementById('newAccName').value;
         const type = document.getElementById('newAccType').value;
         const balance = document.getElementById('newAccBalance').value;
         if(name && type) {
-            db.accounts.push({ Account_ID: name.replace(/\s+/g, ''), Name: name, Type: type, Balance: balance, Default_GC_ID: '' });
-            saveDataToLocal();
-            populateDropdowns();
-            renderAll();
-            closeAccountModal();
+            if (editingAccountIdx >= 0) {
+                db.accounts[editingAccountIdx].Name = name;
+                db.accounts[editingAccountIdx].Type = type;
+                db.accounts[editingAccountIdx].Balance = balance;
+                // Note: Default_GC_ID intentionally removed
+            } else {
+                db.accounts.push({ Account_ID: name.replace(/\s+/g, ''), Name: name, Type: type, Balance: balance });
+            }
+            saveDataToLocal(); populateDropdowns(); renderAll(); closeAccountModal();
         }
     }
 
+    // GOALS
+    let editingGoalIdx = -1;
+    function openGoalModal(idx = -1) {
+        editingGoalIdx = idx;
+        document.getElementById('goalModalTitle').textContent = idx >= 0 ? 'Edit Goal' : 'Add Goal';
+        document.getElementById('saveGoalBtn').textContent = idx >= 0 ? 'Update Goal' : 'Save Goal';
+        if (idx >= 0) {
+            const g = db.goals[idx];
+            document.getElementById('newGoalName').value = g.Name || '';
+            document.getElementById('newGoalDesc').value = g.Description || '';
+            document.getElementById('newGoalAccount').value = g.Linked_Account || '';
+            document.getElementById('newGoalAmount').value = g.Target_Value || '';
+        } else {
+            document.getElementById('newGoalName').value = '';
+            document.getElementById('newGoalDesc').value = '';
+            document.getElementById('newGoalAccount').value = '';
+            document.getElementById('newGoalAmount').value = '';
+        }
+        document.getElementById('goalModal').classList.remove('hidden'); document.getElementById('goalModal').classList.add('flex'); 
+    }
+    function closeGoalModal() { document.getElementById('goalModal').classList.add('hidden'); document.getElementById('goalModal').classList.remove('flex'); }
+    function saveGoal() {
+        const name = document.getElementById('newGoalName').value;
+        const desc = document.getElementById('newGoalDesc').value;
+        const acc = document.getElementById('newGoalAccount').value;
+        const amt = document.getElementById('newGoalAmount').value;
+        if(name && acc && amt) {
+            if (editingGoalIdx >= 0) {
+                db.goals[editingGoalIdx].Name = name;
+                db.goals[editingGoalIdx].Description = desc;
+                db.goals[editingGoalIdx].Linked_Account = acc;
+                db.goals[editingGoalIdx].Target_Value = amt;
+            } else {
+                db.goals.push({ Goal_ID: 'GL_' + Math.floor(Math.random()*100), Name: name, Description: desc, Linked_Account: acc, Target_Value: amt });
+            }
+            saveDataToLocal(); renderAll(); closeGoalModal();
+        }
+    }
+
+    // BUDGETS
     let editingBudgetIdx = -1;
     function openBudgetModal(idx = -1) { 
         editingBudgetIdx = idx;
@@ -776,19 +918,14 @@
             document.getElementById('newBudgNotes').value = '';
             document.getElementById('targetMonthContainer').classList.add('hidden');
         }
-        document.getElementById('budgetModal').classList.remove('hidden'); 
-        document.getElementById('budgetModal').classList.add('flex'); 
+        document.getElementById('budgetModal').classList.remove('hidden'); document.getElementById('budgetModal').classList.add('flex'); 
     }
-    
     function toggleBudgetTargetDate() {
         const type = document.getElementById('newBudgType').value;
         const container = document.getElementById('targetMonthContainer');
-        if (type === 'Target Month') container.classList.remove('hidden');
-        else container.classList.add('hidden');
+        if (type === 'Target Month') container.classList.remove('hidden'); else container.classList.add('hidden');
     }
-    
     function closeBudgetModal() { document.getElementById('budgetModal').classList.add('hidden'); document.getElementById('budgetModal').classList.remove('flex'); }
-    
     function saveBudget() {
         const cat = document.getElementById('newBudgCategory').value;
         const prio = document.getElementById('newBudgPriority').value;
@@ -799,18 +936,9 @@
         
         if(cat && type && amt) {
             const bData = {
-                Budget_ID: 'B_' + Math.floor(Math.random()*10000),
-                Scope_Level: 'Category',
-                Target_Ref_ID: cat,
-                Priority_Type: prio,
-                Rule_Type: type,
-                Amount: amt,
-                Start_Month: appState.selectedMonth, 
-                Target_Month: type === 'Target Month' ? tDate : '',
-                Is_Demo: '0',
-                Notes: notes
+                Budget_ID: 'B_' + Math.floor(Math.random()*10000), Scope_Level: 'Category', Target_Ref_ID: cat, Priority_Type: prio, Rule_Type: type, Amount: amt,
+                Start_Month: appState.selectedMonth, Target_Month: type === 'Target Month' ? tDate : '', Is_Demo: '0', Notes: notes
             };
-
             if (editingBudgetIdx >= 0) {
                 bData.Budget_ID = db.budgets[editingBudgetIdx].Budget_ID || bData.Budget_ID;
                 bData.Start_Month = db.budgets[editingBudgetIdx].Start_Month || bData.Start_Month;
@@ -819,32 +947,13 @@
             } else {
                 db.budgets.push(bData);
             }
-            saveDataToLocal();
-            renderAll();
-            closeBudgetModal();
+            saveDataToLocal(); renderAll(); closeBudgetModal();
         }
     }
-
     function deleteBudget(idx) {
         if(confirm('Remove this budget item?')) {
             db.budgets.splice(idx, 1);
-            saveDataToLocal();
-            renderAll();
-        }
-    }
-
-    function openGoalModal() { document.getElementById('goalModal').classList.remove('hidden'); document.getElementById('goalModal').classList.add('flex'); }
-    function closeGoalModal() { document.getElementById('goalModal').classList.add('hidden'); document.getElementById('goalModal').classList.remove('flex'); }
-    function saveGoal() {
-        const name = document.getElementById('newGoalName').value;
-        const desc = document.getElementById('newGoalDesc').value;
-        const acc = document.getElementById('newGoalAccount').value;
-        const amt = document.getElementById('newGoalAmount').value;
-        if(name && acc && amt) {
-            db.goals.push({ Goal_ID: 'GL_' + Math.floor(Math.random()*100), Name: name, Description: desc, Linked_Account: acc, Target_Value: amt });
-            saveDataToLocal();
-            renderAll();
-            closeGoalModal();
+            saveDataToLocal(); renderAll();
         }
     }
 
