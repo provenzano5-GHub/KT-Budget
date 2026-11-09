@@ -3,13 +3,14 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
   <meta http-equiv="Pragma" content="no-cache" />
   <meta http-equiv="Expires" content="0" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
 
-  <title>KTBudget 2.0: Relational Financial Canvas</title>
+  <title>KTBudget 3.0: Relational Financial Canvas</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -17,6 +18,9 @@
   <style>
     body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; background-color: #f8fafc; color: #0f172a; }
     .font-mono-num { font-family: 'JetBrains Mono', monospace; }
+    /* Hide scrollbar for tabs */
+    .no-scrollbar::-webkit-scrollbar { display: none; }
+    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
   </style>
 </head>
 <body class="min-h-screen flex flex-col">
@@ -34,12 +38,12 @@
         <div class="w-11 h-11 rounded-xl bg-[#6c5ce7] flex items-center justify-center font-extrabold text-lg tracking-tight shadow-inner shrink-0">KT</div>
         <div>
           <div class="flex items-center gap-2.5 flex-wrap">
-            <h1 class="text-xl font-extrabold tracking-tight text-white">KTBudget 2.0</h1>
+            <h1 class="text-xl font-extrabold tracking-tight text-white">KTBudget 3.0</h1>
             <span class="px-2.5 py-0.5 text-[11px] font-semibold rounded-full bg-indigo-950/90 text-indigo-300 border border-indigo-700/60">
-              Relational 8-Table Engine • v2.9.0
+              Relational 8-Table Engine • v3.0.0
             </span>
           </div>
-          <p class="text-xs text-slate-400 mt-0.5">Group Scope Support • Unallocated Buffer Logic</p>
+          <p class="text-xs text-slate-400 mt-0.5">12-Month Drill-Down • Dynamic Date Math</p>
         </div>
       </div>
 
@@ -255,8 +259,33 @@
     </div>
   </div>
 
+  <!-- DRILL-DOWN MODAL -->
+  <div id="drillDownModal" class="fixed inset-0 bg-slate-900/70 hidden items-center justify-center p-4 z-[60]">
+    <div class="bg-white rounded-2xl max-w-2xl w-full p-6 shadow-2xl space-y-4 text-xs flex flex-col max-h-[90vh]">
+      <div class="flex justify-between items-center border-b border-slate-100 pb-3">
+        <h3 id="drillDownTitle" class="text-base font-bold text-slate-900">12-Month View</h3>
+        <button onclick="closeDrillDown()" class="text-slate-400 hover:text-rose-600 font-bold text-2xl leading-none">&times;</button>
+      </div>
+      <div class="overflow-y-auto no-scrollbar flex-1 border border-slate-200 rounded-lg">
+        <table class="w-full text-left border-collapse">
+            <thead class="sticky top-0 bg-slate-100 z-10">
+              <tr class="text-[10px] font-bold uppercase tracking-wider text-slate-500 border-b border-slate-200">
+                <th class="py-3 px-4">Month</th>
+                <th class="py-3 px-4 text-right">Target</th>
+                <th class="py-3 px-4 text-right">Actual</th>
+                <th class="py-3 px-4 text-right">Variance</th>
+              </tr>
+            </thead>
+            <tbody id="drillDownTableBody" class="divide-y divide-slate-100 text-xs"></tbody>
+        </table>
+      </div>
+      <div class="pt-2 text-right">
+        <button onclick="closeDrillDown()" class="px-5 py-2 bg-slate-800 text-white rounded font-bold hover:bg-slate-700 transition">Close</button>
+      </div>
+    </div>
+  </div>
+
   <!-- ALL CRUD MODALS -->
-  <!-- TRANSACTION MODAL -->
   <div id="txnModal" class="fixed inset-0 bg-slate-900/60 hidden items-center justify-center p-4 z-50">
     <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4 text-xs">
       <h3 id="txnModalTitle" class="text-base font-bold">Add Transaction</h3>
@@ -277,7 +306,6 @@
     </div>
   </div>
 
-  <!-- SPLIT TRANSACTION MODAL -->
   <div id="splitModal" class="fixed inset-0 bg-slate-900/60 hidden items-center justify-center p-4 z-50">
     <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4 text-xs">
       <h3 class="text-base font-bold text-indigo-900 border-b pb-2">✂ Split Transaction</h3>
@@ -305,7 +333,6 @@
     </div>
   </div>
 
-  <!-- ACCOUNT MODAL -->
   <div id="accountModal" class="fixed inset-0 bg-slate-900/60 hidden items-center justify-center p-4 z-50">
     <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4 text-xs">
       <h3 id="accountModalTitle" class="text-base font-bold">Add New Account</h3>
@@ -325,7 +352,6 @@
     </div>
   </div>
 
-  <!-- BUDGET MODAL -->
   <div id="budgetModal" class="fixed inset-0 bg-slate-900/60 hidden items-center justify-center p-4 z-50">
     <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4 text-xs">
       <h3 id="budgetModalTitle" class="text-base font-bold">Add Budget Target</h3>
@@ -351,7 +377,6 @@
     </div>
   </div>
 
-  <!-- GOAL MODAL -->
   <div id="goalModal" class="fixed inset-0 bg-slate-900/60 hidden items-center justify-center p-4 z-50">
     <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4 text-xs">
       <h3 id="goalModalTitle" class="text-base font-bold">Add Goal</h3>
@@ -373,7 +398,7 @@
     </div>
   </div>
 
-  <!-- SCRIPT ENGINE: LOCAL STORAGE, JSON BACKUP, FULL CRUD & SPLIT -->
+  <!-- SCRIPT ENGINE: LOCAL STORAGE, JSON BACKUP, FULL CRUD & CROSS-YEAR MATH -->
   <script>
     const STORAGE_KEY = 'ktbudget_data_v2';
     let db = { groups: [], categories: [], group_category: [], accounts: [], budgets: [], goals: [], todos: [], transactions: [], lastModified: 0, lastBackup: 0 };
@@ -460,7 +485,7 @@
                 { Budget_ID: 'B_001', Scope_Level: 'Category', Target_Ref_ID: 'C_CLOTH', Priority_Type: 'Want', Rule_Type: 'Each Month', Amount: '125.00', Start_Month: '2026-10', Target_Month: '', Is_Demo: '1', Notes: 'Standard allowance' },
                 { Budget_ID: 'B_002', Scope_Level: 'Category', Target_Ref_ID: 'C_GROC', Priority_Type: 'Necessity', Rule_Type: 'Annual', Amount: '6000.00', Start_Month: '2026-01', Target_Month: '', Is_Demo: '1', Notes: 'Averages 500/mo' }
             ],
-            goals: [{ Goal_ID: 'GL_1', Name: 'Vet Emergency', Description: 'Buffer for unexpected pet costs', Linked_Account: 'Savings_1', Linked_GC_ID: 'C_GROC', Target_Value: '500.00' }],
+            goals: [{ Goal_ID: 'GL_1', Name: 'Vet Emergency', Description: 'Buffer for unexpected pet costs', Linked_Account: 'Savings_1', Linked_GC_ID: 'C_GROC', Target_Value: '50.00' }],
             transactions: [{ Txn_ID: 'T001', Month: '2026-10', Account_ID: 'Chase', Merchant: 'Target Groceries', GC_ID: 'C_GROC', Amount: '145.20', Include: '1' }],
             todos: [{ Task: 'Update Salon Allocations', Type: 'Budgeting', Due_Date: '2026-10-31', Priority: 'High' }]
         };
@@ -526,7 +551,6 @@
     }
 
     function populateDropdowns() {
-        // SCOPED DROPDOWN: Combines Groups and Categories (for Budgets)
         let scopeOptions = '';
         db.groups.forEach(g => {
             scopeOptions += `<option value="Group|${g.Group_ID}" class="font-bold text-slate-900 bg-slate-100">📁 GROUP: ${g.Name}</option>`;
@@ -538,7 +562,6 @@
         });
         document.getElementById('newBudgCategory').innerHTML = '<option value="" disabled selected>Select Scope (Group or Category)...</option>' + scopeOptions;
 
-        // CATEGORY-ONLY DROPDOWN (for Transactions and Goals)
         let catOptions = '';
         db.categories.forEach(c => {
             const gc = db.group_category.find(g => g.Category_ID === c.Category_ID);
@@ -550,7 +573,6 @@
         document.getElementById('splitCatB').innerHTML = '<option value="" disabled selected>Select Category B...</option>' + catOptions;
         document.getElementById('newGoalCategory').innerHTML = '<option value="" disabled selected>Link to Category...</option>' + catOptions;
 
-        // ACCOUNTS
         const accs = db.accounts.map(a => `<option value="${a.Account_ID}">${a.Name} (${a.Type})</option>`).join('');
         document.getElementById('newGoalAccount').innerHTML = '<option value="" disabled selected>Link to Account...</option>' + accs;
         document.getElementById('newTxnAccount').innerHTML = '<option value="" disabled selected>Select Source Account...</option>' + accs;
@@ -592,16 +614,25 @@
       renderBudgetTable();
     }
 
-    function getMonthlyTargetCalculation(bg) {
+    // --- DYNAMIC DATE MATH (Nuance 3 + YTD Engine) ---
+    function getPriorMonth(yyyy_mm) {
+        let [y, m] = yyyy_mm.split('-').map(Number);
+        m -= 1;
+        if (m === 0) { m = 12; y -= 1; }
+        return `${y}-${m.toString().padStart(2, '0')}`;
+    }
+
+    function getMonthlyTargetCalculation(bg, calcMonthStr) {
         if (!bg) return 0;
         const baseAmt = Number(bg.Amount) || 0;
         const rType = bg.Rule_Type || bg.Type || 'Each Month'; 
         if (rType === 'Annual') return baseAmt / 12;
         if (rType === 'Target Month' && bg.Start_Month && bg.Target_Month) {
+            if (calcMonthStr < bg.Start_Month || calcMonthStr > bg.Target_Month) return 0; // Outside fractional window
             const [sy, sm] = bg.Start_Month.split('-').map(Number);
             const [ty, tm] = bg.Target_Month.split('-').map(Number);
             const span = ((ty - sy) * 12) + (tm - sm) + 1;
-            return span > 0 ? (baseAmt / span) : baseAmt;
+            return span > 0 ? (baseAmt / span) : 0;
         }
         return baseAmt;
     }
@@ -616,9 +647,8 @@
 
     function renderKpis() {
       let totT = 0, totC = 0, totP = 0;
-      const priorMo = appState.selectedMonth === '2026-10' ? '2026-09' : '2026-09';
+      const priorMo = getPriorMonth(appState.selectedMonth); // Cross-year dynamic math
       
-      // NUANCE 2 MATH FOR KPI: Max(Group_Budget, Sum(Category_Budgets + Goals))
       db.groups.forEach(g => {
           const groupGc = db.group_category.filter(gc => gc.Group_ID === g.Group_ID);
           let catTargetsTotal = 0;
@@ -626,11 +656,10 @@
               const bg = db.budgets.find(b => b.Scope_Level === 'Category' && b.Target_Ref_ID === gc.Category_ID);
               const linkedGoals = db.goals.filter(goal => goal.Linked_GC_ID === gc.Category_ID);
               const goalExtra = linkedGoals.reduce((sum, goal) => sum + (Number(goal.Target_Value) || 0), 0);
-              catTargetsTotal += getMonthlyTargetCalculation(bg) + goalExtra;
+              catTargetsTotal += getMonthlyTargetCalculation(bg, appState.selectedMonth) + goalExtra;
           });
           const grpBg = db.budgets.find(b => b.Scope_Level === 'Group' && b.Target_Ref_ID === g.Group_ID);
-          const grpTarget = getMonthlyTargetCalculation(grpBg);
-          
+          const grpTarget = getMonthlyTargetCalculation(grpBg, appState.selectedMonth);
           totT += Math.max(grpTarget, catTargetsTotal);
       });
 
@@ -656,20 +685,19 @@
     }
 
     function renderBudgetTable() {
+      const priorMo = getPriorMonth(appState.selectedMonth);
+      const currYear = appState.selectedMonth.split('-')[0]; // For YTD
+
       const tbody = document.getElementById('relationalBudgetTableBody');
       tbody.innerHTML = db.groups.map(g => {
         const groupGc = db.group_category.filter(gc => gc.Group_ID === g.Group_ID);
         
         let catRowsHtml = '';
-        let sumCatTargets = 0;
-        let sumCatActuals = 0;
-        let sumCatPrior = 0;
-        let sumCatYtd = 0;
+        let sumCatTargets = 0, sumCatActuals = 0, sumCatPrior = 0, sumCatYtd = 0;
 
-        // Process Categories
         groupGc.forEach(gc => {
           const bg = db.budgets.find(b => b.Scope_Level === 'Category' && b.Target_Ref_ID === gc.Category_ID);
-          let target = getMonthlyTargetCalculation(bg);
+          let target = getMonthlyTargetCalculation(bg, appState.selectedMonth);
           const rType = bg ? (bg.Rule_Type || bg.Type || 'Each Month') : '-';
           const priorityBadge = (bg && bg.Priority_Type) ? `<span class="mr-1 text-[9px] uppercase tracking-wider text-slate-400 font-bold">${bg.Priority_Type.substring(0,1)}</span>` : '';
           
@@ -678,14 +706,15 @@
           target += goalExtra; 
           
           const actual = db.transactions.filter(t => t.Include === '1' && t.GC_ID === gc.Category_ID && t.Month === appState.selectedMonth).reduce((s, t) => s + (Number(t.Amount) || 0), 0);
-          const priorActual = db.transactions.filter(t => t.Include === '1' && t.GC_ID === gc.Category_ID && t.Month === '2026-09').reduce((s, t) => s + (Number(t.Amount) || 0), 0);
-          const ytdActual = db.transactions.filter(t => t.Include === '1' && t.GC_ID === gc.Category_ID && (t.Month || '').startsWith('2026')).reduce((s, t) => s + (Number(t.Amount) || 0), 0);
+          const priorActual = db.transactions.filter(t => t.Include === '1' && t.GC_ID === gc.Category_ID && t.Month === priorMo).reduce((s, t) => s + (Number(t.Amount) || 0), 0);
+          const ytdActual = db.transactions.filter(t => t.Include === '1' && t.GC_ID === gc.Category_ID && t.Month.startsWith(currYear) && t.Month <= appState.selectedMonth).reduce((s, t) => s + (Number(t.Amount) || 0), 0);
           const variance = target - actual;
           const meter = target > 0 ? Math.round((actual / target) * 100) : 0;
           const goalNote = goalExtra > 0 ? `<div class="text-[9px] text-emerald-600 font-bold mt-0.5">+${fmtCurrency(goalExtra)} Goal rollup</div>` : '';
 
           sumCatTargets += target; sumCatActuals += actual; sumCatPrior += priorActual; sumCatYtd += ytdActual;
 
+          const escapedCatName = (gc.Display_Label.split('::')[1] || gc.Display_Label).replace(/'/g, "\\'");
           catRowsHtml += `
             <tr class="hover:bg-slate-50">
               <td class="py-2 pl-8 pr-3 text-slate-700 font-medium text-[11px]">${priorityBadge}${gc.Display_Label.split('::')[1] || gc.Display_Label}</td>
@@ -697,15 +726,14 @@
               <td class="py-2 px-3 text-right font-mono-num text-indigo-700">${fmtCurrency(ytdActual)}</td>
               <td class="py-2 px-3 text-center font-mono-num text-slate-500">${meter}%</td>
               <td class="py-2 pl-3 pr-5 text-right">
-                <button onclick="alert('12-Month view coming soon.')" class="px-2 py-1 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded text-[10px] font-semibold transition">[12-Mo]</button>
+                <button onclick="openDrillDown('Category', '${gc.Category_ID}', '${escapedCatName}')" class="px-2 py-1 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded text-[10px] font-semibold transition">[12-Mo]</button>
               </td>
             </tr>
           `;
         });
 
-        // NUANCE 2 MATH: Group Level Rollup & Unallocated Buffer
         const grpBg = db.budgets.find(b => b.Scope_Level === 'Group' && b.Target_Ref_ID === g.Group_ID);
-        const explicitGroupTarget = getMonthlyTargetCalculation(grpBg);
+        const explicitGroupTarget = getMonthlyTargetCalculation(grpBg, appState.selectedMonth);
         const effectiveGroupTarget = Math.max(explicitGroupTarget, sumCatTargets);
         const unallocated = effectiveGroupTarget - sumCatTargets;
         const grpVariance = effectiveGroupTarget - sumCatActuals;
@@ -715,7 +743,7 @@
         if (unallocated > 0.001) {
             unallocatedRow = `
                 <tr class="bg-amber-50/40">
-                  <td class="py-2 pl-8 pr-3 text-amber-700 font-semibold text-[11px] italic">↳ Unallocated Group Buffer</td>
+                  <td class="py-2 pl-8 pr-3 text-amber-700 font-semibold text-[11px] italic">⚠ Unallocated Group Buffer</td>
                   <td class="py-2 px-3">-</td>
                   <td class="py-2 px-3 text-right font-mono-num text-amber-700 font-bold">${fmtCurrency(unallocated)}</td>
                   <td class="py-2 px-3 text-right font-mono-num font-bold text-slate-400">$0.00</td>
@@ -728,6 +756,7 @@
             `;
         }
 
+        const escapedGrpName = g.Name.replace(/'/g, "\\'");
         const groupHeader = `
           <tr class="bg-slate-100 font-bold text-slate-900 border-t-2 border-slate-300">
             <td class="py-3 pl-4 uppercase tracking-wide text-xs">
@@ -740,7 +769,9 @@
             <td class="py-3 px-3 text-right font-mono-num text-slate-600">${fmtCurrency(sumCatPrior)}</td>
             <td class="py-3 px-3 text-right font-mono-num text-indigo-800">${fmtCurrency(sumCatYtd)}</td>
             <td class="py-3 px-3 text-center font-mono-num text-slate-700">${grpMeter}%</td>
-            <td class="py-3 pl-3 pr-5 text-right"></td>
+            <td class="py-3 pl-3 pr-5 text-right">
+              <button onclick="openDrillDown('Group', '${g.Group_ID}', 'GROUP: ${escapedGrpName}')" class="px-2 py-1 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded text-[10px] font-semibold transition">[12-Mo]</button>
+            </td>
           </tr>
         `;
 
@@ -748,6 +779,77 @@
       }).join('');
     }
 
+    // --- 12-MONTH DRILL-DOWN LOGIC ---
+    function openDrillDown(scope, refId, displayName) {
+        document.getElementById('drillDownTitle').textContent = `12-Month Trend: ${displayName}`;
+        const currYear = appState.selectedMonth.split('-')[0];
+        const tbody = document.getElementById('drillDownTableBody');
+        let html = '';
+        let totalTarget = 0, totalActual = 0;
+        
+        for(let m = 1; m <= 12; m++) {
+            const monthStr = `${currYear}-${m.toString().padStart(2, '0')}`;
+            let target = 0;
+            let actual = 0;
+            
+            if (scope === 'Group') {
+                const groupGc = db.group_category.filter(x => x.Group_ID === refId);
+                let catTargetsTotal = 0;
+                groupGc.forEach(gc => {
+                    const bg = db.budgets.find(b => b.Scope_Level === 'Category' && b.Target_Ref_ID === gc.Category_ID);
+                    const linkedGoals = db.goals.filter(goal => goal.Linked_GC_ID === gc.Category_ID);
+                    const goalExtra = linkedGoals.reduce((sum, goal) => sum + (Number(goal.Target_Value) || 0), 0);
+                    catTargetsTotal += getMonthlyTargetCalculation(bg, monthStr) + goalExtra;
+                });
+                const grpBg = db.budgets.find(b => b.Scope_Level === 'Group' && b.Target_Ref_ID === refId);
+                const grpTarget = getMonthlyTargetCalculation(grpBg, monthStr);
+                target = Math.max(grpTarget, catTargetsTotal);
+
+                const catIds = groupGc.map(x => x.Category_ID);
+                actual = db.transactions.filter(t => t.Include === '1' && catIds.includes(t.GC_ID) && t.Month === monthStr).reduce((s,t) => s + (Number(t.Amount)||0), 0);
+            } else {
+                const bg = db.budgets.find(b => b.Scope_Level === 'Category' && b.Target_Ref_ID === refId);
+                const linkedGoals = db.goals.filter(goal => goal.Linked_GC_ID === refId);
+                const goalExtra = linkedGoals.reduce((sum, goal) => sum + (Number(goal.Target_Value) || 0), 0);
+                target = getMonthlyTargetCalculation(bg, monthStr) + goalExtra;
+
+                actual = db.transactions.filter(t => t.Include === '1' && t.GC_ID === refId && t.Month === monthStr).reduce((s,t) => s + (Number(t.Amount)||0), 0);
+            }
+            
+            const variance = target - actual;
+            totalTarget += target;
+            totalActual += actual;
+            
+            const isFuture = monthStr > appState.selectedMonth;
+            const isCurrent = monthStr === appState.selectedMonth;
+            const rowClass = isFuture ? 'opacity-60 bg-slate-50' : (isCurrent ? 'bg-indigo-50/70 font-semibold' : '');
+            
+            html += `<tr class="border-b border-slate-100 ${rowClass} hover:bg-slate-50">
+                <td class="py-2.5 px-4">${monthStr} ${isFuture ? '<span class="text-[9px] uppercase tracking-wide text-slate-400 ml-1">Proj</span>' : ''}</td>
+                <td class="py-2.5 px-4 text-right font-mono-num text-slate-800">${fmtCurrency(target)}</td>
+                <td class="py-2.5 px-4 text-right font-mono-num text-slate-800 ${isCurrent ? 'font-bold' : ''}">${fmtCurrency(actual)}</td>
+                <td class="py-2.5 px-4 text-right font-mono-num ${variance < 0 ? 'text-rose-600' : 'text-emerald-600'}">${fmtCurrency(variance, true)}</td>
+            </tr>`;
+        }
+        
+        html += `<tr class="bg-slate-100 font-bold border-t-2 border-slate-300">
+            <td class="py-3 px-4 uppercase text-[10px] tracking-widest text-slate-500">Year Total</td>
+            <td class="py-3 px-4 text-right font-mono-num">${fmtCurrency(totalTarget)}</td>
+            <td class="py-3 px-4 text-right font-mono-num">${fmtCurrency(totalActual)}</td>
+            <td class="py-3 px-4 text-right font-mono-num ${totalTarget - totalActual < 0 ? 'text-rose-600' : 'text-emerald-600'}">${fmtCurrency(totalTarget - totalActual, true)}</td>
+        </tr>`;
+        
+        document.getElementById('drillDownTableBody').innerHTML = html;
+        document.getElementById('drillDownModal').classList.remove('hidden');
+        document.getElementById('drillDownModal').classList.add('flex');
+    }
+    
+    function closeDrillDown() {
+        document.getElementById('drillDownModal').classList.add('hidden');
+        document.getElementById('drillDownModal').classList.remove('flex');
+    }
+
+    // CRUD RENDERS
     function renderLedger() {
       const tbody = document.getElementById('ledgerTableBody');
       tbody.innerHTML = db.transactions.map((t, idx) => `
