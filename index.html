@@ -24,7 +24,7 @@
           <div class="flex items-center gap-2.5 flex-wrap">
             <h1 class="text-xl font-extrabold tracking-tight text-white">KTBudget 2.0</h1>
             <span class="px-2.5 py-0.5 text-[11px] font-semibold rounded-full bg-indigo-950/90 text-indigo-300 border border-indigo-700/60">
-              Relational 8-Table Engine • v2.2.0
+              Relational 8-Table Engine • v2.3.0
             </span>
           </div>
           <p class="text-xs text-slate-400 mt-0.5">GitHub CSV Sync • Budgets, Goals, &amp; Demo Data Engine</p>
@@ -60,7 +60,7 @@
 
     <!-- ALERT BANNER FOR DEMO DATA -->
     <div id="demoDataAlert" class="hidden bg-amber-50 border border-amber-200 text-amber-800 px-4 py-3 rounded-xl text-sm shadow-sm flex items-center justify-between">
-      <div><strong>Demo Data Loaded:</strong> Since no CSVs were found, default templates have been loaded. You can use these to start budgeting or overwrite them when you connect your own data.</div>
+      <div><strong>Demo Data Loaded:</strong> Since no CSVs were found (or they were empty), default templates have been loaded. You can use these to test the app.</div>
       <button onclick="document.getElementById('demoDataAlert').classList.add('hidden')" class="text-amber-600 hover:text-amber-900 text-xl font-bold">&times;</button>
     </div>
 
@@ -71,7 +71,7 @@
         <div class="bg-white rounded-xl p-5 border border-slate-200 shadow-sm relative overflow-hidden">
           <div class="text-xs font-bold uppercase tracking-wider text-slate-400">Monthly Target</div>
           <div id="kpiMonthlyTarget" class="text-3xl font-extrabold text-slate-900 mt-2 font-mono-num">$0.00</div>
-          <div id="kpiTargetSub" class="text-xs text-slate-400 mt-2">Loading CSVs...</div>
+          <div id="kpiTargetSub" class="text-xs text-slate-400 mt-2">Based on setup targets</div>
         </div>
         <div class="bg-white rounded-xl p-5 border border-slate-200 shadow-sm relative overflow-hidden">
           <div class="text-xs font-bold uppercase tracking-wider text-slate-400">Current Actual</div>
@@ -152,11 +152,11 @@
       </div>
     </section>
 
-  <!-- TAB 3: CANVAS & GOALS (BUDGETS) -->
+    <!-- TAB 3: CANVAS & GOALS (BUDGET SETUP) -->
     <section id="tab-canvas" class="hidden space-y-6">
       <div class="bg-white rounded-xl border border-slate-200 p-5 shadow-sm space-y-4">
         <div class="flex items-center justify-between border-b border-slate-100 pb-3">
-            <h2 class="text-base font-bold text-slate-900">Budget Canvas (Setup & Adjustments)</h2>
+            <h2 class="text-base font-bold text-slate-900">Budget Canvas (Setup &amp; Adjustments)</h2>
             <button onclick="openBudgetModal()" class="bg-[#6c5ce7] hover:bg-[#5b4bc4] text-white text-xs font-semibold px-3.5 py-2 rounded-lg transition">+ Add Budget</button>
         </div>
         
@@ -175,7 +175,7 @@
           </table>
         </div>
         
-        <h3 class="text-sm font-bold text-slate-900 mt-6 border-b border-slate-100 pb-2">To-Dos & Reminders</h3>
+        <h3 class="text-sm font-bold text-slate-900 mt-6 border-b border-slate-100 pb-2">To-Dos &amp; Reminders</h3>
         <div id="todoTableBody" class="space-y-2 text-xs"></div>
       </div>
     </section>
@@ -386,6 +386,7 @@
     }
 
     function handleMonthChange(val) { appState.selectedMonth = val; renderAll(); }
+    
     function promptAddMonth() {
       const m = prompt('Enter new Month (YYYY-MM):', '2026-11');
       if (m && /^\d{4}-\d{2}$/.test(m.trim())) {
@@ -415,7 +416,6 @@
       renderTodos();
       renderAccountsAndGoals();
       renderBudgetSetup();
-      }).join('');
     }
 
     function renderKpis() {
@@ -491,40 +491,7 @@
         }).join('');
       }).join('');
     }
-    function renderBudgetSetup() {
-      const tbody = document.getElementById('budgetSetupTableBody');
-      tbody.innerHTML = db.budgets.map((b, index) => {
-        let catName = b.Target_Ref_ID;
-        const cat = db.categories.find(c => c.Category_ID === b.Target_Ref_ID);
-        if (cat) {
-            const gc = db.group_category.find(g => g.Category_ID === cat.Category_ID);
-            catName = gc ? gc.Display_Label : cat.Name;
-        }
-        // Fallback to 'Each Month' if the CSV doesn't have a Type defined yet
-        const bType = b.Type || 'Each Month'; 
-        const amt = Number(b.Amount) || 0;
-        const ann = bType === 'Each Month' ? amt * 12 : (bType === 'Annual' ? amt : amt * 12);
-        
-        return `
-        <tr class="hover:bg-slate-50">
-          <td class="py-3 pl-4 font-semibold text-slate-800">${catName}</td>
-          <td class="py-3 text-slate-600"><span class="bg-indigo-50 text-indigo-700 px-2 py-0.5 rounded text-[10px] font-bold">${bType}</span></td>
-          <td class="py-3 text-right font-mono-num font-bold text-slate-900">${fmtCurrency(amt)}</td>
-          <td class="py-3 text-right font-mono-num text-slate-400">${fmtCurrency(ann)}</td>
-          <td class="py-3 pl-2 pr-4 text-right">
-             <button onclick="deleteBudget(${index})" class="text-slate-400 hover:text-rose-600 font-bold text-lg leading-none" title="Delete Budget">&times;</button>
-          </td>
-        </tr>
-        `;
-      }).join('');
-    }
 
-    function deleteBudget(idx) {
-        if(confirm('Remove this budget item?')) {
-            db.budgets.splice(idx, 1);
-            renderAll();
-        }
-    }
     function renderLedger() {
       const tbody = document.getElementById('ledgerTableBody');
       tbody.innerHTML = db.transactions.map(t => `
@@ -570,6 +537,41 @@
           <p class="text-[11px] text-emerald-600 font-semibold">Linked: ${linkedName}</p>
         </div>
       `}).join('');
+    }
+
+    function renderBudgetSetup() {
+      const tbody = document.getElementById('budgetSetupTableBody');
+      tbody.innerHTML = db.budgets.map((b, index) => {
+        let catName = b.Target_Ref_ID;
+        const cat = db.categories.find(c => c.Category_ID === b.Target_Ref_ID);
+        if (cat) {
+            const gc = db.group_category.find(g => g.Category_ID === cat.Category_ID);
+            catName = gc ? gc.Display_Label : cat.Name;
+        }
+        
+        const bType = b.Type || 'Each Month'; 
+        const amt = Number(b.Amount) || 0;
+        const ann = bType === 'Each Month' ? amt * 12 : (bType === 'Annual' ? amt : amt * 12);
+        
+        return `
+        <tr class="hover:bg-slate-50">
+          <td class="py-3 pl-4 font-semibold text-slate-800">${catName}</td>
+          <td class="py-3 text-slate-600"><span class="bg-indigo-50 text-indigo-700 px-2 py-0.5 rounded text-[10px] font-bold">${bType}</span></td>
+          <td class="py-3 text-right font-mono-num font-bold text-slate-900">${fmtCurrency(amt)}</td>
+          <td class="py-3 text-right font-mono-num text-slate-400">${fmtCurrency(ann)}</td>
+          <td class="py-3 pl-2 pr-4 text-right">
+             <button onclick="deleteBudget(${index})" class="text-slate-400 hover:text-rose-600 font-bold text-lg leading-none" title="Delete Budget">&times;</button>
+          </td>
+        </tr>
+        `;
+      }).join('');
+    }
+
+    function deleteBudget(idx) {
+        if(confirm('Remove this budget item?')) {
+            db.budgets.splice(idx, 1);
+            renderAll();
+        }
     }
 
     // Modal Control Functions
