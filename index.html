@@ -152,18 +152,31 @@
       </div>
     </section>
 
-    <!-- TAB 3: CANVAS & GOALS (BUDGETS) -->
+  <!-- TAB 3: CANVAS & GOALS (BUDGETS) -->
     <section id="tab-canvas" class="hidden space-y-6">
       <div class="bg-white rounded-xl border border-slate-200 p-5 shadow-sm space-y-4">
         <div class="flex items-center justify-between border-b border-slate-100 pb-3">
-            <h2 class="text-base font-bold text-slate-900">Budget Canvas &amp; To-Dos</h2>
+            <h2 class="text-base font-bold text-slate-900">Budget Canvas (Setup & Adjustments)</h2>
             <button onclick="openBudgetModal()" class="bg-[#6c5ce7] hover:bg-[#5b4bc4] text-white text-xs font-semibold px-3.5 py-2 rounded-lg transition">+ Add Budget</button>
         </div>
-        <div id="todoTableBody" class="space-y-2 text-xs"></div>
-        <div id="budgetItemsList" class="mt-4 p-4 bg-slate-50 rounded border border-slate-200 text-sm">
-            <p class="text-slate-500 font-semibold mb-2">Active Budget Directives:</p>
-            <ul id="activeBudgetsUI" class="space-y-1 list-disc pl-5"></ul>
+        
+        <div class="overflow-x-auto">
+          <table class="w-full text-left border-collapse min-w-[700px]">
+            <thead>
+              <tr class="border-b border-slate-200 bg-slate-50 text-[11px] font-bold uppercase tracking-wider text-slate-400">
+                <th class="py-3 pl-4">Group :: Category</th>
+                <th class="py-3">Budget Type</th>
+                <th class="py-3 text-right">Target Amount</th>
+                <th class="py-3 text-right">Annual Equivalent</th>
+                <th class="py-3 pl-2 pr-4 text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="budgetSetupTableBody" class="divide-y divide-slate-100 text-xs"></tbody>
+          </table>
         </div>
+        
+        <h3 class="text-sm font-bold text-slate-900 mt-6 border-b border-slate-100 pb-2">To-Dos & Reminders</h3>
+        <div id="todoTableBody" class="space-y-2 text-xs"></div>
       </div>
     </section>
 
@@ -401,13 +414,7 @@
       renderLedger();
       renderTodos();
       renderAccountsAndGoals();
-      
-      // Render simple Budget list
-      document.getElementById('activeBudgetsUI').innerHTML = db.budgets.map(b => {
-          let catName = b.Target_Ref_ID;
-          const cat = db.categories.find(c => c.Category_ID === b.Target_Ref_ID);
-          if (cat) catName = cat.Name;
-          return `<li><strong>${catName}:</strong> ${fmtCurrency(b.Amount)} (${b.Type})</li>`;
+      renderBudgetSetup();
       }).join('');
     }
 
@@ -484,7 +491,40 @@
         }).join('');
       }).join('');
     }
+    function renderBudgetSetup() {
+      const tbody = document.getElementById('budgetSetupTableBody');
+      tbody.innerHTML = db.budgets.map((b, index) => {
+        let catName = b.Target_Ref_ID;
+        const cat = db.categories.find(c => c.Category_ID === b.Target_Ref_ID);
+        if (cat) {
+            const gc = db.group_category.find(g => g.Category_ID === cat.Category_ID);
+            catName = gc ? gc.Display_Label : cat.Name;
+        }
+        // Fallback to 'Each Month' if the CSV doesn't have a Type defined yet
+        const bType = b.Type || 'Each Month'; 
+        const amt = Number(b.Amount) || 0;
+        const ann = bType === 'Each Month' ? amt * 12 : (bType === 'Annual' ? amt : amt * 12);
+        
+        return `
+        <tr class="hover:bg-slate-50">
+          <td class="py-3 pl-4 font-semibold text-slate-800">${catName}</td>
+          <td class="py-3 text-slate-600"><span class="bg-indigo-50 text-indigo-700 px-2 py-0.5 rounded text-[10px] font-bold">${bType}</span></td>
+          <td class="py-3 text-right font-mono-num font-bold text-slate-900">${fmtCurrency(amt)}</td>
+          <td class="py-3 text-right font-mono-num text-slate-400">${fmtCurrency(ann)}</td>
+          <td class="py-3 pl-2 pr-4 text-right">
+             <button onclick="deleteBudget(${index})" class="text-slate-400 hover:text-rose-600 font-bold text-lg leading-none" title="Delete Budget">&times;</button>
+          </td>
+        </tr>
+        `;
+      }).join('');
+    }
 
+    function deleteBudget(idx) {
+        if(confirm('Remove this budget item?')) {
+            db.budgets.splice(idx, 1);
+            renderAll();
+        }
+    }
     function renderLedger() {
       const tbody = document.getElementById('ledgerTableBody');
       tbody.innerHTML = db.transactions.map(t => `
