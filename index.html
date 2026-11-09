@@ -10,7 +10,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
 
-  <title>KTBudget 3.0: Relational Financial Canvas</title>
+  <title>KTBudget 3.1: Relational Financial Canvas</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -40,10 +40,10 @@
           <div class="flex items-center gap-2.5 flex-wrap">
             <h1 class="text-xl font-extrabold tracking-tight text-white">KTBudget 3.0</h1>
             <span class="px-2.5 py-0.5 text-[11px] font-semibold rounded-full bg-indigo-950/90 text-indigo-300 border border-indigo-700/60">
-              Relational 8-Table Engine • v3.0.0
+              Relational 8-Table Engine • v3.1.0
             </span>
           </div>
-          <p class="text-xs text-slate-400 mt-0.5">12-Month Drill-Down • Dynamic Date Math</p>
+          <p class="text-xs text-slate-400 mt-0.5">Legacy CSV Auto-Healing • 12-Month Drill-Down</p>
         </div>
       </div>
 
@@ -526,6 +526,15 @@
       db.goals = await loadCsv('goals.csv');
       db.todos = await loadCsv('todos.csv');
       db.transactions = await loadCsv('transactions.csv');
+      
+      // Auto-heal legacy budget items missing Scope_Level
+      db.budgets.forEach(b => {
+          if (!b.Scope_Level) {
+              if (db.groups.some(g => g.Group_ID === b.Target_Ref_ID)) b.Scope_Level = 'Group';
+              else b.Scope_Level = 'Category';
+          }
+      });
+      
       db.lastBackup = Date.now(); 
       saveDataToLocal(); 
       document.getElementById('demoDataAlert').classList.remove('hidden');
@@ -614,7 +623,7 @@
       renderBudgetTable();
     }
 
-    // --- DYNAMIC DATE MATH (Nuance 3 + YTD Engine) ---
+    // --- DYNAMIC DATE MATH ---
     function getPriorMonth(yyyy_mm) {
         let [y, m] = yyyy_mm.split('-').map(Number);
         m -= 1;
@@ -628,7 +637,7 @@
         const rType = bg.Rule_Type || bg.Type || 'Each Month'; 
         if (rType === 'Annual') return baseAmt / 12;
         if (rType === 'Target Month' && bg.Start_Month && bg.Target_Month) {
-            if (calcMonthStr < bg.Start_Month || calcMonthStr > bg.Target_Month) return 0; // Outside fractional window
+            if (calcMonthStr < bg.Start_Month || calcMonthStr > bg.Target_Month) return 0; 
             const [sy, sm] = bg.Start_Month.split('-').map(Number);
             const [ty, tm] = bg.Target_Month.split('-').map(Number);
             const span = ((ty - sy) * 12) + (tm - sm) + 1;
@@ -642,23 +651,32 @@
       mSel.innerHTML = appState.customMonths.map(m => `<option value="${m}">${m}</option>`).join('');
       mSel.value = appState.selectedMonth;
       document.getElementById('ledgerCountBadge').textContent = db.transactions.length;
+      
+      // Ensure all budgets have Scope_Level for robust mapping (Auto-healing step)
+      db.budgets.forEach(b => {
+          if (!b.Scope_Level) {
+              if (db.groups.some(g => g.Group_ID === b.Target_Ref_ID)) b.Scope_Level = 'Group';
+              else b.Scope_Level = 'Category';
+          }
+      });
+      
       renderKpis(); renderBudgetTable(); renderLedger(); renderAccountsAndGoals(); renderBudgetSetup();
     }
 
     function renderKpis() {
       let totT = 0, totC = 0, totP = 0;
-      const priorMo = getPriorMonth(appState.selectedMonth); // Cross-year dynamic math
+      const priorMo = getPriorMonth(appState.selectedMonth); 
       
       db.groups.forEach(g => {
           const groupGc = db.group_category.filter(gc => gc.Group_ID === g.Group_ID);
           let catTargetsTotal = 0;
           groupGc.forEach(gc => {
-              const bg = db.budgets.find(b => b.Scope_Level === 'Category' && b.Target_Ref_ID === gc.Category_ID);
+              const bg = db.budgets.find(b => b.Target_Ref_ID === gc.Category_ID);
               const linkedGoals = db.goals.filter(goal => goal.Linked_GC_ID === gc.Category_ID);
               const goalExtra = linkedGoals.reduce((sum, goal) => sum + (Number(goal.Target_Value) || 0), 0);
               catTargetsTotal += getMonthlyTargetCalculation(bg, appState.selectedMonth) + goalExtra;
           });
-          const grpBg = db.budgets.find(b => b.Scope_Level === 'Group' && b.Target_Ref_ID === g.Group_ID);
+          const grpBg = db.budgets.find(b => b.Target_Ref_ID === g.Group_ID);
           const grpTarget = getMonthlyTargetCalculation(grpBg, appState.selectedMonth);
           totT += Math.max(grpTarget, catTargetsTotal);
       });
@@ -686,7 +704,7 @@
 
     function renderBudgetTable() {
       const priorMo = getPriorMonth(appState.selectedMonth);
-      const currYear = appState.selectedMonth.split('-')[0]; // For YTD
+      const currYear = appState.selectedMonth.split('-')[0]; 
 
       const tbody = document.getElementById('relationalBudgetTableBody');
       tbody.innerHTML = db.groups.map(g => {
@@ -696,7 +714,7 @@
         let sumCatTargets = 0, sumCatActuals = 0, sumCatPrior = 0, sumCatYtd = 0;
 
         groupGc.forEach(gc => {
-          const bg = db.budgets.find(b => b.Scope_Level === 'Category' && b.Target_Ref_ID === gc.Category_ID);
+          const bg = db.budgets.find(b => b.Target_Ref_ID === gc.Category_ID);
           let target = getMonthlyTargetCalculation(bg, appState.selectedMonth);
           const rType = bg ? (bg.Rule_Type || bg.Type || 'Each Month') : '-';
           const priorityBadge = (bg && bg.Priority_Type) ? `<span class="mr-1 text-[9px] uppercase tracking-wider text-slate-400 font-bold">${bg.Priority_Type.substring(0,1)}</span>` : '';
@@ -732,7 +750,7 @@
           `;
         });
 
-        const grpBg = db.budgets.find(b => b.Scope_Level === 'Group' && b.Target_Ref_ID === g.Group_ID);
+        const grpBg = db.budgets.find(b => b.Target_Ref_ID === g.Group_ID);
         const explicitGroupTarget = getMonthlyTargetCalculation(grpBg, appState.selectedMonth);
         const effectiveGroupTarget = Math.max(explicitGroupTarget, sumCatTargets);
         const unallocated = effectiveGroupTarget - sumCatTargets;
@@ -796,19 +814,19 @@
                 const groupGc = db.group_category.filter(x => x.Group_ID === refId);
                 let catTargetsTotal = 0;
                 groupGc.forEach(gc => {
-                    const bg = db.budgets.find(b => b.Scope_Level === 'Category' && b.Target_Ref_ID === gc.Category_ID);
+                    const bg = db.budgets.find(b => b.Target_Ref_ID === gc.Category_ID);
                     const linkedGoals = db.goals.filter(goal => goal.Linked_GC_ID === gc.Category_ID);
                     const goalExtra = linkedGoals.reduce((sum, goal) => sum + (Number(goal.Target_Value) || 0), 0);
                     catTargetsTotal += getMonthlyTargetCalculation(bg, monthStr) + goalExtra;
                 });
-                const grpBg = db.budgets.find(b => b.Scope_Level === 'Group' && b.Target_Ref_ID === refId);
+                const grpBg = db.budgets.find(b => b.Target_Ref_ID === refId);
                 const grpTarget = getMonthlyTargetCalculation(grpBg, monthStr);
                 target = Math.max(grpTarget, catTargetsTotal);
 
                 const catIds = groupGc.map(x => x.Category_ID);
                 actual = db.transactions.filter(t => t.Include === '1' && catIds.includes(t.GC_ID) && t.Month === monthStr).reduce((s,t) => s + (Number(t.Amount)||0), 0);
             } else {
-                const bg = db.budgets.find(b => b.Scope_Level === 'Category' && b.Target_Ref_ID === refId);
+                const bg = db.budgets.find(b => b.Target_Ref_ID === refId);
                 const linkedGoals = db.goals.filter(goal => goal.Linked_GC_ID === refId);
                 const goalExtra = linkedGoals.reduce((sum, goal) => sum + (Number(goal.Target_Value) || 0), 0);
                 target = getMonthlyTargetCalculation(bg, monthStr) + goalExtra;
@@ -899,7 +917,9 @@
       const tbody = document.getElementById('budgetSetupTableBody');
       tbody.innerHTML = db.budgets.map((b, index) => {
         let dispName = b.Target_Ref_ID;
-        if (b.Scope_Level === 'Group') {
+        
+        // Auto-detect Scope for robust display (fixes legacy missing Scope_Level)
+        if (b.Scope_Level === 'Group' || db.groups.some(g => g.Group_ID === b.Target_Ref_ID)) {
             const g = db.groups.find(x => x.Group_ID === b.Target_Ref_ID);
             dispName = g ? `📁 GROUP: ${g.Name}` : dispName;
         } else {
