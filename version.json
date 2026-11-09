@@ -1,5 +1,5 @@
 {
-  "version": "2.1.1",
+  "version": "2.1.2",
   "updated": "2026-11-08",
-  "notes": "Relational 8-CSV architecture with 12-month projections, split transactions, and Interactive Budget Canvas"
+  "notes": "Continue with table Create, add, edit, etc. for each table and on rows."
 }
