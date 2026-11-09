@@ -10,7 +10,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
 
-  <title>KTBudget 3.2: Relational Financial Canvas</title>
+  <title>KTBudget 3.4: Relational Financial Canvas</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -37,10 +37,10 @@
           <div class="flex items-center gap-2.5 flex-wrap">
             <h1 class="text-xl font-extrabold tracking-tight text-white">KTBudget 3.0</h1>
             <span class="px-2.5 py-0.5 text-[11px] font-semibold rounded-full bg-indigo-950/90 text-indigo-300 border border-indigo-700/60">
-              Relational 8-Table Engine • v3.2.0
+              Relational 8-Table Engine • v3.4.0
             </span>
           </div>
-          <p class="text-xs text-slate-400 mt-0.5">Effective Dating Engine • UI Data Healing</p>
+          <p class="text-xs text-slate-400 mt-0.5">Dynamic Startup Anchoring • Effective Dating</p>
         </div>
       </div>
 
@@ -361,11 +361,17 @@
       </select>
       <input id="newBudgAmount" type="number" step="0.01" placeholder="Target Value Amount ($)..." class="w-full border rounded px-3 py-2 font-mono-num" />
       
-      <div id="targetMonthContainer" class="space-y-1 mt-2">
-        <label class="text-[10px] text-slate-500 font-bold uppercase">End Month / Deadline (Optional)</label>
-        <input id="newBudgDate" type="month" class="w-full border rounded px-3 py-2" />
-        <p class="text-[10px] text-slate-400 leading-tight">Leave blank for continuous. Used to close old budgets without breaking history (e.g. Rent change).</p>
+      <div class="grid grid-cols-2 gap-2 mt-2">
+        <div class="space-y-1">
+          <label class="text-[10px] text-slate-500 font-bold uppercase">Start Month</label>
+          <input id="newBudgStartMonth" type="month" class="w-full border rounded px-3 py-2" required />
+        </div>
+        <div class="space-y-1">
+          <label class="text-[10px] text-slate-500 font-bold uppercase">End Month (Optional)</label>
+          <input id="newBudgDate" type="month" class="w-full border rounded px-3 py-2" />
+        </div>
       </div>
+      <p class="text-[10px] text-slate-400 leading-tight mt-1">Leave End Month blank for continuous budgets. Editing history? Adjust the Start Month.</p>
 
       <input id="newBudgNotes" type="text" placeholder="Notes (Optional)..." class="w-full border rounded px-3 py-2 mt-2" />
       <div class="flex justify-end gap-2 pt-3 border-t mt-3">
@@ -476,12 +482,12 @@
             group_category: [{ GC_ID: 'GC_1', Group_ID: 'G_WANTS', Category_ID: 'C_CLOTH', Display_Label: 'Wants::Clothing & online shopping' }, { GC_ID: 'GC_2', Group_ID: 'G_NEC', Category_ID: 'C_GROC', Display_Label: 'Personal necessities::Groceries & household' }],
             accounts: [{ Account_ID: 'Chase', Name: 'Chase Checking', Type: 'CCard', Balance: '5471.25' }, { Account_ID: 'Savings_1', Name: 'Dog Emergency Fund', Type: 'Savings', Balance: '150.00' }],
             budgets: [
-                { Budget_ID: 'B_000', Scope_Level: 'Group', Target_Ref_ID: 'G_WANTS', Priority_Type: 'Want', Rule_Type: 'Each Month', Amount: '300.00', Start_Month: '2026-10', Target_Month: '', Is_Demo: '1', Notes: 'Overall Wants Group Budget' },
-                { Budget_ID: 'B_001', Scope_Level: 'Category', Target_Ref_ID: 'C_CLOTH', Priority_Type: 'Want', Rule_Type: 'Each Month', Amount: '125.00', Start_Month: '2026-10', Target_Month: '', Is_Demo: '1', Notes: 'Standard allowance' },
-                { Budget_ID: 'B_002', Scope_Level: 'Category', Target_Ref_ID: 'C_GROC', Priority_Type: 'Necessity', Rule_Type: 'Annual', Amount: '6000.00', Start_Month: '2026-01', Target_Month: '', Is_Demo: '1', Notes: 'Averages 500/mo' }
+                { Budget_ID: 'B_000', Scope_Level: 'Group', Target_Ref_ID: 'G_WANTS', Priority_Type: 'Want', Rule_Type: 'Each Month', Amount: '300.00', Start_Month: appState.selectedMonth, Target_Month: '', Is_Demo: '1', Notes: 'Overall Wants Group Budget' },
+                { Budget_ID: 'B_001', Scope_Level: 'Category', Target_Ref_ID: 'C_CLOTH', Priority_Type: 'Want', Rule_Type: 'Each Month', Amount: '125.00', Start_Month: appState.selectedMonth, Target_Month: '', Is_Demo: '1', Notes: 'Standard allowance' },
+                { Budget_ID: 'B_002', Scope_Level: 'Category', Target_Ref_ID: 'C_GROC', Priority_Type: 'Necessity', Rule_Type: 'Annual', Amount: '6000.00', Start_Month: appState.selectedMonth, Target_Month: '', Is_Demo: '1', Notes: 'Averages 500/mo' }
             ],
             goals: [{ Goal_ID: 'GL_1', Name: 'Vet Emergency', Description: 'Buffer for unexpected pet costs', Linked_Account: 'Savings_1', Linked_GC_ID: 'C_GROC', Target_Value: '50.00' }],
-            transactions: [{ Txn_ID: 'T001', Month: '2026-10', Account_ID: 'Chase', Merchant: 'Target Groceries', GC_ID: 'C_GROC', Amount: '145.20', Include: '1' }],
+            transactions: [{ Txn_ID: 'T001', Month: appState.selectedMonth, Account_ID: 'Chase', Merchant: 'Target Groceries', GC_ID: 'C_GROC', Amount: '145.20', Include: '1' }],
             todos: [{ Task: 'Update Salon Allocations', Type: 'Budgeting', Due_Date: '2026-10-31', Priority: 'High' }]
         };
         return demo[table.replace('.csv', '')] || [];
@@ -522,11 +528,14 @@
       db.todos = await loadCsv('todos.csv');
       db.transactions = await loadCsv('transactions.csv');
       
+      // Auto-heal missing data loops
       db.budgets.forEach(b => {
           if (!b.Scope_Level) {
               if (db.groups.some(g => g.Group_ID === b.Target_Ref_ID)) b.Scope_Level = 'Group';
               else b.Scope_Level = 'Category';
           }
+          // Fix V3.4.0: Anchor legacy/imported CSV budgets missing start dates to current month to avoid fake variances
+          if (!b.Start_Month) b.Start_Month = appState.selectedMonth; 
       });
       
       db.lastBackup = Date.now(); 
@@ -542,8 +551,8 @@
       } else {
           await seedDatabase();
       }
-      checkBackupStatus();
 
+      checkBackupStatus();
       const mSet = new Set(appState.customMonths);
       db.transactions.forEach(t => { if (t.Month) mSet.add(t.Month); });
       appState.customMonths = Array.from(mSet).sort().reverse();
@@ -617,7 +626,6 @@
       renderBudgetTable();
     }
 
-    // --- DYNAMIC EFFECTIVE DATE MATH (V3.2.0 UPGRADE) ---
     function getPriorMonth(yyyy_mm) {
         let [y, m] = yyyy_mm.split('-').map(Number);
         m -= 1;
@@ -628,7 +636,6 @@
     function getMonthlyTargetCalculation(bg, calcMonthStr) {
         if (!bg) return 0;
         
-        // Strict Effective Dating Boundaries
         if (bg.Start_Month && calcMonthStr < bg.Start_Month) return 0;
         if (bg.Target_Month && calcMonthStr > bg.Target_Month) return 0;
 
@@ -867,7 +874,6 @@
     function renderLedger() {
       const tbody = document.getElementById('ledgerTableBody');
       tbody.innerHTML = db.transactions.map((t, idx) => {
-        // UI Fix: Display actual account name instead of raw ID
         const accObj = db.accounts.find(a => a.Account_ID === t.Account_ID);
         const accDisplay = accObj ? accObj.Name : `<span class="text-rose-600" title="Unlinked ID: ${t.Account_ID}">⚠ ${t.Account_ID}</span>`;
 
@@ -957,8 +963,6 @@
         document.getElementById('saveTxnBtn').textContent = idx >= 0 ? 'Update' : 'Save';
         if (idx >= 0) {
             const t = db.transactions[idx];
-            
-            // UI Healing: If the transaction has an unmapped ID, inject it so the dropdown doesn't blank out
             if (t.Account_ID && !db.accounts.some(a => a.Account_ID === t.Account_ID)) {
                 const sel = document.getElementById('newTxnAccount');
                 if(!sel.querySelector(`option[value="${t.Account_ID}"]`)) {
@@ -1130,19 +1134,23 @@
             document.getElementById('newBudgPriority').value = b.Priority_Type || '';
             document.getElementById('newBudgType').value = b.Rule_Type || b.Type || 'Each Month';
             document.getElementById('newBudgAmount').value = b.Amount || '';
+            document.getElementById('newBudgStartMonth').value = b.Start_Month || appState.selectedMonth;
             document.getElementById('newBudgDate').value = b.Target_Month || '';
             document.getElementById('newBudgNotes').value = b.Notes || '';
+            toggleBudgetTargetDate();
         } else {
             document.getElementById('newBudgCategory').value = '';
             document.getElementById('newBudgPriority').value = '';
             document.getElementById('newBudgType').value = '';
             document.getElementById('newBudgAmount').value = '';
+            document.getElementById('newBudgStartMonth').value = appState.selectedMonth;
             document.getElementById('newBudgDate').value = '';
             document.getElementById('newBudgNotes').value = '';
+            document.getElementById('targetMonthContainer').classList.add('hidden');
         }
         document.getElementById('budgetModal').classList.remove('hidden'); document.getElementById('budgetModal').classList.add('flex'); 
     }
-
+    
     function closeBudgetModal() { document.getElementById('budgetModal').classList.add('hidden'); document.getElementById('budgetModal').classList.remove('flex'); }
     
     function saveBudget() {
@@ -1150,18 +1158,18 @@
         const prio = document.getElementById('newBudgPriority').value;
         const type = document.getElementById('newBudgType').value;
         const amt = document.getElementById('newBudgAmount').value;
+        const sDate = document.getElementById('newBudgStartMonth').value;
         const tDate = document.getElementById('newBudgDate').value;
         const notes = document.getElementById('newBudgNotes').value;
         
-        if(selection && type && amt) {
+        if(selection && type && amt && sDate) {
             const [scope, targetRef] = selection.split('|');
             const bData = {
                 Budget_ID: 'B_' + Math.floor(Math.random()*10000), Scope_Level: scope, Target_Ref_ID: targetRef, Priority_Type: prio, Rule_Type: type, Amount: amt,
-                Start_Month: appState.selectedMonth, Target_Month: tDate, Is_Demo: '0', Notes: notes
+                Start_Month: sDate, Target_Month: tDate, Is_Demo: '0', Notes: notes
             };
             if (editingBudgetIdx >= 0) {
                 bData.Budget_ID = db.budgets[editingBudgetIdx].Budget_ID || bData.Budget_ID;
-                bData.Start_Month = db.budgets[editingBudgetIdx].Start_Month || bData.Start_Month;
                 bData.Is_Demo = db.budgets[editingBudgetIdx].Is_Demo || '0';
                 db.budgets[editingBudgetIdx] = bData;
             } else {
@@ -1169,7 +1177,7 @@
             }
             saveDataToLocal(); renderAll(); closeBudgetModal();
         } else {
-            alert('Please complete all fields.');
+            alert('Please complete all required fields, including Start Month.');
         }
     }
     function deleteBudget(idx) {
