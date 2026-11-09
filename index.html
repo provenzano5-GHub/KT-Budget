@@ -36,10 +36,10 @@
           <div class="flex items-center gap-2.5 flex-wrap">
             <h1 class="text-xl font-extrabold tracking-tight text-white">KTBudget 2.0</h1>
             <span class="px-2.5 py-0.5 text-[11px] font-semibold rounded-full bg-indigo-950/90 text-indigo-300 border border-indigo-700/60">
-              Relational 8-Table Engine • v2.8.0
+              Relational 8-Table Engine • v2.9.0
             </span>
           </div>
-          <p class="text-xs text-slate-400 mt-0.5">Category-Linked Goals • Account UI Cleanup</p>
+          <p class="text-xs text-slate-400 mt-0.5">Group Scope Support • Unallocated Buffer Logic</p>
         </div>
       </div>
 
@@ -79,7 +79,7 @@
         <div class="bg-white rounded-xl p-5 border border-slate-200 shadow-sm relative overflow-hidden">
           <div class="text-xs font-bold uppercase tracking-wider text-slate-400">Monthly Target</div>
           <div id="kpiMonthlyTarget" class="text-3xl font-extrabold text-slate-900 mt-2 font-mono-num">$0.00</div>
-          <div id="kpiTargetSub" class="text-xs text-slate-400 mt-2">Based on active Budget Rules</div>
+          <div id="kpiTargetSub" class="text-xs text-slate-400 mt-2">Includes Unallocated Group Buffers</div>
         </div>
         <div class="bg-white rounded-xl p-5 border border-slate-200 shadow-sm relative overflow-hidden">
           <div class="text-xs font-bold uppercase tracking-wider text-slate-400">Current Actual</div>
@@ -102,7 +102,7 @@
         <div class="p-5 border-b border-slate-100 flex flex-col lg:flex-row lg:items-center justify-between gap-4">
           <div>
             <h2 class="text-base font-bold text-slate-900">Relational Group &amp; Category Budget Allocations</h2>
-            <p class="text-xs text-slate-400">Click <strong>[12-Mo]</strong> on any row to open the 12-month backward history and forward projection trend view.</p>
+            <p class="text-xs text-slate-400">Group rows dynamically show the highest target between the explicit Group budget or sum of its Category budgets.</p>
           </div>
         </div>
         <div class="overflow-x-auto">
@@ -164,7 +164,7 @@
           <table class="w-full text-left border-collapse min-w-[900px]">
             <thead>
               <tr class="border-b border-slate-200 bg-slate-50 text-[11px] font-bold uppercase tracking-wider text-slate-400">
-                <th class="py-3 pl-4">Group :: Category</th>
+                <th class="py-3 pl-4">Scope &amp; Target</th>
                 <th class="py-3">Priority</th>
                 <th class="py-3">Rule Type</th>
                 <th class="py-3 text-right">Base Amount</th>
@@ -265,7 +265,7 @@
           <select id="newTxnAccount" class="w-full border rounded px-3 py-2"><option value="" disabled selected>Select Source Account...</option></select>
       </div>
       <div class="space-y-1">
-          <label class="text-[10px] text-slate-500 font-bold uppercase">Group :: Category</label>
+          <label class="text-[10px] text-slate-500 font-bold uppercase">Destination Category</label>
           <select id="newTxnCategory" class="w-full border rounded px-3 py-2"><option value="" disabled selected>Select Destination Category...</option></select>
       </div>
       <input id="newTxnMerchant" type="text" placeholder="Merchant name..." class="w-full border rounded px-3 py-2" />
@@ -287,12 +287,12 @@
       </div>
       <div class="space-y-2 border border-slate-200 p-3 rounded bg-slate-50">
           <h4 class="font-bold text-slate-700">Part A (ID-A)</h4>
-          <select id="splitCatA" class="w-full border rounded px-3 py-2"><option value="" disabled selected>Select Group::Category A...</option></select>
+          <select id="splitCatA" class="w-full border rounded px-3 py-2"><option value="" disabled selected>Select Category A...</option></select>
           <input id="splitAmtA" type="number" step="0.01" placeholder="Amount A..." class="w-full border rounded px-3 py-2 font-mono-num" oninput="calculateSplitRemainder()" />
       </div>
       <div class="space-y-2 border border-slate-200 p-3 rounded bg-slate-50">
           <h4 class="font-bold text-slate-700">Part B (ID-B)</h4>
-          <select id="splitCatB" class="w-full border rounded px-3 py-2"><option value="" disabled selected>Select Group::Category B...</option></select>
+          <select id="splitCatB" class="w-full border rounded px-3 py-2"><option value="" disabled selected>Select Category B...</option></select>
           <div class="flex items-center gap-2">
               <span class="text-slate-500 font-bold flex-1 text-right">Auto-Calculated Remainder:</span>
               <input id="splitAmtB" type="number" step="0.01" class="w-24 border rounded px-3 py-2 font-mono-num bg-slate-200 text-slate-600 cursor-not-allowed" readonly />
@@ -329,7 +329,7 @@
   <div id="budgetModal" class="fixed inset-0 bg-slate-900/60 hidden items-center justify-center p-4 z-50">
     <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4 text-xs">
       <h3 id="budgetModalTitle" class="text-base font-bold">Add Budget Target</h3>
-      <select id="newBudgCategory" class="w-full border rounded px-3 py-2"><option value="" disabled selected>Select Group/Category...</option></select>
+      <select id="newBudgCategory" class="w-full border rounded px-3 py-2"><option value="" disabled selected>Select Scope (Group or Category)...</option></select>
       <select id="newBudgPriority" class="w-full border rounded px-3 py-2">
          <option value="" disabled selected>Priority Type...</option>
          <option value="Necessity">Necessity</option><option value="Want">Want</option>
@@ -363,7 +363,7 @@
       </div>
       <div class="space-y-1">
           <label class="text-[10px] text-slate-500 font-bold uppercase">Budget Target Category</label>
-          <select id="newGoalCategory" class="w-full border rounded px-3 py-2"><option value="" disabled selected>Link to Group::Category...</option></select>
+          <select id="newGoalCategory" class="w-full border rounded px-3 py-2"><option value="" disabled selected>Link to Category...</option></select>
       </div>
       <input id="newGoalAmount" type="number" step="0.01" placeholder="Target Value ($)..." class="w-full border rounded px-3 py-2 font-mono-num" />
       <div class="flex justify-end gap-2 pt-2">
@@ -456,6 +456,7 @@
             group_category: [{ GC_ID: 'GC_1', Group_ID: 'G_WANTS', Category_ID: 'C_CLOTH', Display_Label: 'Wants::Clothing & online shopping' }, { GC_ID: 'GC_2', Group_ID: 'G_NEC', Category_ID: 'C_GROC', Display_Label: 'Personal necessities::Groceries & household' }],
             accounts: [{ Account_ID: 'Chase', Name: 'Chase Checking', Type: 'CCard', Balance: '5471.25' }, { Account_ID: 'Savings_1', Name: 'Dog Emergency Fund', Type: 'Savings', Balance: '150.00' }],
             budgets: [
+                { Budget_ID: 'B_000', Scope_Level: 'Group', Target_Ref_ID: 'G_WANTS', Priority_Type: 'Want', Rule_Type: 'Each Month', Amount: '300.00', Start_Month: '2026-10', Target_Month: '', Is_Demo: '1', Notes: 'Overall Wants Group Budget' },
                 { Budget_ID: 'B_001', Scope_Level: 'Category', Target_Ref_ID: 'C_CLOTH', Priority_Type: 'Want', Rule_Type: 'Each Month', Amount: '125.00', Start_Month: '2026-10', Target_Month: '', Is_Demo: '1', Notes: 'Standard allowance' },
                 { Budget_ID: 'B_002', Scope_Level: 'Category', Target_Ref_ID: 'C_GROC', Priority_Type: 'Necessity', Rule_Type: 'Annual', Amount: '6000.00', Start_Month: '2026-01', Target_Month: '', Is_Demo: '1', Notes: 'Averages 500/mo' }
             ],
@@ -525,13 +526,31 @@
     }
 
     function populateDropdowns() {
-        const cats = db.categories.map(c => `<option value="${c.Category_ID}">${c.Name}</option>`).join('');
-        document.getElementById('newBudgCategory').innerHTML = '<option value="" disabled selected>Select Group/Category...</option>' + cats;
-        document.getElementById('newTxnCategory').innerHTML = '<option value="" disabled selected>Select Destination Category...</option>' + cats;
-        document.getElementById('splitCatA').innerHTML = '<option value="" disabled selected>Select Group::Category A...</option>' + cats;
-        document.getElementById('splitCatB').innerHTML = '<option value="" disabled selected>Select Group::Category B...</option>' + cats;
-        document.getElementById('newGoalCategory').innerHTML = '<option value="" disabled selected>Link to Group::Category...</option>' + cats;
+        // SCOPED DROPDOWN: Combines Groups and Categories (for Budgets)
+        let scopeOptions = '';
+        db.groups.forEach(g => {
+            scopeOptions += `<option value="Group|${g.Group_ID}" class="font-bold text-slate-900 bg-slate-100">📁 GROUP: ${g.Name}</option>`;
+            const catsInGroup = db.group_category.filter(gc => gc.Group_ID === g.Group_ID);
+            catsInGroup.forEach(gc => {
+                const c = db.categories.find(cat => cat.Category_ID === gc.Category_ID);
+                if (c) scopeOptions += `<option value="Category|${c.Category_ID}">&nbsp;&nbsp;&nbsp;↳ Category: ${c.Name}</option>`;
+            });
+        });
+        document.getElementById('newBudgCategory').innerHTML = '<option value="" disabled selected>Select Scope (Group or Category)...</option>' + scopeOptions;
 
+        // CATEGORY-ONLY DROPDOWN (for Transactions and Goals)
+        let catOptions = '';
+        db.categories.forEach(c => {
+            const gc = db.group_category.find(g => g.Category_ID === c.Category_ID);
+            const label = gc ? gc.Display_Label : c.Name;
+            catOptions += `<option value="${c.Category_ID}">${label}</option>`;
+        });
+        document.getElementById('newTxnCategory').innerHTML = '<option value="" disabled selected>Select Destination Category...</option>' + catOptions;
+        document.getElementById('splitCatA').innerHTML = '<option value="" disabled selected>Select Category A...</option>' + catOptions;
+        document.getElementById('splitCatB').innerHTML = '<option value="" disabled selected>Select Category B...</option>' + catOptions;
+        document.getElementById('newGoalCategory').innerHTML = '<option value="" disabled selected>Link to Category...</option>' + catOptions;
+
+        // ACCOUNTS
         const accs = db.accounts.map(a => `<option value="${a.Account_ID}">${a.Name} (${a.Type})</option>`).join('');
         document.getElementById('newGoalAccount').innerHTML = '<option value="" disabled selected>Link to Account...</option>' + accs;
         document.getElementById('newTxnAccount').innerHTML = '<option value="" disabled selected>Select Source Account...</option>' + accs;
@@ -574,6 +593,7 @@
     }
 
     function getMonthlyTargetCalculation(bg) {
+        if (!bg) return 0;
         const baseAmt = Number(bg.Amount) || 0;
         const rType = bg.Rule_Type || bg.Type || 'Each Month'; 
         if (rType === 'Annual') return baseAmt / 12;
@@ -597,7 +617,22 @@
     function renderKpis() {
       let totT = 0, totC = 0, totP = 0;
       const priorMo = appState.selectedMonth === '2026-10' ? '2026-09' : '2026-09';
-      db.budgets.forEach(b => { totT += getMonthlyTargetCalculation(b); });
+      
+      // NUANCE 2 MATH FOR KPI: Max(Group_Budget, Sum(Category_Budgets + Goals))
+      db.groups.forEach(g => {
+          const groupGc = db.group_category.filter(gc => gc.Group_ID === g.Group_ID);
+          let catTargetsTotal = 0;
+          groupGc.forEach(gc => {
+              const bg = db.budgets.find(b => b.Scope_Level === 'Category' && b.Target_Ref_ID === gc.Category_ID);
+              const linkedGoals = db.goals.filter(goal => goal.Linked_GC_ID === gc.Category_ID);
+              const goalExtra = linkedGoals.reduce((sum, goal) => sum + (Number(goal.Target_Value) || 0), 0);
+              catTargetsTotal += getMonthlyTargetCalculation(bg) + goalExtra;
+          });
+          const grpBg = db.budgets.find(b => b.Scope_Level === 'Group' && b.Target_Ref_ID === g.Group_ID);
+          const grpTarget = getMonthlyTargetCalculation(grpBg);
+          
+          totT += Math.max(grpTarget, catTargetsTotal);
+      });
 
       db.transactions.forEach(t => {
         const amt = Number(t.Amount) || 0;
@@ -624,44 +659,92 @@
       const tbody = document.getElementById('relationalBudgetTableBody');
       tbody.innerHTML = db.groups.map(g => {
         const groupGc = db.group_category.filter(gc => gc.Group_ID === g.Group_ID);
-        return `
-          <tr class="bg-slate-100 font-bold text-slate-900 border-t border-slate-200">
-            <td colspan="9" class="py-2.5 pl-4">${g.Name} (${g.Impact} • ${g.Type})</td>
-          </tr>
-        ` + groupGc.map(gc => {
-          const bg = db.budgets.find(b => b.Target_Ref_ID === gc.Category_ID) || { Amount: 0, Rule_Type: 'Each Month' };
+        
+        let catRowsHtml = '';
+        let sumCatTargets = 0;
+        let sumCatActuals = 0;
+        let sumCatPrior = 0;
+        let sumCatYtd = 0;
+
+        // Process Categories
+        groupGc.forEach(gc => {
+          const bg = db.budgets.find(b => b.Scope_Level === 'Category' && b.Target_Ref_ID === gc.Category_ID);
           let target = getMonthlyTargetCalculation(bg);
-          const rType = bg.Rule_Type || bg.Type || 'Each Month';
-          const priorityBadge = bg.Priority_Type ? `<span class="mr-1 text-[9px] uppercase tracking-wider text-slate-400 font-bold">${bg.Priority_Type.substring(0,1)}</span>` : '';
+          const rType = bg ? (bg.Rule_Type || bg.Type || 'Each Month') : '-';
+          const priorityBadge = (bg && bg.Priority_Type) ? `<span class="mr-1 text-[9px] uppercase tracking-wider text-slate-400 font-bold">${bg.Priority_Type.substring(0,1)}</span>` : '';
           
-          // NUANCE 5 UPGRADED: Goal contributions roll up directly via Linked_GC_ID on the Goal itself
           const linkedGoals = db.goals.filter(goal => goal.Linked_GC_ID === gc.Category_ID);
           const goalExtra = linkedGoals.reduce((sum, goal) => sum + (Number(goal.Target_Value) || 0), 0);
           target += goalExtra; 
           
           const actual = db.transactions.filter(t => t.Include === '1' && t.GC_ID === gc.Category_ID && t.Month === appState.selectedMonth).reduce((s, t) => s + (Number(t.Amount) || 0), 0);
-          const variance = target - actual;
           const priorActual = db.transactions.filter(t => t.Include === '1' && t.GC_ID === gc.Category_ID && t.Month === '2026-09').reduce((s, t) => s + (Number(t.Amount) || 0), 0);
           const ytdActual = db.transactions.filter(t => t.Include === '1' && t.GC_ID === gc.Category_ID && (t.Month || '').startsWith('2026')).reduce((s, t) => s + (Number(t.Amount) || 0), 0);
+          const variance = target - actual;
           const meter = target > 0 ? Math.round((actual / target) * 100) : 0;
           const goalNote = goalExtra > 0 ? `<div class="text-[9px] text-emerald-600 font-bold mt-0.5">+${fmtCurrency(goalExtra)} Goal rollup</div>` : '';
 
-          return `
+          sumCatTargets += target; sumCatActuals += actual; sumCatPrior += priorActual; sumCatYtd += ytdActual;
+
+          catRowsHtml += `
             <tr class="hover:bg-slate-50">
-              <td class="py-3 pl-6 pr-3 text-slate-800 font-medium">${priorityBadge}${gc.Display_Label.split('::')[1] || gc.Display_Label}</td>
-              <td class="py-3 px-3"><span class="px-2 py-0.5 rounded text-[10px] bg-slate-100 text-slate-600">${rType}</span></td>
-              <td class="py-3 px-3 text-right font-mono-num">${fmtCurrency(target)}${goalNote}</td>
-              <td class="py-3 px-3 text-right font-mono-num font-bold text-slate-900">${fmtCurrency(actual)}</td>
-              <td class="py-3 px-3 text-right font-mono-num ${variance < 0 ? 'text-rose-600' : 'text-emerald-600'}">${fmtCurrency(variance, true)}</td>
-              <td class="py-3 px-3 text-right font-mono-num text-slate-500">${fmtCurrency(priorActual)}</td>
-              <td class="py-3 px-3 text-right font-mono-num text-indigo-700">${fmtCurrency(ytdActual)}</td>
-              <td class="py-3 px-3 text-center font-mono-num text-slate-500">${meter}%</td>
-              <td class="py-3 pl-3 pr-5 text-right">
-                <button onclick="alert('12-Month view coming soon.')" class="px-2 py-1 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded text-[11px] font-semibold transition">[12-Mo]</button>
+              <td class="py-2 pl-8 pr-3 text-slate-700 font-medium text-[11px]">${priorityBadge}${gc.Display_Label.split('::')[1] || gc.Display_Label}</td>
+              <td class="py-2 px-3"><span class="px-2 py-0.5 rounded text-[10px] bg-slate-100 text-slate-600">${rType}</span></td>
+              <td class="py-2 px-3 text-right font-mono-num">${fmtCurrency(target)}${goalNote}</td>
+              <td class="py-2 px-3 text-right font-mono-num font-bold text-slate-900">${fmtCurrency(actual)}</td>
+              <td class="py-2 px-3 text-right font-mono-num ${variance < 0 ? 'text-rose-600' : 'text-emerald-600'}">${fmtCurrency(variance, true)}</td>
+              <td class="py-2 px-3 text-right font-mono-num text-slate-500">${fmtCurrency(priorActual)}</td>
+              <td class="py-2 px-3 text-right font-mono-num text-indigo-700">${fmtCurrency(ytdActual)}</td>
+              <td class="py-2 px-3 text-center font-mono-num text-slate-500">${meter}%</td>
+              <td class="py-2 pl-3 pr-5 text-right">
+                <button onclick="alert('12-Month view coming soon.')" class="px-2 py-1 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded text-[10px] font-semibold transition">[12-Mo]</button>
               </td>
             </tr>
           `;
-        }).join('');
+        });
+
+        // NUANCE 2 MATH: Group Level Rollup & Unallocated Buffer
+        const grpBg = db.budgets.find(b => b.Scope_Level === 'Group' && b.Target_Ref_ID === g.Group_ID);
+        const explicitGroupTarget = getMonthlyTargetCalculation(grpBg);
+        const effectiveGroupTarget = Math.max(explicitGroupTarget, sumCatTargets);
+        const unallocated = effectiveGroupTarget - sumCatTargets;
+        const grpVariance = effectiveGroupTarget - sumCatActuals;
+        const grpMeter = effectiveGroupTarget > 0 ? Math.round((sumCatActuals / effectiveGroupTarget) * 100) : 0;
+
+        let unallocatedRow = '';
+        if (unallocated > 0.001) {
+            unallocatedRow = `
+                <tr class="bg-amber-50/40">
+                  <td class="py-2 pl-8 pr-3 text-amber-700 font-semibold text-[11px] italic">↳ Unallocated Group Buffer</td>
+                  <td class="py-2 px-3">-</td>
+                  <td class="py-2 px-3 text-right font-mono-num text-amber-700 font-bold">${fmtCurrency(unallocated)}</td>
+                  <td class="py-2 px-3 text-right font-mono-num font-bold text-slate-400">$0.00</td>
+                  <td class="py-2 px-3 text-right font-mono-num text-amber-600">${fmtCurrency(unallocated, true)}</td>
+                  <td class="py-2 px-3 text-right font-mono-num text-slate-400">$0.00</td>
+                  <td class="py-2 px-3 text-right font-mono-num text-slate-400">$0.00</td>
+                  <td class="py-2 px-3 text-center font-mono-num text-slate-400">0%</td>
+                  <td class="py-2 pl-3 pr-5 text-right"></td>
+                </tr>
+            `;
+        }
+
+        const groupHeader = `
+          <tr class="bg-slate-100 font-bold text-slate-900 border-t-2 border-slate-300">
+            <td class="py-3 pl-4 uppercase tracking-wide text-xs">
+                ${g.Name} <span class="ml-2 text-[9px] font-normal text-slate-500 bg-slate-200 px-1.5 py-0.5 rounded">${g.Impact}</span>
+            </td>
+            <td class="py-3 px-3"></td>
+            <td class="py-3 px-3 text-right font-mono-num">${fmtCurrency(effectiveGroupTarget)}</td>
+            <td class="py-3 px-3 text-right font-mono-num">${fmtCurrency(sumCatActuals)}</td>
+            <td class="py-3 px-3 text-right font-mono-num ${grpVariance < 0 ? 'text-rose-600' : 'text-emerald-700'}">${fmtCurrency(grpVariance, true)}</td>
+            <td class="py-3 px-3 text-right font-mono-num text-slate-600">${fmtCurrency(sumCatPrior)}</td>
+            <td class="py-3 px-3 text-right font-mono-num text-indigo-800">${fmtCurrency(sumCatYtd)}</td>
+            <td class="py-3 px-3 text-center font-mono-num text-slate-700">${grpMeter}%</td>
+            <td class="py-3 pl-3 pr-5 text-right"></td>
+          </tr>
+        `;
+
+        return groupHeader + catRowsHtml + unallocatedRow;
       }).join('');
     }
 
@@ -713,19 +796,26 @@
     function renderBudgetSetup() {
       const tbody = document.getElementById('budgetSetupTableBody');
       tbody.innerHTML = db.budgets.map((b, index) => {
-        let catName = b.Target_Ref_ID;
-        const cat = db.categories.find(c => c.Category_ID === b.Target_Ref_ID);
-        if (cat) {
-            const gc = db.group_category.find(g => g.Category_ID === cat.Category_ID);
-            catName = gc ? gc.Display_Label : cat.Name;
+        let dispName = b.Target_Ref_ID;
+        if (b.Scope_Level === 'Group') {
+            const g = db.groups.find(x => x.Group_ID === b.Target_Ref_ID);
+            dispName = g ? `📁 GROUP: ${g.Name}` : dispName;
+        } else {
+            const cat = db.categories.find(c => c.Category_ID === b.Target_Ref_ID);
+            if (cat) {
+                const gc = db.group_category.find(g => g.Category_ID === cat.Category_ID);
+                dispName = gc ? `&nbsp;&nbsp;↳ Category: ${gc.Display_Label.split('::')[1] || gc.Display_Label}` : `&nbsp;&nbsp;↳ Category: ${cat.Name}`;
+            }
         }
+
         const bType = b.Rule_Type || b.Type || 'Each Month'; 
         const amt = Number(b.Amount) || 0;
         const prio = b.Priority_Type || '-';
         const startTarget = (bType === 'Target Month') ? `${b.Start_Month} &rarr; ${b.Target_Month}` : `<span class="text-slate-300">Continuous</span>`;
+        
         return `
         <tr class="hover:bg-slate-50">
-          <td class="py-3 pl-4 font-semibold text-slate-800">${catName}</td>
+          <td class="py-3 pl-4 font-semibold text-slate-800">${dispName}</td>
           <td class="py-3 text-slate-600"><span class="bg-indigo-50 text-indigo-700 px-2 py-0.5 rounded text-[10px] font-bold">${prio}</span></td>
           <td class="py-3 text-slate-600 font-medium">${bType}</td>
           <td class="py-3 text-right font-mono-num font-bold text-slate-900">${fmtCurrency(amt)}</td>
@@ -907,7 +997,7 @@
         
         if (idx >= 0) {
             const b = db.budgets[idx];
-            document.getElementById('newBudgCategory').value = b.Target_Ref_ID || '';
+            document.getElementById('newBudgCategory').value = b.Scope_Level + '|' + b.Target_Ref_ID;
             document.getElementById('newBudgPriority').value = b.Priority_Type || '';
             document.getElementById('newBudgType').value = b.Rule_Type || b.Type || 'Each Month';
             document.getElementById('newBudgAmount').value = b.Amount || '';
@@ -932,16 +1022,17 @@
     }
     function closeBudgetModal() { document.getElementById('budgetModal').classList.add('hidden'); document.getElementById('budgetModal').classList.remove('flex'); }
     function saveBudget() {
-        const cat = document.getElementById('newBudgCategory').value;
+        const selection = document.getElementById('newBudgCategory').value;
         const prio = document.getElementById('newBudgPriority').value;
         const type = document.getElementById('newBudgType').value;
         const amt = document.getElementById('newBudgAmount').value;
         const tDate = document.getElementById('newBudgDate').value;
         const notes = document.getElementById('newBudgNotes').value;
         
-        if(cat && type && amt) {
+        if(selection && type && amt) {
+            const [scope, targetRef] = selection.split('|');
             const bData = {
-                Budget_ID: 'B_' + Math.floor(Math.random()*10000), Scope_Level: 'Category', Target_Ref_ID: cat, Priority_Type: prio, Rule_Type: type, Amount: amt,
+                Budget_ID: 'B_' + Math.floor(Math.random()*10000), Scope_Level: scope, Target_Ref_ID: targetRef, Priority_Type: prio, Rule_Type: type, Amount: amt,
                 Start_Month: appState.selectedMonth, Target_Month: type === 'Target Month' ? tDate : '', Is_Demo: '0', Notes: notes
             };
             if (editingBudgetIdx >= 0) {
