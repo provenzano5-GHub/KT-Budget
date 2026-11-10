@@ -250,6 +250,15 @@
           <button onclick="openImportGuideModal()" class="bg-white text-indigo-900 hover:bg-indigo-50 font-bold py-2.5 px-6 rounded-lg text-sm shadow transition shrink-0">View Import Guide</button>
       </div>
 
+      <!-- NEW: AI Data Prep & Architecture Card -->
+      <div class="bg-slate-900 rounded-xl p-6 shadow-sm text-slate-50 flex flex-col md:flex-row gap-6 items-center justify-between mt-6">
+          <div class="space-y-2">
+              <h2 class="text-lg font-bold text-white">Zero-to-One: AI Data Prep &amp; Architecture</h2>
+              <p class="text-sm text-slate-300">Starting fresh? Let AI analyze your raw bank CSVs to automatically build your bespoke Accounts, Groups, and Categories.</p>
+          </div>
+          <button onclick="openAiPrepGuideModal()" class="bg-white text-slate-900 hover:bg-slate-50 font-bold py-2.5 px-6 rounded-lg text-sm shadow transition shrink-0">View AI Prep Guide</button>
+      </div>
+
       <div class="bg-white rounded-xl border border-slate-200 p-6 shadow-sm space-y-6">
         <div class="border-b border-slate-100 pb-3">
             <h2 class="text-lg font-bold text-slate-900">System Admin &amp; Data Backup</h2>
@@ -286,6 +295,17 @@
                     ⬆️ Restore from File
                 </button>
             </div>
+        </div>
+
+        <!-- NEW: Factory Reset / Wipe Data -->
+        <div class="border border-rose-200 bg-rose-50 rounded-lg p-5 space-y-4 mt-4">
+            <div>
+                <h3 class="font-bold text-rose-900 text-sm">Factory Reset / Wipe Data</h3>
+                <p class="text-xs text-rose-700 mt-1">Delete all local data and return to the initial demo state. Ensure you have a backup downloaded first!</p>
+            </div>
+            <button onclick="wipeAllData()" class="bg-rose-700 hover:bg-rose-800 text-white text-xs font-semibold px-4 py-2.5 rounded transition md:w-auto w-full">
+                ⚠️ Wipe All Data &amp; Reset
+            </button>
         </div>
       </div>
     </section>
@@ -341,6 +361,30 @@
 
       <div class="pt-4 text-right">
         <button onclick="closeImportGuideModal()" class="px-5 py-2.5 bg-slate-200 text-slate-800 rounded-lg font-bold hover:bg-slate-300 transition">Close Guide</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- AI PREP GUIDE MODAL -->
+  <div id="aiPrepGuideModal" class="fixed inset-0 bg-slate-900/70 hidden items-center justify-center p-4 z-[60]">
+    <div class="bg-white rounded-2xl max-w-3xl w-full p-8 shadow-2xl space-y-6 text-sm flex flex-col max-h-[90vh] overflow-y-auto relative">
+      <button onclick="closeAiPrepGuideModal()" class="absolute top-6 right-6 text-slate-400 hover:text-rose-600 font-bold text-3xl leading-none">&times;</button>
+      <h3 class="text-xl font-extrabold text-slate-900 border-b pb-4">Zero-to-One: AI Data Prep Engine</h3>
+      
+      <div class="space-y-4">
+          <p class="text-slate-600">Instead of building your accounts, groups, and categories manually, you can use an LLM (like Gemini or ChatGPT) to design your bespoke relational architecture based on your actual spending habits.</p>
+          <ul class="list-decimal pl-5 text-slate-600 space-y-2">
+              <li>Download your raw bank/credit card CSVs and copy all the text.</li>
+              <li>Click the button below to copy the <strong>KTBudget Architecture Generator Prompt</strong>.</li>
+              <li>Paste the prompt and your raw CSV text into the AI.</li>
+              <li>The AI will output a complete <code>.json</code> file representing your tailored database.</li>
+              <li>Save that text as a <code>.json</code> file, use the <strong>Wipe All Data &amp; Reset</strong> button on the Admin tab, and then <strong>Restore from File</strong> to load your custom setup!</li>
+          </ul>
+          <button onclick="copyAiPrepPrompt()" class="mt-4 bg-[#6c5ce7] hover:bg-[#5b4bc4] text-white font-bold py-2.5 px-6 rounded-lg text-xs shadow transition">📋 Copy AI Architect Prompt to Clipboard</button>
+      </div>
+
+      <div class="pt-4 text-right border-t border-slate-200 mt-4">
+        <button onclick="closeAiPrepGuideModal()" class="px-5 py-2.5 bg-slate-200 text-slate-800 rounded-lg font-bold hover:bg-slate-300 transition">Close Guide</button>
       </div>
     </div>
   </div>
@@ -769,6 +813,59 @@
         }).catch(err => {
             alert('Failed to copy. Please manually select this text:\n\n' + prompt);
         });
+    }
+
+    // --- AI DATA PREP & RESET ENGINE ---
+    function openAiPrepGuideModal() {
+        document.getElementById('aiPrepGuideModal').classList.remove('hidden');
+        document.getElementById('aiPrepGuideModal').classList.add('flex');
+    }
+    function closeAiPrepGuideModal() {
+        document.getElementById('aiPrepGuideModal').classList.add('hidden');
+        document.getElementById('aiPrepGuideModal').classList.remove('flex');
+    }
+    
+    function copyAiPrepPrompt() {
+        const prompt = `Act as a financial data architect. I am going to give you raw bank/credit card transaction data. Your job is to analyze my spending, design a bespoke relational category structure for me, and output a complete, valid JSON database matching my app's schema.
+
+Step 1: Analyze & Architect
+- Identify distinct funding sources (Accounts) based on the data and create Account IDs.
+- Analyze merchants and cluster them into logical Categories (e.g., Groceries, Utilities). Create Category IDs (e.g., C_GROC).
+- Cluster those Categories into high-level Groups (e.g., Necessities, Wants). Create Group IDs (e.g., G_NEC).
+- Map the Categories to the Groups using a relational Group_Category table (GC_ID).
+
+Step 2: Process Transactions
+- Format all transactions to match this schema. Make expenses positive numbers. Format dates as YYYY-MM.
+- Assign the correct Account_ID and GC_ID to every transaction.
+
+Step 3: JSON Output
+Output ONLY valid JSON (no markdown wrapping) matching this exact schema:
+{
+  "groups": [ {"Group_ID": "G_NEC", "Name": "Necessities", "Type": "Fixed", "Impact": "personal", "Budget": "Yes"} ],
+  "categories": [ {"Category_ID": "C_GROC", "Name": "Groceries", "Type": "Flexible", "Impact": "personal", "Budget": "Yes"} ],
+  "group_category": [ {"GC_ID": "GC_1", "Group_ID": "G_NEC", "Category_ID": "C_GROC", "Display_Label": "Necessities::Groceries"} ],
+  "accounts": [ {"Account_ID": "Chase", "Name": "Chase Checking", "Type": "Payment", "Balance": "0.00"} ],
+  "budgets": [],
+  "goals": [],
+  "todos": [],
+  "transactions": [ {"Txn_ID": "T1001", "Month": "2026-10", "Account_ID": "Chase", "Merchant": "Target", "GC_ID": "GC_1", "Amount": "145.20", "Include": "1"} ]
+}
+
+Here is the raw CSV data:
+`;
+        navigator.clipboard.writeText(prompt).then(() => {
+            alert('Architecture Prompt copied to clipboard! Paste this into Gemini/ChatGPT along with your raw bank CSV text.');
+        }).catch(err => {
+            alert('Failed to copy. Please check browser permissions.');
+        });
+    }
+
+    function wipeAllData() {
+        if (confirm("⚠️ WARNING: This will permanently delete all local data and restore the initial demo state.\n\nPlease ensure you have downloaded a backup if you wish to keep your current data.\n\nProceed with Factory Reset?")) {
+            localStorage.removeItem(STORAGE_KEY);
+            alert("Data wiped successfully. The app will now reload into Demo mode.");
+            location.reload();
+        }
     }
 
     // --- DEMO DATA SEEDING ---
