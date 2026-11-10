@@ -21,8 +21,8 @@
     .no-scrollbar::-webkit-scrollbar { display: none; }
     .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
     .drag-over { border-color: #6c5ce7; background-color: #f5f3ff; }
-    .sort-icon { display: inline-block; width: 12px; margin-left: 4px; opacity: 0.4; }
-    .sort-active { opacity: 1; color: #6c5ce7; }
+    .sort-icon { display: inline-block; width: 14px; margin-left: 4px; font-size: 10px; color: #94a3b8; }
+    .sort-active { color: #6c5ce7; font-weight: 900; }
   </style>
 </head>
 <body class="min-h-screen flex flex-col">
@@ -162,14 +162,14 @@
         <div class="overflow-x-auto">
           <table class="w-full text-left border-collapse min-w-[1000px]">
             <thead>
-              <tr class="border-b border-slate-200 bg-slate-50 text-[11px] font-bold uppercase tracking-wider text-slate-400 cursor-pointer select-none">
+              <tr class="border-b border-slate-200 bg-slate-50 text-[11px] font-bold uppercase tracking-wider text-slate-400 select-none">
                 <th class="py-3 pl-4 w-10">Inc.</th>
-                <th class="py-3 hover:text-slate-600 transition" onclick="sortLedger('Date')">Date <span id="sort-Date" class="sort-icon">▼</span></th>
-                <th class="py-3 hover:text-slate-600 transition" onclick="sortLedger('Account_ID')">Source <span id="sort-Account_ID" class="sort-icon"></span></th>
-                <th class="py-3 hover:text-slate-600 transition" onclick="sortLedger('Merchant')">Merchant <span id="sort-Merchant" class="sort-icon"></span></th>
-                <th class="py-3 hover:text-slate-600 transition" onclick="sortLedger('GroupName')">Group <span id="sort-GroupName" class="sort-icon"></span></th>
-                <th class="py-3 hover:text-slate-600 transition" onclick="sortLedger('CategoryName')">Category <span id="sort-CategoryName" class="sort-icon"></span></th>
-                <th class="py-3 text-right hover:text-slate-600 transition" onclick="sortLedger('Amount')">Amount <span id="sort-Amount" class="sort-icon"></span></th>
+                <th class="py-3 hover:text-slate-700 transition cursor-pointer" onclick="sortLedger('Date')">Date <span id="sort-Date" class="sort-icon sort-active">▼</span></th>
+                <th class="py-3 hover:text-slate-700 transition cursor-pointer" onclick="sortLedger('AccountName')">Source <span id="sort-AccountName" class="sort-icon">⇕</span></th>
+                <th class="py-3 hover:text-slate-700 transition cursor-pointer" onclick="sortLedger('Merchant')">Merchant <span id="sort-Merchant" class="sort-icon">⇕</span></th>
+                <th class="py-3 hover:text-slate-700 transition cursor-pointer" onclick="sortLedger('GroupName')">Group <span id="sort-GroupName" class="sort-icon">⇕</span></th>
+                <th class="py-3 hover:text-slate-700 transition cursor-pointer" onclick="sortLedger('CategoryName')">Category <span id="sort-CategoryName" class="sort-icon">⇕</span></th>
+                <th class="py-3 text-right hover:text-slate-700 transition cursor-pointer" onclick="sortLedger('Amount')">Amount <span id="sort-Amount" class="sort-icon">⇕</span></th>
                 <th class="py-3 pl-2 pr-4 text-right cursor-default">Actions</th>
               </tr>
             </thead>
@@ -253,7 +253,7 @@
                             <th class="py-3 px-4">Parsed Merchant</th>
                             <th class="py-3 px-4 text-right">Amount</th>
                             <th class="py-3 px-4">Source Account</th>
-                            <th class="py-3 px-4">Destination Category</th>
+                            <th class="py-3 px-4">Destination (Group :: Category)</th>
                             <th class="py-3 px-4 text-center">Action</th>
                         </tr>
                     </thead>
@@ -462,7 +462,7 @@
           <select id="newTxnAccount" class="w-full border rounded px-3 py-2"><option value="" disabled selected>Select Source Account...</option></select>
       </div>
       <div class="space-y-1">
-          <label class="text-[10px] text-slate-500 font-bold uppercase">Destination Category</label>
+          <label class="text-[10px] text-slate-500 font-bold uppercase">Destination (Group :: Category)</label>
           <select id="newTxnCategory" class="w-full border rounded px-3 py-2"><option value="" disabled selected>Select Destination Category...</option></select>
       </div>
       <input id="newTxnMerchant" type="text" placeholder="Merchant name..." class="w-full border rounded px-3 py-2" />
@@ -764,8 +764,9 @@
         let catOptions = '<option value="" disabled>Select Category...</option>';
         db.categories.forEach(c => {
             const gc = db.group_category.find(g => g.Category_ID === c.Category_ID);
-            const label = gc ? gc.Display_Label : c.Name;
-            catOptions += `<option value="${c.Category_ID}">${label}</option>`;
+            const grp = gc ? db.groups.find(g => g.Group_ID === gc.Group_ID) : null;
+            const groupName = grp ? grp.Name : 'Uncategorized';
+            catOptions += `<option value="${c.Category_ID}">[${groupName}] ${c.Name}</option>`;
         });
         
         let accOptions = '<option value="" disabled>Select Source...</option>';
@@ -949,9 +950,11 @@ Output ONLY valid JSON (no markdown wrapping) matching this exact schema:
           if (!b.Start_Month) b.Start_Month = appState.selectedMonth; 
       });
       
-      // Ensure all transactions have a Date field
+      // Ensure all transactions have a Date field and normalized GC_ID
       db.transactions.forEach(t => {
           if(!t.Date) t.Date = t.Month ? `${t.Month}-01` : '';
+          const checkGc = db.group_category.find(gc => gc.GC_ID === t.GC_ID);
+          if(checkGc) t.GC_ID = checkGc.Category_ID;
       });
 
       db.lastBackup = Date.now(); 
@@ -967,10 +970,15 @@ Output ONLY valid JSON (no markdown wrapping) matching this exact schema:
       if (localData) {
           try { 
               db = JSON.parse(localData); 
-              // Backwards compatibility migration: add Date if missing
+              
+              // Backwards compatibility migration & AI Auto-Heal
               db.transactions.forEach(t => {
                   if(!t.Date) t.Date = t.Month ? `${t.Month}-01` : '';
+                  // If AI assigned a GC_ID instead of a Category_ID, heal it permanently
+                  const checkGc = db.group_category.find(gc => gc.GC_ID === t.GC_ID);
+                  if(checkGc) t.GC_ID = checkGc.Category_ID;
               });
+
           } catch (e) { await seedDatabase(); }
       } else {
           await seedDatabase();
@@ -998,15 +1006,18 @@ Output ONLY valid JSON (no markdown wrapping) matching this exact schema:
         });
         document.getElementById('newBudgCategory').innerHTML = '<option value="" disabled selected>Select Scope (Group or Category)...</option>' + scopeOptions;
 
+        // Group Categories for Edit/Split Modals
         let catOptions = '';
         db.categories.forEach(c => {
             const gc = db.group_category.find(g => g.Category_ID === c.Category_ID);
-            const label = gc ? gc.Display_Label : c.Name;
-            catOptions += `<option value="${c.Category_ID}">${label}</option>`;
+            const grp = gc ? db.groups.find(g => g.Group_ID === gc.Group_ID) : null;
+            const groupName = grp ? grp.Name : 'Uncategorized';
+            catOptions += `<option value="${c.Category_ID}">[${groupName}] ${c.Name}</option>`;
         });
-        document.getElementById('newTxnCategory').innerHTML = '<option value="" disabled selected>Select Destination Category...</option>' + catOptions;
-        document.getElementById('splitCatA').innerHTML = '<option value="" disabled selected>Select Category A...</option>' + catOptions;
-        document.getElementById('splitCatB').innerHTML = '<option value="" disabled selected>Select Category B...</option>' + catOptions;
+        
+        document.getElementById('newTxnCategory').innerHTML = '<option value="" disabled selected>Select Group :: Category...</option>' + catOptions;
+        document.getElementById('splitCatA').innerHTML = '<option value="" disabled selected>Select Group :: Category A...</option>' + catOptions;
+        document.getElementById('splitCatB').innerHTML = '<option value="" disabled selected>Select Group :: Category B...</option>' + catOptions;
         document.getElementById('newGoalCategory').innerHTML = '<option value="" disabled selected>Link to Category...</option>' + catOptions;
 
         const accs = db.accounts.map(a => `<option value="${a.Account_ID}">${a.Name} (${a.Type})</option>`).join('');
@@ -1327,7 +1338,7 @@ Output ONLY valid JSON (no markdown wrapping) matching this exact schema:
         }
         
         // Update UI Sort Icons
-        document.querySelectorAll('.sort-icon').forEach(el => { el.innerHTML = ''; el.classList.remove('sort-active'); });
+        document.querySelectorAll('.sort-icon').forEach(el => { el.innerHTML = '⇕'; el.classList.remove('sort-active'); });
         const activeIcon = document.getElementById(`sort-${col}`);
         if(activeIcon) {
             activeIcon.innerHTML = ledgerState.sortDir === 'asc' ? '▲' : '▼';
@@ -1341,8 +1352,8 @@ Output ONLY valid JSON (no markdown wrapping) matching this exact schema:
       // 1. Enrich data for sorting/filtering
       let enrichedTxns = db.transactions.map((t, originalIndex) => {
           const accObj = db.accounts.find(a => a.Account_ID === t.Account_ID);
-          const gcObj = db.group_category.find(gc => gc.Category_ID === t.GC_ID);
           const catObj = db.categories.find(c => c.Category_ID === t.GC_ID);
+          const gcObj = db.group_category.find(gc => gc.Category_ID === t.GC_ID);
           const grpObj = gcObj ? db.groups.find(g => g.Group_ID === gcObj.Group_ID) : null;
           
           return {
@@ -1351,7 +1362,7 @@ Output ONLY valid JSON (no markdown wrapping) matching this exact schema:
               AccountName: accObj ? accObj.Name : t.Account_ID,
               GroupName: grpObj ? grpObj.Name : 'Uncategorized',
               GroupID: grpObj ? grpObj.Group_ID : '',
-              CategoryName: catObj ? catObj.Name : t.GC_ID
+              CategoryName: catObj ? catObj.Name : (t.GC_ID || 'Uncategorized')
           };
       });
 
