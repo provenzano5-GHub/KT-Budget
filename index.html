@@ -21,6 +21,8 @@
     .no-scrollbar::-webkit-scrollbar { display: none; }
     .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
     .drag-over { border-color: #6c5ce7; background-color: #f5f3ff; }
+    .sort-icon { display: inline-block; width: 12px; margin-left: 4px; opacity: 0.4; }
+    .sort-active { opacity: 1; color: #6c5ce7; }
   </style>
 </head>
 <body class="min-h-screen flex flex-col">
@@ -47,7 +49,7 @@
 
       <div class="flex items-center gap-2 flex-wrap">
         <div class="flex items-center bg-[#1e2548] border border-slate-700/80 rounded-lg px-3 py-1.5 text-xs">
-          <span class="text-slate-400 mr-1.5 font-medium">Month:</span>
+          <span class="text-slate-400 mr-1.5 font-medium">Budget Month:</span>
           <select id="monthSelect" onchange="handleMonthChange(this.value)" class="bg-transparent text-white font-semibold focus:outline-none cursor-pointer pr-1"></select>
           <button onclick="promptAddMonth()" class="ml-2 pl-2 border-l border-slate-700 text-indigo-300 hover:text-white font-bold text-[11px]">+ Month</button>
         </div>
@@ -130,22 +132,45 @@
     <!-- TAB 2: TRANSACTIONS LEDGER -->
     <section id="tab-ledger" class="hidden space-y-6">
       <div class="bg-white rounded-xl border border-slate-200 p-5 shadow-sm space-y-4">
-        <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+        
+        <!-- Ledger Header & Controls -->
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-100 pb-3">
           <h2 class="text-base font-bold text-slate-900">Transactions Ledger</h2>
-          <button onclick="openTransactionModal(-1)" class="bg-[#6c5ce7] hover:bg-[#5b4bc4] text-white text-xs font-semibold px-3.5 py-2 rounded-lg">+ Add Item</button>
+          <div class="flex items-center gap-2">
+              <button onclick="clearLedgerFilters()" class="text-xs text-slate-500 hover:text-slate-800 underline">Clear Filters</button>
+              <button onclick="openTransactionModal(-1)" class="bg-[#6c5ce7] hover:bg-[#5b4bc4] text-white text-xs font-semibold px-3.5 py-2 rounded-lg">+ Add Item</button>
+          </div>
         </div>
+
+        <!-- Ledger Filter Bar -->
+        <div class="flex flex-wrap gap-3 bg-slate-50 p-3 rounded-lg border border-slate-200">
+            <input type="text" id="filterMerchant" placeholder="Search merchant..." class="border border-slate-300 rounded px-3 py-1.5 text-xs flex-1 min-w-[150px] shadow-sm" oninput="updateLedgerFilters()">
+            <select id="filterMonth" class="border border-slate-300 rounded px-3 py-1.5 text-xs shadow-sm" onchange="updateLedgerFilters()">
+                <option value="">All Months</option>
+            </select>
+            <select id="filterAccount" class="border border-slate-300 rounded px-3 py-1.5 text-xs shadow-sm" onchange="updateLedgerFilters()">
+                <option value="">All Accounts</option>
+            </select>
+            <select id="filterGroup" class="border border-slate-300 rounded px-3 py-1.5 text-xs shadow-sm" onchange="updateLedgerFilters()">
+                <option value="">All Groups</option>
+            </select>
+            <select id="filterCategory" class="border border-slate-300 rounded px-3 py-1.5 text-xs shadow-sm" onchange="updateLedgerFilters()">
+                <option value="">All Categories</option>
+            </select>
+        </div>
+
         <div class="overflow-x-auto">
-          <table class="w-full text-left border-collapse min-w-[900px]">
+          <table class="w-full text-left border-collapse min-w-[1000px]">
             <thead>
-              <tr class="border-b border-slate-200 bg-slate-50 text-[11px] font-bold uppercase tracking-wider text-slate-400">
-                <th class="py-3 pl-4">Inc.</th>
-                <th class="py-3">ID</th>
-                <th class="py-3">Month</th>
-                <th class="py-3">Account (Source)</th>
-                <th class="py-3">Merchant</th>
-                <th class="py-3">Group :: Category</th>
-                <th class="py-3 text-right">Amount</th>
-                <th class="py-3 pl-2 pr-4 text-right">Actions</th>
+              <tr class="border-b border-slate-200 bg-slate-50 text-[11px] font-bold uppercase tracking-wider text-slate-400 cursor-pointer select-none">
+                <th class="py-3 pl-4 w-10">Inc.</th>
+                <th class="py-3 hover:text-slate-600 transition" onclick="sortLedger('Date')">Date <span id="sort-Date" class="sort-icon">▼</span></th>
+                <th class="py-3 hover:text-slate-600 transition" onclick="sortLedger('Account_ID')">Source <span id="sort-Account_ID" class="sort-icon"></span></th>
+                <th class="py-3 hover:text-slate-600 transition" onclick="sortLedger('Merchant')">Merchant <span id="sort-Merchant" class="sort-icon"></span></th>
+                <th class="py-3 hover:text-slate-600 transition" onclick="sortLedger('GroupName')">Group <span id="sort-GroupName" class="sort-icon"></span></th>
+                <th class="py-3 hover:text-slate-600 transition" onclick="sortLedger('CategoryName')">Category <span id="sort-CategoryName" class="sort-icon"></span></th>
+                <th class="py-3 text-right hover:text-slate-600 transition" onclick="sortLedger('Amount')">Amount <span id="sort-Amount" class="sort-icon"></span></th>
+                <th class="py-3 pl-2 pr-4 text-right cursor-default">Actions</th>
               </tr>
             </thead>
             <tbody id="ledgerTableBody" class="divide-y divide-slate-100 text-xs"></tbody>
@@ -223,7 +248,8 @@
                 <table class="w-full text-left border-collapse">
                     <thead class="bg-slate-100">
                         <tr class="text-[10px] font-bold uppercase tracking-wider text-slate-500 border-b border-slate-200">
-                            <th class="py-3 px-4">Date (Month)</th>
+                            <th class="py-3 px-4">Date</th>
+                            <th class="py-3 px-4">Budget Month</th>
                             <th class="py-3 px-4">Parsed Merchant</th>
                             <th class="py-3 px-4 text-right">Amount</th>
                             <th class="py-3 px-4">Source Account</th>
@@ -297,7 +323,7 @@
             </div>
         </div>
 
-        <!-- NEW: Factory Reset / Wipe Data -->
+        <!-- Factory Reset / Wipe Data -->
         <div class="border border-rose-200 bg-rose-50 rounded-lg p-5 space-y-4 mt-4">
             <div>
                 <h3 class="font-bold text-rose-900 text-sm">Factory Reset / Wipe Data</h3>
@@ -419,6 +445,18 @@
   <div id="txnModal" class="fixed inset-0 bg-slate-900/60 hidden items-center justify-center p-4 z-50">
     <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4 text-xs">
       <h3 id="txnModalTitle" class="text-base font-bold">Add Transaction</h3>
+      
+      <div class="grid grid-cols-2 gap-2">
+        <div class="space-y-1">
+            <label class="text-[10px] text-slate-500 font-bold uppercase">Transaction Date</label>
+            <input id="newTxnDate" type="date" class="w-full border rounded px-3 py-2" required />
+        </div>
+        <div class="space-y-1">
+            <label class="text-[10px] text-slate-500 font-bold uppercase">Budget Month (YYYY-MM)</label>
+            <input id="newTxnMonth" type="text" placeholder="e.g. 2026-10" class="w-full border rounded px-3 py-2 font-mono-num bg-slate-50" required />
+        </div>
+      </div>
+
       <div class="space-y-1">
           <label class="text-[10px] text-slate-500 font-bold uppercase">Account (Source)</label>
           <select id="newTxnAccount" class="w-full border rounded px-3 py-2"><option value="" disabled selected>Select Source Account...</option></select>
@@ -542,6 +580,9 @@
     const STORAGE_KEY = 'ktbudget_data_v2';
     let db = { groups: [], categories: [], group_category: [], accounts: [], budgets: [], goals: [], todos: [], transactions: [], lastModified: 0, lastBackup: 0 };
     let appState = { selectedMonth: '2026-10', customMonths: ['2026-10', '2026-09'], show12Mo: false };
+    
+    // Ledger Filter & Sort State
+    let ledgerState = { search: '', month: '', account: '', group: '', category: '', sortCol: 'Date', sortDir: 'desc' };
     let pendingImports = []; // Array to hold parsed CSV rows before saving
 
     // --- INSTALL SHIELD ---
@@ -630,7 +671,6 @@
     }
 
     function parseCsvLine(line) {
-        // Handle commas inside quotes
         let result = []; let current = ''; let inQuotes = false;
         for(let i=0; i<line.length; i++){
             const char = line[i];
@@ -674,12 +714,16 @@
                 const cols = parseCsvLine(lines[i]);
                 if(cols.length <= Math.max(dateIdx, descIdx, amtIdx)) continue;
 
-                // Format Date to YYYY-MM
+                // Format Date to YYYY-MM-DD for exact Date, and YYYY-MM for Budget Month
+                let fullDateStr = '';
                 let monthStr = appState.selectedMonth; // Fallback
                 const dMatch = cols[dateIdx].match(/(\d{1,4})[\/\-](\d{1,2})[\/\-](\d{1,4})/);
+                
                 if(dMatch) {
                    let y = dMatch[3].length === 4 ? dMatch[3] : (dMatch[1].length === 4 ? dMatch[1] : '20'+dMatch[3]);
                    let m = dMatch[1].length === 4 ? dMatch[2] : dMatch[1]; // Handle MM/DD/YYYY vs YYYY-MM-DD
+                   let d = dMatch[1].length === 4 ? dMatch[3] : dMatch[2]; 
+                   fullDateStr = `${y}-${m.padStart(2, '0')}-${d.padStart(2, '0')}`;
                    monthStr = `${y}-${m.padStart(2, '0')}`;
                 }
 
@@ -700,7 +744,7 @@
 
                 pendingImports.push({
                     id: 'P_' + Math.random().toString(36).substr(2,9),
-                    Month: monthStr, Merchant: merchant, Amount: amt, Account_ID: predAcc, GC_ID: predCat
+                    Date: fullDateStr, Month: monthStr, Merchant: merchant, Amount: amt, Account_ID: predAcc, GC_ID: predCat
                 });
             }
             
@@ -717,7 +761,6 @@
     function renderPendingImports() {
         const tbody = document.getElementById('pendingImportsTableBody');
         
-        // Build dropdown templates once for performance
         let catOptions = '<option value="" disabled>Select Category...</option>';
         db.categories.forEach(c => {
             const gc = db.group_category.find(g => g.Category_ID === c.Category_ID);
@@ -731,13 +774,13 @@
         });
 
         tbody.innerHTML = pendingImports.map((p, idx) => {
-            // Auto-select predictions in the HTML string
             const rowAccOptions = accOptions.replace(`value="${p.Account_ID}"`, `value="${p.Account_ID}" selected`);
             const rowCatOptions = catOptions.replace(`value="${p.GC_ID}"`, `value="${p.GC_ID}" selected`);
             
             return `
             <tr id="pendingRow_${p.id}" class="hover:bg-slate-50">
-              <td class="py-2 px-4 font-mono-num">${p.Month}</td>
+              <td class="py-2 px-4 font-mono-num text-[11px]">${p.Date}</td>
+              <td class="py-2 px-4 font-mono-num text-[11px] text-indigo-700">${p.Month}</td>
               <td class="py-2 px-4 font-semibold text-slate-800"><input type="text" id="impMerch_${p.id}" value="${p.Merchant.replace(/"/g, '&quot;')}" class="w-full bg-transparent border-b border-dashed border-slate-300 focus:border-indigo-500 focus:outline-none" /></td>
               <td class="py-2 px-4 text-right font-mono-num font-bold text-slate-900">$${p.Amount.toFixed(2)}</td>
               <td class="py-2 px-4"><select id="impAcc_${p.id}" class="w-full border rounded px-2 py-1 text-[11px] ${p.Account_ID ? 'bg-emerald-50 border-emerald-200' : 'bg-rose-50 border-rose-200'}">${rowAccOptions}</select></td>
@@ -766,6 +809,7 @@
             if(accSelect.value && catSelect.value) {
                 db.transactions.push({
                     Txn_ID: 'T' + Math.floor(Math.random()*100000),
+                    Date: p.Date || `${p.Month}-01`,
                     Month: p.Month,
                     Account_ID: accSelect.value,
                     Merchant: merchInput.value || p.Merchant,
@@ -787,46 +831,29 @@
             
             alert(`Successfully imported ${savedCount} transactions!${errorCount > 0 ? `\n\nSkipped ${errorCount} rows missing account/category assignments.` : ''}`);
             renderAll();
-            switchTab('ledger'); // Auto jump to ledger to view
+            switchTab('ledger'); 
         } else {
             alert("No rows saved. Please ensure Account and Category are selected for rows you want to import.");
         }
     }
 
-    // --- AI PROMPT GENERATOR ---
-    function openImportGuideModal() {
-        document.getElementById('importGuideModal').classList.remove('hidden');
-        document.getElementById('importGuideModal').classList.add('flex');
-    }
-    function closeImportGuideModal() {
-        document.getElementById('importGuideModal').classList.add('hidden');
-        document.getElementById('importGuideModal').classList.remove('flex');
-    }
+    // --- AI PROMPT GENERATOR & RESET WIZARD ---
+    function openImportGuideModal() { document.getElementById('importGuideModal').classList.remove('hidden'); document.getElementById('importGuideModal').classList.add('flex'); }
+    function closeImportGuideModal() { document.getElementById('importGuideModal').classList.add('hidden'); document.getElementById('importGuideModal').classList.remove('flex'); }
     
     function generateAIPrompt() {
         const accs = db.accounts.map(a => a.Account_ID).join(', ');
         const cats = db.categories.map(c => c.Category_ID).join(', ');
-        const prompt = `You are a financial data processor.\nHere is a list of my official Account IDs: [${accs}].\nHere is a list of my exact Category IDs: [${cats}].\n\nTake the following raw bank CSV data and return a newly mapped CSV. You must categorize every transaction as best as you can by matching the merchant to the most logical Category ID. If it is a credit card payment or transfer, use the most appropriate transfer category. Output ONLY the raw CSV text using exactly these headers: Txn_ID, Month, Account_ID, Merchant, GC_ID, Amount, Include.\n\nNote: Output expenses as positive amounts, use '1' for Include, make up sequential Txn_IDs (e.g. T9001), and format Month strictly as YYYY-MM.`;
+        const prompt = `You are a financial data processor.\nHere is a list of my official Account IDs: [${accs}].\nHere is a list of my exact Category IDs: [${cats}].\n\nTake the following raw bank CSV data and return a newly mapped CSV. You must categorize every transaction as best as you can by matching the merchant to the most logical Category ID. If it is a credit card payment or transfer, use the most appropriate transfer category. Output ONLY the raw CSV text using exactly these headers: Txn_ID, Date, Month, Account_ID, Merchant, GC_ID, Amount, Include.\n\nNote: Output expenses as positive amounts, use '1' for Include, make up sequential Txn_IDs (e.g. T9001), format Date strictly as YYYY-MM-DD, and format Month strictly as YYYY-MM.`;
         
-        navigator.clipboard.writeText(prompt).then(() => {
-            alert('Prompt copied to clipboard! Paste this into Gemini/ChatGPT along with your raw bank CSV text.');
-        }).catch(err => {
-            alert('Failed to copy. Please manually select this text:\n\n' + prompt);
-        });
+        navigator.clipboard.writeText(prompt).then(() => alert('Prompt copied to clipboard! Paste this into Gemini/ChatGPT along with your raw bank CSV text.')).catch(err => alert('Failed to copy.'));
     }
 
-    // --- AI DATA PREP & RESET ENGINE ---
-    function openAiPrepGuideModal() {
-        document.getElementById('aiPrepGuideModal').classList.remove('hidden');
-        document.getElementById('aiPrepGuideModal').classList.add('flex');
-    }
-    function closeAiPrepGuideModal() {
-        document.getElementById('aiPrepGuideModal').classList.add('hidden');
-        document.getElementById('aiPrepGuideModal').classList.remove('flex');
-    }
+    function openAiPrepGuideModal() { document.getElementById('aiPrepGuideModal').classList.remove('hidden'); document.getElementById('aiPrepGuideModal').classList.add('flex'); }
+    function closeAiPrepGuideModal() { document.getElementById('aiPrepGuideModal').classList.add('hidden'); document.getElementById('aiPrepGuideModal').classList.remove('flex'); }
     
     function copyAiPrepPrompt() {
-        const prompt = `Act as a financial data architect. I am going to give you raw bank/credit card transaction data. Your job is to analyze my spending, design a bespoke relational category structure for me, and output a complete, valid JSON database matching my app's schema.
+        const prompt = `Act as a financial data architect. I have attached several raw bank and credit card transaction files (or pasted the text below). Your job is to analyze my spending, design a bespoke relational category structure for me, and output a complete, valid JSON database matching my app's schema.
 
 Step 1: Analyze & Architect
 - Identify distinct funding sources (Accounts) based on the data and create Account IDs.
@@ -835,7 +862,7 @@ Step 1: Analyze & Architect
 - Map the Categories to the Groups using a relational Group_Category table (GC_ID).
 
 Step 2: Process Transactions
-- Format all transactions to match this schema. Make expenses positive numbers. Format dates as YYYY-MM.
+- Format all transactions to match this schema. Make expenses positive numbers. Format Date as YYYY-MM-DD and Month as YYYY-MM.
 - Assign the correct Account_ID and GC_ID to every transaction.
 
 Step 3: JSON Output
@@ -848,16 +875,10 @@ Output ONLY valid JSON (no markdown wrapping) matching this exact schema:
   "budgets": [],
   "goals": [],
   "todos": [],
-  "transactions": [ {"Txn_ID": "T1001", "Month": "2026-10", "Account_ID": "Chase", "Merchant": "Target", "GC_ID": "GC_1", "Amount": "145.20", "Include": "1"} ]
+  "transactions": [ {"Txn_ID": "T1001", "Date": "2026-10-15", "Month": "2026-10", "Account_ID": "Chase", "Merchant": "Target", "GC_ID": "GC_1", "Amount": "145.20", "Include": "1"} ]
 }
-
-Here is the raw CSV data:
 `;
-        navigator.clipboard.writeText(prompt).then(() => {
-            alert('Architecture Prompt copied to clipboard! Paste this into Gemini/ChatGPT along with your raw bank CSV text.');
-        }).catch(err => {
-            alert('Failed to copy. Please check browser permissions.');
-        });
+        navigator.clipboard.writeText(prompt).then(() => alert('Architecture Prompt copied to clipboard!')).catch(err => alert('Failed to copy.'));
     }
 
     function wipeAllData() {
@@ -881,7 +902,7 @@ Here is the raw CSV data:
                 { Budget_ID: 'B_002', Scope_Level: 'Category', Target_Ref_ID: 'C_GROC', Priority_Type: 'Necessity', Rule_Type: 'Annual', Amount: '6000.00', Start_Month: appState.selectedMonth, Target_Month: '', Is_Demo: '1', Notes: 'Averages 500/mo' }
             ],
             goals: [{ Goal_ID: 'GL_1', Name: 'Vet Emergency', Description: 'Buffer for unexpected pet costs', Linked_Account: 'Savings_1', Linked_GC_ID: 'C_GROC', Target_Value: '50.00' }],
-            transactions: [{ Txn_ID: 'T001', Month: appState.selectedMonth, Account_ID: 'Chase', Merchant: 'Target Groceries', GC_ID: 'C_GROC', Amount: '145.20', Include: '1' }],
+            transactions: [{ Txn_ID: 'T001', Date: `${appState.selectedMonth}-14`, Month: appState.selectedMonth, Account_ID: 'Chase', Merchant: 'Target Groceries', GC_ID: 'C_GROC', Amount: '145.20', Include: '1' }],
             todos: [{ Task: 'Update Salon Allocations', Type: 'Budgeting', Due_Date: '2026-10-31', Priority: 'High' }]
         };
         return demo[table.replace('.csv', '')] || [];
@@ -895,9 +916,7 @@ Here is the raw CSV data:
         const data = parseCsv(text);
         if(data.length === 0) return getDemoData(filename);
         return data;
-      } catch (e) {
-        return getDemoData(filename);
-      }
+      } catch (e) { return getDemoData(filename); }
     }
 
     function parseCsv(text) {
@@ -930,6 +949,11 @@ Here is the raw CSV data:
           if (!b.Start_Month) b.Start_Month = appState.selectedMonth; 
       });
       
+      // Ensure all transactions have a Date field
+      db.transactions.forEach(t => {
+          if(!t.Date) t.Date = t.Month ? `${t.Month}-01` : '';
+      });
+
       db.lastBackup = Date.now(); 
       saveDataToLocal(); 
       document.getElementById('demoDataAlert').classList.remove('hidden');
@@ -941,7 +965,13 @@ Here is the raw CSV data:
       
       const localData = localStorage.getItem(STORAGE_KEY);
       if (localData) {
-          try { db = JSON.parse(localData); } catch (e) { await seedDatabase(); }
+          try { 
+              db = JSON.parse(localData); 
+              // Backwards compatibility migration: add Date if missing
+              db.transactions.forEach(t => {
+                  if(!t.Date) t.Date = t.Month ? `${t.Month}-01` : '';
+              });
+          } catch (e) { await seedDatabase(); }
       } else {
           await seedDatabase();
       }
@@ -982,6 +1012,18 @@ Here is the raw CSV data:
         const accs = db.accounts.map(a => `<option value="${a.Account_ID}">${a.Name} (${a.Type})</option>`).join('');
         document.getElementById('newGoalAccount').innerHTML = '<option value="" disabled selected>Link to Account...</option>' + accs;
         document.getElementById('newTxnAccount').innerHTML = '<option value="" disabled selected>Select Source Account...</option>' + accs;
+
+        // Populate Ledger Filters
+        document.getElementById('filterMonth').innerHTML = '<option value="">All Months</option>' + appState.customMonths.map(m => `<option value="${m}">${m}</option>`).join('');
+        document.getElementById('filterAccount').innerHTML = '<option value="">All Accounts</option>' + accs;
+        
+        let grpFilters = '<option value="">All Groups</option>';
+        db.groups.forEach(g => { grpFilters += `<option value="${g.Group_ID}">${g.Name}</option>`; });
+        document.getElementById('filterGroup').innerHTML = grpFilters;
+
+        let catFilters = '<option value="">All Categories</option>';
+        db.categories.forEach(c => { catFilters += `<option value="${c.Category_ID}">${c.Name}</option>`; });
+        document.getElementById('filterCategory').innerHTML = catFilters;
     }
 
     function fmtCurrency(val, showPlus = false) {
@@ -1014,12 +1056,6 @@ Here is the raw CSV data:
       }
     }
 
-    function toggleGlobal12MonthView() {
-      appState.show12Mo = !appState.show12Mo;
-      document.getElementById('global12MoBtn').textContent = appState.show12Mo ? '📅 Collapse 12-Month Grid' : '📅 Expand All 12-Month Columns';
-      renderBudgetTable();
-    }
-
     function getPriorMonth(yyyy_mm) {
         let [y, m] = yyyy_mm.split('-').map(Number);
         m -= 1;
@@ -1029,7 +1065,6 @@ Here is the raw CSV data:
 
     function getMonthlyTargetCalculation(bg, calcMonthStr) {
         if (!bg) return 0;
-        
         if (bg.Start_Month && calcMonthStr < bg.Start_Month) return 0;
         if (bg.Target_Month && calcMonthStr > bg.Target_Month) return 0;
 
@@ -1050,7 +1085,6 @@ Here is the raw CSV data:
       const mSel = document.getElementById('monthSelect');
       mSel.innerHTML = appState.customMonths.map(m => `<option value="${m}">${m}</option>`).join('');
       mSel.value = appState.selectedMonth;
-      document.getElementById('ledgerCountBadge').textContent = db.transactions.length;
       
       db.budgets.forEach(b => {
           if (!b.Scope_Level) {
@@ -1265,28 +1299,125 @@ Here is the raw CSV data:
         document.getElementById('drillDownModal').classList.remove('flex');
     }
 
-    function renderLedger() {
-      const tbody = document.getElementById('ledgerTableBody');
-      tbody.innerHTML = db.transactions.map((t, idx) => {
-        const accObj = db.accounts.find(a => a.Account_ID === t.Account_ID);
-        const accDisplay = accObj ? accObj.Name : `<span class="text-rose-600" title="Unlinked ID: ${t.Account_ID}">⚠ ${t.Account_ID}</span>`;
+    // --- LEDGER FILTERING & SORTING LOGIC ---
+    function updateLedgerFilters() {
+        ledgerState.search = document.getElementById('filterMerchant').value.toLowerCase();
+        ledgerState.month = document.getElementById('filterMonth').value;
+        ledgerState.account = document.getElementById('filterAccount').value;
+        ledgerState.group = document.getElementById('filterGroup').value;
+        ledgerState.category = document.getElementById('filterCategory').value;
+        renderLedger();
+    }
 
+    function clearLedgerFilters() {
+        document.getElementById('filterMerchant').value = '';
+        document.getElementById('filterMonth').value = '';
+        document.getElementById('filterAccount').value = '';
+        document.getElementById('filterGroup').value = '';
+        document.getElementById('filterCategory').value = '';
+        updateLedgerFilters();
+    }
+
+    function sortLedger(col) {
+        if(ledgerState.sortCol === col) {
+            ledgerState.sortDir = ledgerState.sortDir === 'asc' ? 'desc' : 'asc';
+        } else {
+            ledgerState.sortCol = col;
+            ledgerState.sortDir = col === 'Amount' ? 'desc' : 'asc'; // Amounts default to highest first
+        }
+        
+        // Update UI Sort Icons
+        document.querySelectorAll('.sort-icon').forEach(el => { el.innerHTML = ''; el.classList.remove('sort-active'); });
+        const activeIcon = document.getElementById(`sort-${col}`);
+        if(activeIcon) {
+            activeIcon.innerHTML = ledgerState.sortDir === 'asc' ? '▲' : '▼';
+            activeIcon.classList.add('sort-active');
+        }
+        
+        renderLedger();
+    }
+
+    function renderLedger() {
+      // 1. Enrich data for sorting/filtering
+      let enrichedTxns = db.transactions.map((t, originalIndex) => {
+          const accObj = db.accounts.find(a => a.Account_ID === t.Account_ID);
+          const gcObj = db.group_category.find(gc => gc.Category_ID === t.GC_ID);
+          const catObj = db.categories.find(c => c.Category_ID === t.GC_ID);
+          const grpObj = gcObj ? db.groups.find(g => g.Group_ID === gcObj.Group_ID) : null;
+          
+          return {
+              ...t,
+              originalIndex,
+              AccountName: accObj ? accObj.Name : t.Account_ID,
+              GroupName: grpObj ? grpObj.Name : 'Uncategorized',
+              GroupID: grpObj ? grpObj.Group_ID : '',
+              CategoryName: catObj ? catObj.Name : t.GC_ID
+          };
+      });
+
+      // 2. Apply Filters
+      if (ledgerState.search) {
+          enrichedTxns = enrichedTxns.filter(t => t.Merchant.toLowerCase().includes(ledgerState.search));
+      }
+      if (ledgerState.month) {
+          enrichedTxns = enrichedTxns.filter(t => t.Month === ledgerState.month);
+      }
+      if (ledgerState.account) {
+          enrichedTxns = enrichedTxns.filter(t => t.Account_ID === ledgerState.account);
+      }
+      if (ledgerState.category) {
+          enrichedTxns = enrichedTxns.filter(t => t.GC_ID === ledgerState.category);
+      }
+      if (ledgerState.group) {
+          enrichedTxns = enrichedTxns.filter(t => t.GroupID === ledgerState.group);
+      }
+
+      // 3. Apply Sorting
+      enrichedTxns.sort((a, b) => {
+          let valA = a[ledgerState.sortCol];
+          let valB = b[ledgerState.sortCol];
+          
+          if (ledgerState.sortCol === 'Amount') {
+              valA = parseFloat(valA) || 0;
+              valB = parseFloat(valB) || 0;
+          } else {
+              valA = (valA || '').toString().toLowerCase();
+              valB = (valB || '').toString().toLowerCase();
+          }
+
+          if (valA < valB) return ledgerState.sortDir === 'asc' ? -1 : 1;
+          if (valA > valB) return ledgerState.sortDir === 'asc' ? 1 : -1;
+          return 0;
+      });
+
+      // 4. Render Table
+      const tbody = document.getElementById('ledgerTableBody');
+      document.getElementById('ledgerCountBadge').textContent = enrichedTxns.length;
+
+      tbody.innerHTML = enrichedTxns.map((t) => {
         return `
         <tr class="hover:bg-slate-50 ${t.Include !== '1' ? 'opacity-50' : ''}">
           <td class="py-3 pl-4"><input type="checkbox" ${t.Include === '1' ? 'checked' : ''} disabled /></td>
-          <td class="py-3 font-mono-num text-[11px] text-slate-500">${t.Txn_ID}</td>
-          <td class="py-3 font-mono-num text-slate-600">${t.Month}</td>
-          <td class="py-3 font-semibold text-slate-700">${accDisplay}</td>
+          <td class="py-3 font-mono-num text-[11px] text-slate-500 whitespace-nowrap">
+            <span class="block text-slate-800 font-bold">${t.Date}</span>
+            <span class="block text-[9px] text-slate-400 mt-0.5">ID: ${t.Txn_ID}</span>
+          </td>
+          <td class="py-3 font-semibold text-slate-700">${t.AccountName}</td>
           <td class="py-3 text-slate-800">${t.Merchant}</td>
-          <td class="py-3 font-mono-num text-slate-500">${t.GC_ID}</td>
+          <td class="py-3 text-slate-600 font-medium">${t.GroupName}</td>
+          <td class="py-3 text-slate-600 font-medium">${t.CategoryName}</td>
           <td class="py-3 text-right font-mono-num font-bold">${fmtCurrency(t.Amount)}</td>
           <td class="py-3 pl-2 pr-4 text-right whitespace-nowrap">
-             <button onclick="openTransactionModal(${idx})" class="text-indigo-600 hover:text-indigo-800 font-bold text-sm mr-2" title="Edit">✎</button>
-             <button onclick="openSplitModal(${idx})" class="text-slate-500 hover:text-slate-700 font-bold text-sm mr-2" title="Split">✂</button>
-             <button onclick="deleteTransaction(${idx})" class="text-slate-400 hover:text-rose-600 font-bold text-lg leading-none align-middle" title="Delete">&times;</button>
+             <button onclick="openTransactionModal(${t.originalIndex})" class="text-indigo-600 hover:text-indigo-800 font-bold text-sm mr-2" title="Edit">✎</button>
+             <button onclick="openSplitModal(${t.originalIndex})" class="text-slate-500 hover:text-slate-700 font-bold text-sm mr-2" title="Split">✂</button>
+             <button onclick="deleteTransaction(${t.originalIndex})" class="text-slate-400 hover:text-rose-600 font-bold text-lg leading-none align-middle" title="Delete">&times;</button>
           </td>
         </tr>
       `}).join('');
+      
+      if(enrichedTxns.length === 0) {
+          tbody.innerHTML = `<tr><td colspan="8" class="py-8 text-center text-slate-500 italic">No transactions match your current filters.</td></tr>`;
+      }
     }
 
     function renderAccountsAndGoals() {
@@ -1365,12 +1496,17 @@ Here is the raw CSV data:
                     sel.innerHTML += `<option value="${t.Account_ID}" class="text-rose-600">⚠ ${t.Account_ID} (Unlinked)</option>`;
                 }
             }
-
+            
+            document.getElementById('newTxnDate').value = t.Date || `${t.Month}-01`;
+            document.getElementById('newTxnMonth').value = t.Month || '';
             document.getElementById('newTxnAccount').value = t.Account_ID || '';
             document.getElementById('newTxnCategory').value = t.GC_ID || '';
             document.getElementById('newTxnMerchant').value = t.Merchant || '';
             document.getElementById('newTxnAmount').value = t.Amount || '';
         } else {
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('newTxnDate').value = today;
+            document.getElementById('newTxnMonth').value = appState.selectedMonth;
             document.getElementById('newTxnAccount').value = '';
             document.getElementById('newTxnCategory').value = '';
             document.getElementById('newTxnMerchant').value = '';
@@ -1378,24 +1514,32 @@ Here is the raw CSV data:
         }
         document.getElementById('txnModal').classList.remove('hidden'); document.getElementById('txnModal').classList.add('flex');
     }
+    
     function closeTransactionModal() { document.getElementById('txnModal').classList.add('hidden'); document.getElementById('txnModal').classList.remove('flex'); }
+    
     function saveNewTransaction() {
+        const txnDate = document.getElementById('newTxnDate').value;
+        const txnMonth = document.getElementById('newTxnMonth').value;
         const acc = document.getElementById('newTxnAccount').value;
         const cat = document.getElementById('newTxnCategory').value;
         const merchant = document.getElementById('newTxnMerchant').value.trim() || 'New Expense';
         const amount = parseFloat(document.getElementById('newTxnAmount').value) || 0;
-        if (!acc || !cat || amount <= 0) return alert('Please complete all fields.');
+        
+        if (!txnDate || !txnMonth || !acc || !cat || amount <= 0) return alert('Please complete all required fields.');
         
         if (editingTxnIdx >= 0) {
+            db.transactions[editingTxnIdx].Date = txnDate;
+            db.transactions[editingTxnIdx].Month = txnMonth;
             db.transactions[editingTxnIdx].Account_ID = acc;
             db.transactions[editingTxnIdx].GC_ID = cat;
             db.transactions[editingTxnIdx].Merchant = merchant;
             db.transactions[editingTxnIdx].Amount = amount;
         } else {
-            db.transactions.push({ Txn_ID: 'T' + Math.floor(Math.random()*10000), Month: appState.selectedMonth, Account_ID: acc, Merchant: merchant, Amount: amount, GC_ID: cat, Include: '1' });
+            db.transactions.push({ Txn_ID: 'T' + Math.floor(Math.random()*10000), Date: txnDate, Month: txnMonth, Account_ID: acc, Merchant: merchant, Amount: amount, GC_ID: cat, Include: '1' });
         }
         saveDataToLocal(); closeTransactionModal(); renderAll();
     }
+    
     function deleteTransaction(idx) {
         if(confirm('Delete transaction?')) {
             db.transactions.splice(idx, 1);
@@ -1407,7 +1551,7 @@ Here is the raw CSV data:
     function openSplitModal(idx) {
         splittingTxnIdx = idx;
         const t = db.transactions[idx];
-        document.getElementById('splitOrigTitle').textContent = t.Merchant + ' (' + t.Month + ', ' + t.Account_ID + ')';
+        document.getElementById('splitOrigTitle').textContent = t.Merchant + ' (' + t.Date + ', ' + t.Account_ID + ')';
         document.getElementById('splitOrigTotal').textContent = parseFloat(t.Amount).toFixed(2);
         document.getElementById('splitCatA').value = t.GC_ID; 
         document.getElementById('splitAmtA').value = '';
