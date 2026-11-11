@@ -64,6 +64,7 @@
       <button id="tabBtn-ledger" onclick="switchTab('ledger')" class="tab-btn px-3.5 py-2 rounded-lg text-xs font-semibold flex items-center gap-2 transition whitespace-nowrap text-slate-300 hover:bg-[#1e2548]">Transactions Ledger (<span id="ledgerCountBadge">0</span>)</button>
       <button id="tabBtn-canvas" onclick="switchTab('canvas')" class="tab-btn px-3.5 py-2 rounded-lg text-xs font-semibold flex items-center gap-2 transition whitespace-nowrap text-slate-300 hover:bg-[#1e2548]">Budget Canvas &amp; Goals</button>
       <button id="tabBtn-accounts" onclick="switchTab('accounts')" class="tab-btn px-3.5 py-2 rounded-lg text-xs font-semibold flex items-center gap-2 transition whitespace-nowrap text-slate-300 hover:bg-[#1e2548]">Accounts &amp; Goals</button>
+      <button id="tabBtn-structure" onclick="switchTab('structure')" class="tab-btn px-3.5 py-2 rounded-lg text-xs font-semibold flex items-center gap-2 transition whitespace-nowrap text-slate-300 hover:bg-[#1e2548]">🗂️ Groups &amp; Categories</button>
       <button id="tabBtn-importer" onclick="switchTab('importer')" class="tab-btn px-3.5 py-2 rounded-lg text-xs font-semibold flex items-center gap-2 transition whitespace-nowrap text-slate-300 hover:bg-[#1e2548]">📥 Data Importer</button>
       <button id="tabBtn-admin" onclick="switchTab('admin')" class="tab-btn px-3.5 py-2 rounded-lg text-xs font-semibold flex items-center gap-2 transition whitespace-nowrap text-slate-300 hover:bg-[#1e2548]">⚙️ Admin &amp; Backup</button>
     </div>
@@ -133,7 +134,6 @@
     <section id="tab-ledger" class="hidden space-y-6">
       <div class="bg-white rounded-xl border border-slate-200 p-5 shadow-sm space-y-4">
         
-        <!-- Ledger Header & Controls -->
         <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-100 pb-3">
           <h2 class="text-base font-bold text-slate-900">Transactions Ledger</h2>
           <div class="flex items-center gap-2">
@@ -142,21 +142,12 @@
           </div>
         </div>
 
-        <!-- Ledger Filter Bar -->
         <div class="flex flex-wrap gap-3 bg-slate-50 p-3 rounded-lg border border-slate-200">
             <input type="text" id="filterMerchant" placeholder="Search merchant..." class="border border-slate-300 rounded px-3 py-1.5 text-xs flex-1 min-w-[150px] shadow-sm" oninput="updateLedgerFilters()">
-            <select id="filterMonth" class="border border-slate-300 rounded px-3 py-1.5 text-xs shadow-sm" onchange="updateLedgerFilters()">
-                <option value="">All Months</option>
-            </select>
-            <select id="filterAccount" class="border border-slate-300 rounded px-3 py-1.5 text-xs shadow-sm" onchange="updateLedgerFilters()">
-                <option value="">All Accounts</option>
-            </select>
-            <select id="filterGroup" class="border border-slate-300 rounded px-3 py-1.5 text-xs shadow-sm" onchange="updateLedgerFilters()">
-                <option value="">All Groups</option>
-            </select>
-            <select id="filterCategory" class="border border-slate-300 rounded px-3 py-1.5 text-xs shadow-sm" onchange="updateLedgerFilters()">
-                <option value="">All Categories</option>
-            </select>
+            <select id="filterMonth" class="border border-slate-300 rounded px-3 py-1.5 text-xs shadow-sm" onchange="updateLedgerFilters()"><option value="">All Months</option></select>
+            <select id="filterAccount" class="border border-slate-300 rounded px-3 py-1.5 text-xs shadow-sm" onchange="updateLedgerFilters()"><option value="">All Accounts</option></select>
+            <select id="filterGroup" class="border border-slate-300 rounded px-3 py-1.5 text-xs shadow-sm" onchange="updateLedgerFilters()"><option value="">All Groups</option></select>
+            <select id="filterCategory" class="border border-slate-300 rounded px-3 py-1.5 text-xs shadow-sm" onchange="updateLedgerFilters()"><option value="">All Categories</option></select>
         </div>
 
         <div class="overflow-x-auto">
@@ -220,6 +211,54 @@
       </div>
     </section>
 
+    <!-- TAB 7: GROUPS & CATEGORIES -->
+    <section id="tab-structure" class="hidden space-y-6">
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        
+        <!-- Groups Manager -->
+        <div class="bg-white rounded-xl border border-slate-200 p-5 shadow-sm space-y-4">
+            <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+                <div>
+                    <h2 class="text-base font-bold text-slate-900">Groups</h2>
+                    <p class="text-[10px] text-slate-500">High-level containers for categories.</p>
+                </div>
+                <button onclick="openGroupModal(-1)" class="bg-slate-800 hover:bg-slate-700 text-white text-xs font-semibold px-3.5 py-2 rounded-lg">+ Add Group</button>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse">
+                    <thead><tr class="border-b border-slate-200 bg-slate-50 text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                        <th class="py-2 pl-3">Group Name</th>
+                        <th class="py-2">Type</th>
+                        <th class="py-2 text-right pr-3">Actions</th>
+                    </tr></thead>
+                    <tbody id="groupsTableBody" class="divide-y divide-slate-100 text-xs"></tbody>
+                </table>
+            </div>
+        </div>
+        
+        <!-- Categories Manager -->
+        <div class="bg-white rounded-xl border border-slate-200 p-5 shadow-sm space-y-4">
+            <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+                <div>
+                    <h2 class="text-base font-bold text-slate-900">Categories &amp; Mapping</h2>
+                    <p class="text-[10px] text-slate-500">Assign categories to parent groups.</p>
+                </div>
+                <button onclick="openCategoryModal(-1)" class="bg-[#6c5ce7] hover:bg-[#5b4bc4] text-white text-xs font-semibold px-3.5 py-2 rounded-lg">+ Add Category</button>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse">
+                    <thead><tr class="border-b border-slate-200 bg-slate-50 text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                        <th class="py-2 pl-3">Category Name</th>
+                        <th class="py-2">Parent Group</th>
+                        <th class="py-2 text-right pr-3">Actions</th>
+                    </tr></thead>
+                    <tbody id="categoriesTableBody" class="divide-y divide-slate-100 text-xs"></tbody>
+                </table>
+            </div>
+        </div>
+      </div>
+    </section>
+
     <!-- TAB 5: DATA IMPORTER (NATIVE BULK WIZARD) -->
     <section id="tab-importer" class="hidden space-y-6">
       <div class="bg-white rounded-xl border border-slate-200 p-6 shadow-sm space-y-6">
@@ -236,7 +275,6 @@
             <button onclick="document.getElementById('bankCsvInput').click()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-6 rounded-lg text-xs transition">Select CSV File</button>
         </div>
 
-        <!-- Rapid Fire List (Hidden until file loaded) -->
         <div id="importRapidFireUI" class="hidden space-y-4">
             <div class="flex justify-between items-end border-b border-slate-200 pb-2 mt-8">
                 <h3 class="font-bold text-slate-800 text-base">Rapid-Fire Review</h3>
@@ -266,8 +304,6 @@
 
     <!-- TAB 6: ADMIN & BACKUP -->
     <section id="tab-admin" class="hidden space-y-6">
-      
-      <!-- Import Instructions Card -->
       <div class="bg-indigo-900 rounded-xl p-6 shadow-sm text-indigo-50 flex flex-col md:flex-row gap-6 items-center justify-between">
           <div class="space-y-2">
               <h2 class="text-lg font-bold text-white">How to Account for Next Month's Actuals</h2>
@@ -276,7 +312,6 @@
           <button onclick="openImportGuideModal()" class="bg-white text-indigo-900 hover:bg-indigo-50 font-bold py-2.5 px-6 rounded-lg text-sm shadow transition shrink-0">View Import Guide</button>
       </div>
 
-      <!-- NEW: AI Data Prep & Architecture Card -->
       <div class="bg-slate-900 rounded-xl p-6 shadow-sm text-slate-50 flex flex-col md:flex-row gap-6 items-center justify-between mt-6">
           <div class="space-y-2">
               <h2 class="text-lg font-bold text-white">Zero-to-One: AI Data Prep &amp; Architecture</h2>
@@ -323,7 +358,6 @@
             </div>
         </div>
 
-        <!-- Factory Reset / Wipe Data -->
         <div class="border border-rose-200 bg-rose-50 rounded-lg p-5 space-y-4 mt-4">
             <div>
                 <h3 class="font-bold text-rose-900 text-sm">Factory Reset / Wipe Data</h3>
@@ -355,52 +389,40 @@
     </div>
   </div>
 
-  <!-- IMPORT GUIDE MODAL -->
+  <!-- MODALS -->
   <div id="importGuideModal" class="fixed inset-0 bg-slate-900/70 hidden items-center justify-center p-4 z-[60]">
     <div class="bg-white rounded-2xl max-w-3xl w-full p-8 shadow-2xl space-y-6 text-sm flex flex-col max-h-[90vh] overflow-y-auto relative">
       <button onclick="closeImportGuideModal()" class="absolute top-6 right-6 text-slate-400 hover:text-rose-600 font-bold text-3xl leading-none">&times;</button>
       <h3 class="text-xl font-extrabold text-slate-900 border-b pb-4">How to Account for Next Month's Actuals</h3>
-      
       <div class="space-y-4">
           <h4 class="font-bold text-indigo-700 text-base">Method 1: The Native Bulk-Import Wizard (Recommended)</h4>
           <p class="text-slate-600">This app is fully equipped to parse raw bank files directly on your device, ensuring privacy and speed.</p>
           <ul class="list-decimal pl-5 text-slate-600 space-y-2">
-              <li>Log into your bank (Chase, PayPal, Venmo, etc.) and click <strong>"Download Activity as CSV"</strong>.</li>
+              <li>Log into your bank and click <strong>"Download Activity as CSV"</strong>.</li>
               <li>In this app, click the <strong>📥 Data Importer</strong> tab.</li>
               <li>Drag and drop your raw bank CSV file into the designated zone.</li>
-              <li>The engine will instantly parse the file, flip expenses to positive values, and attempt to auto-guess the Categories and Accounts based on your past ledger entries.</li>
-              <li>Review the Rapid-Fire list, make any dropdown adjustments, and click <strong>Save All</strong>.</li>
+              <li>The engine will instantly parse the file, flip expenses to positive values, and attempt to auto-guess the Categories based on your past ledger entries.</li>
           </ul>
       </div>
-
       <div class="border-t border-slate-200 pt-6 space-y-4">
           <h4 class="font-bold text-indigo-700 text-base">Method 2: AI Bulk Categorization (Alternative)</h4>
-          <p class="text-slate-600">If you have a massive batch of entirely new merchants and want an AI to do the categorization heavy lifting before importing, you can use a strict prompt in Gemini or ChatGPT.</p>
-          <ul class="list-decimal pl-5 text-slate-600 space-y-2">
-              <li>Download your bank CSV and copy all the text.</li>
-              <li>Click the button below to copy your custom **Master AI Prompt**, which injects your exact live database IDs.</li>
-              <li>Paste the prompt and your raw CSV text into Gemini/ChatGPT.</li>
-              <li>Save the AI's perfectly mapped CSV output and drop it into the Data Importer tab!</li>
-          </ul>
+          <p class="text-slate-600">Use a strict prompt in Gemini or ChatGPT to categorize massive batches of new merchants before importing.</p>
           <button onclick="generateAIPrompt()" class="mt-4 bg-slate-800 hover:bg-slate-700 text-white font-bold py-2.5 px-6 rounded-lg text-xs transition">📋 Copy Master AI Prompt to Clipboard</button>
       </div>
-
       <div class="pt-4 text-right">
         <button onclick="closeImportGuideModal()" class="px-5 py-2.5 bg-slate-200 text-slate-800 rounded-lg font-bold hover:bg-slate-300 transition">Close Guide</button>
       </div>
     </div>
   </div>
 
-  <!-- AI PREP GUIDE MODAL -->
   <div id="aiPrepGuideModal" class="fixed inset-0 bg-slate-900/70 hidden items-center justify-center p-4 z-[60]">
     <div class="bg-white rounded-2xl max-w-3xl w-full p-8 shadow-2xl space-y-6 text-sm flex flex-col max-h-[90vh] overflow-y-auto relative">
       <button onclick="closeAiPrepGuideModal()" class="absolute top-6 right-6 text-slate-400 hover:text-rose-600 font-bold text-3xl leading-none">&times;</button>
       <h3 class="text-xl font-extrabold text-slate-900 border-b pb-4">Zero-to-One: AI Data Prep Engine</h3>
-      
       <div class="space-y-4">
-          <p class="text-slate-600">Instead of building your accounts, groups, and categories manually, you can use an LLM (like Gemini or ChatGPT) to design your bespoke relational architecture based on your actual spending habits.</p>
+          <p class="text-slate-600">Instead of building your accounts, groups, and categories manually, use an LLM to design your bespoke relational architecture based on your actual spending habits.</p>
           <ul class="list-decimal pl-5 text-slate-600 space-y-2">
-              <li>Download your raw bank/credit card CSVs and copy all the text.</li>
+              <li>Download your raw bank/credit card CSVs.</li>
               <li>Click the button below to copy the <strong>KTBudget Architecture Generator Prompt</strong>.</li>
               <li>Paste the prompt and your raw CSV text into the AI.</li>
               <li>The AI will output a complete <code>.json</code> file representing your tailored database.</li>
@@ -408,14 +430,12 @@
           </ul>
           <button onclick="copyAiPrepPrompt()" class="mt-4 bg-[#6c5ce7] hover:bg-[#5b4bc4] text-white font-bold py-2.5 px-6 rounded-lg text-xs shadow transition">📋 Copy AI Architect Prompt to Clipboard</button>
       </div>
-
       <div class="pt-4 text-right border-t border-slate-200 mt-4">
         <button onclick="closeAiPrepGuideModal()" class="px-5 py-2.5 bg-slate-200 text-slate-800 rounded-lg font-bold hover:bg-slate-300 transition">Close Guide</button>
       </div>
     </div>
   </div>
 
-  <!-- DRILL-DOWN MODAL -->
   <div id="drillDownModal" class="fixed inset-0 bg-slate-900/70 hidden items-center justify-center p-4 z-[60]">
     <div class="bg-white rounded-2xl max-w-2xl w-full p-6 shadow-2xl space-y-4 text-xs flex flex-col max-h-[90vh]">
       <div class="flex justify-between items-center border-b border-slate-100 pb-3">
@@ -441,7 +461,34 @@
     </div>
   </div>
 
-  <!-- ALL CRUD MODALS -->
+  <!-- CRUD MODALS -->
+  <div id="groupModal" class="fixed inset-0 bg-slate-900/60 hidden items-center justify-center p-4 z-50">
+    <div class="bg-white rounded-2xl max-w-sm w-full p-6 shadow-2xl space-y-4 text-xs">
+      <h3 id="groupModalTitle" class="text-base font-bold">Add Group</h3>
+      <input id="newGrpName" type="text" placeholder="Group Name (e.g. Necessities)" class="w-full border rounded px-3 py-2" />
+      <select id="newGrpType" class="w-full border rounded px-3 py-2"><option value="Fixed">Fixed</option><option value="Flexible">Flexible</option></select>
+      <div class="flex justify-end gap-2 pt-2">
+        <button onclick="closeGroupModal()" class="px-3 py-1.5 border rounded hover:bg-slate-50">Cancel</button>
+        <button onclick="saveGroup()" class="px-3 py-1.5 bg-slate-800 text-white rounded">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="categoryModal" class="fixed inset-0 bg-slate-900/60 hidden items-center justify-center p-4 z-50">
+    <div class="bg-white rounded-2xl max-w-sm w-full p-6 shadow-2xl space-y-4 text-xs">
+      <h3 id="categoryModalTitle" class="text-base font-bold">Add Category</h3>
+      <input id="newCatName" type="text" placeholder="Category Name (e.g. Groceries)" class="w-full border rounded px-3 py-2" />
+      <div class="space-y-1">
+          <label class="text-[10px] text-slate-500 font-bold uppercase">Assign to Group</label>
+          <select id="newCatGroup" class="w-full border rounded px-3 py-2"><option value="" disabled selected>Select Parent Group...</option></select>
+      </div>
+      <div class="flex justify-end gap-2 pt-2">
+        <button onclick="closeCategoryModal()" class="px-3 py-1.5 border rounded hover:bg-slate-50">Cancel</button>
+        <button onclick="saveCategory()" class="px-3 py-1.5 bg-[#6c5ce7] hover:bg-[#5b4bc4] text-white rounded">Save</button>
+      </div>
+    </div>
+  </div>
+
   <div id="txnModal" class="fixed inset-0 bg-slate-900/60 hidden items-center justify-center p-4 z-50">
     <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4 text-xs">
       <h3 id="txnModalTitle" class="text-base font-bold">Add Transaction</h3>
@@ -459,12 +506,20 @@
 
       <div class="space-y-1">
           <label class="text-[10px] text-slate-500 font-bold uppercase">Account (Source)</label>
-          <select id="newTxnAccount" class="w-full border rounded px-3 py-2"><option value="" disabled selected>Select Source Account...</option></select>
+          <select id="newTxnAccount" class="w-full border rounded px-3 py-2 transition-colors"><option value="" disabled selected>Select Source Account...</option></select>
       </div>
-      <div class="space-y-1">
-          <label class="text-[10px] text-slate-500 font-bold uppercase">Destination (Group :: Category)</label>
-          <select id="newTxnCategory" class="w-full border rounded px-3 py-2"><option value="" disabled selected>Select Destination Category...</option></select>
+      
+      <div class="grid grid-cols-2 gap-2">
+          <div class="space-y-1">
+              <label class="text-[10px] text-slate-500 font-bold uppercase">Group</label>
+              <select id="newTxnGroup" class="w-full border rounded px-3 py-2" onchange="updateCategoryDropdown('newTxnCategory', this.value)"><option value="" disabled selected>Select Group...</option></select>
+          </div>
+          <div class="space-y-1">
+              <label class="text-[10px] text-slate-500 font-bold uppercase">Category</label>
+              <select id="newTxnCategory" class="w-full border rounded px-3 py-2"><option value="" disabled selected>Select Category...</option></select>
+          </div>
       </div>
+
       <input id="newTxnMerchant" type="text" placeholder="Merchant name..." class="w-full border rounded px-3 py-2" />
       <input id="newTxnAmount" type="number" step="0.01" placeholder="Amount ($)..." class="w-full border rounded px-3 py-2 font-mono-num" />
       <div class="flex justify-end gap-2 pt-2">
@@ -483,13 +538,19 @@
       </div>
       <div class="space-y-2 border border-slate-200 p-3 rounded bg-slate-50">
           <h4 class="font-bold text-slate-700">Part A (ID-A)</h4>
-          <select id="splitCatA" class="w-full border rounded px-3 py-2"><option value="" disabled selected>Select Category A...</option></select>
+          <div class="grid grid-cols-2 gap-2">
+              <select id="splitGrpA" class="w-full border rounded px-3 py-2" onchange="updateCategoryDropdown('splitCatA', this.value)"><option value="" disabled selected>Group A...</option></select>
+              <select id="splitCatA" class="w-full border rounded px-3 py-2"><option value="" disabled selected>Category A...</option></select>
+          </div>
           <input id="splitAmtA" type="number" step="0.01" placeholder="Amount A..." class="w-full border rounded px-3 py-2 font-mono-num" oninput="calculateSplitRemainder()" />
       </div>
       <div class="space-y-2 border border-slate-200 p-3 rounded bg-slate-50">
           <h4 class="font-bold text-slate-700">Part B (ID-B)</h4>
-          <select id="splitCatB" class="w-full border rounded px-3 py-2"><option value="" disabled selected>Select Category B...</option></select>
-          <div class="flex items-center gap-2">
+          <div class="grid grid-cols-2 gap-2">
+              <select id="splitGrpB" class="w-full border rounded px-3 py-2" onchange="updateCategoryDropdown('splitCatB', this.value)"><option value="" disabled selected>Group B...</option></select>
+              <select id="splitCatB" class="w-full border rounded px-3 py-2"><option value="" disabled selected>Category B...</option></select>
+          </div>
+          <div class="flex items-center gap-2 mt-2">
               <span class="text-slate-500 font-bold flex-1 text-right">Auto-Calculated Remainder:</span>
               <input id="splitAmtB" type="number" step="0.01" class="w-24 border rounded px-3 py-2 font-mono-num bg-slate-200 text-slate-600 cursor-not-allowed" readonly />
           </div>
@@ -545,7 +606,6 @@
         </div>
       </div>
       <p class="text-[10px] text-slate-400 leading-tight mt-1">Leave End Month blank for continuous budgets. Editing history? Adjust the Start Month.</p>
-
       <input id="newBudgNotes" type="text" placeholder="Notes (Optional)..." class="w-full border rounded px-3 py-2 mt-2" />
       <div class="flex justify-end gap-2 pt-3 border-t mt-3">
         <button onclick="closeBudgetModal()" class="px-3 py-1.5 border rounded hover:bg-slate-50">Cancel</button>
@@ -721,7 +781,7 @@
                 
                 if(dMatch) {
                    let y = dMatch[3].length === 4 ? dMatch[3] : (dMatch[1].length === 4 ? dMatch[1] : '20'+dMatch[3]);
-                   let m = dMatch[1].length === 4 ? dMatch[2] : dMatch[1]; // Handle MM/DD/YYYY vs YYYY-MM-DD
+                   let m = dMatch[1].length === 4 ? dMatch[2] : dMatch[1]; 
                    let d = dMatch[1].length === 4 ? dMatch[3] : dMatch[2]; 
                    fullDateStr = `${y}-${m.padStart(2, '0')}-${d.padStart(2, '0')}`;
                    monthStr = `${y}-${m.padStart(2, '0')}`;
@@ -729,7 +789,7 @@
 
                 const rawAmt = parseFloat(cols[amtIdx].replace(/[^0-9.-]+/g,""));
                 if(isNaN(rawAmt)) continue;
-                // Treat negative bank logic (expense) as positive ledger logic, and vice versa
+                // Treat negative bank logic (expense) as positive ledger logic
                 const amt = Math.abs(rawAmt); 
                 const merchant = cols[descIdx].replace(/^"|"$/g, '');
 
@@ -739,12 +799,12 @@
                 const historyMatch = db.transactions.find(t => t.Merchant.toLowerCase() === merchant.toLowerCase());
                 if(historyMatch) { 
                     predAcc = historyMatch.Account_ID; 
-                    predCat = historyMatch.GC_ID; 
+                    predCat = historyMatch.Category_ID || historyMatch.GC_ID; 
                 }
 
                 pendingImports.push({
                     id: 'P_' + Math.random().toString(36).substr(2,9),
-                    Date: fullDateStr, Month: monthStr, Merchant: merchant, Amount: amt, Account_ID: predAcc, GC_ID: predCat
+                    Date: fullDateStr, Month: monthStr, Merchant: merchant, Amount: amt, Account_ID: predAcc, Category_ID: predCat
                 });
             }
             
@@ -776,7 +836,7 @@
 
         tbody.innerHTML = pendingImports.map((p, idx) => {
             const rowAccOptions = accOptions.replace(`value="${p.Account_ID}"`, `value="${p.Account_ID}" selected`);
-            const rowCatOptions = catOptions.replace(`value="${p.GC_ID}"`, `value="${p.GC_ID}" selected`);
+            const rowCatOptions = catOptions.replace(`value="${p.Category_ID}"`, `value="${p.Category_ID}" selected`);
             
             return `
             <tr id="pendingRow_${p.id}" class="hover:bg-slate-50">
@@ -785,7 +845,7 @@
               <td class="py-2 px-4 font-semibold text-slate-800"><input type="text" id="impMerch_${p.id}" value="${p.Merchant.replace(/"/g, '&quot;')}" class="w-full bg-transparent border-b border-dashed border-slate-300 focus:border-indigo-500 focus:outline-none" /></td>
               <td class="py-2 px-4 text-right font-mono-num font-bold text-slate-900">$${p.Amount.toFixed(2)}</td>
               <td class="py-2 px-4"><select id="impAcc_${p.id}" class="w-full border rounded px-2 py-1 text-[11px] ${p.Account_ID ? 'bg-emerald-50 border-emerald-200' : 'bg-rose-50 border-rose-200'}">${rowAccOptions}</select></td>
-              <td class="py-2 px-4"><select id="impCat_${p.id}" class="w-full border rounded px-2 py-1 text-[11px] ${p.GC_ID ? 'bg-emerald-50 border-emerald-200' : 'bg-rose-50 border-rose-200'}">${rowCatOptions}</select></td>
+              <td class="py-2 px-4"><select id="impCat_${p.id}" class="w-full border rounded px-2 py-1 text-[11px] ${p.Category_ID ? 'bg-emerald-50 border-emerald-200' : 'bg-rose-50 border-rose-200'}">${rowCatOptions}</select></td>
               <td class="py-2 px-4 text-center"><button onclick="removePendingImport('${p.id}')" class="text-slate-400 hover:text-rose-600 font-bold text-lg leading-none" title="Ignore/Remove">&times;</button></td>
             </tr>
             `;
@@ -808,6 +868,10 @@
             const merchInput = document.getElementById(`impMerch_${p.id}`);
             
             if(accSelect.value && catSelect.value) {
+                const selectedCat = catSelect.value;
+                const findParentGc = db.group_category.find(gc => gc.Category_ID === selectedCat);
+                const groupId = findParentGc ? findParentGc.Group_ID : '';
+                
                 db.transactions.push({
                     Txn_ID: 'T' + Math.floor(Math.random()*100000),
                     Date: p.Date || `${p.Month}-01`,
@@ -815,7 +879,8 @@
                     Account_ID: accSelect.value,
                     Merchant: merchInput.value || p.Merchant,
                     Amount: p.Amount,
-                    GC_ID: catSelect.value,
+                    Group_ID: groupId,
+                    Category_ID: selectedCat,
                     Include: '1'
                 });
                 savedCount++;
@@ -845,7 +910,7 @@
     function generateAIPrompt() {
         const accs = db.accounts.map(a => a.Account_ID).join(', ');
         const cats = db.categories.map(c => c.Category_ID).join(', ');
-        const prompt = `You are a financial data processor.\nHere is a list of my official Account IDs: [${accs}].\nHere is a list of my exact Category IDs: [${cats}].\n\nTake the following raw bank CSV data and return a newly mapped CSV. You must categorize every transaction as best as you can by matching the merchant to the most logical Category ID. If it is a credit card payment or transfer, use the most appropriate transfer category. Output ONLY the raw CSV text using exactly these headers: Txn_ID, Date, Month, Account_ID, Merchant, GC_ID, Amount, Include.\n\nNote: Output expenses as positive amounts, use '1' for Include, make up sequential Txn_IDs (e.g. T9001), format Date strictly as YYYY-MM-DD, and format Month strictly as YYYY-MM.`;
+        const prompt = `You are a financial data processor.\nHere is a list of my official Account IDs: [${accs}].\nHere is a list of my exact Category IDs: [${cats}].\n\nTake the following raw bank CSV data and return a newly mapped CSV. You must categorize every transaction as best as you can by matching the merchant to the most logical Category ID. If it is a credit card payment or transfer, use the most appropriate transfer category. Output ONLY the raw CSV text using exactly these headers: Txn_ID, Date, Month, Account_ID, Merchant, Group_ID, Category_ID, Amount, Include.\n\nNote: Output expenses as positive amounts, use '1' for Include, make up sequential Txn_IDs (e.g. T9001), format Date strictly as YYYY-MM-DD, and format Month strictly as YYYY-MM. Note: Use your best judgment to assign the logical Group_ID (e.g., G_NEC) that corresponds with the Category_ID.`;
         
         navigator.clipboard.writeText(prompt).then(() => alert('Prompt copied to clipboard! Paste this into Gemini/ChatGPT along with your raw bank CSV text.')).catch(err => alert('Failed to copy.'));
     }
@@ -864,7 +929,7 @@ Step 1: Analyze & Architect
 
 Step 2: Process Transactions
 - Format all transactions to match this schema. Make expenses positive numbers. Format Date as YYYY-MM-DD and Month as YYYY-MM.
-- Assign the correct Account_ID and GC_ID to every transaction.
+- Assign the correct Account_ID, Group_ID, and Category_ID to every transaction.
 
 Step 3: JSON Output
 Output ONLY valid JSON (no markdown wrapping) matching this exact schema:
@@ -876,7 +941,7 @@ Output ONLY valid JSON (no markdown wrapping) matching this exact schema:
   "budgets": [],
   "goals": [],
   "todos": [],
-  "transactions": [ {"Txn_ID": "T1001", "Date": "2026-10-15", "Month": "2026-10", "Account_ID": "Chase", "Merchant": "Target", "GC_ID": "GC_1", "Amount": "145.20", "Include": "1"} ]
+  "transactions": [ {"Txn_ID": "T1001", "Date": "2026-10-15", "Month": "2026-10", "Account_ID": "Chase", "Merchant": "Target", "Group_ID": "G_NEC", "Category_ID": "C_GROC", "Amount": "145.20", "Include": "1"} ]
 }
 `;
         navigator.clipboard.writeText(prompt).then(() => alert('Architecture Prompt copied to clipboard!')).catch(err => alert('Failed to copy.'));
@@ -903,7 +968,7 @@ Output ONLY valid JSON (no markdown wrapping) matching this exact schema:
                 { Budget_ID: 'B_002', Scope_Level: 'Category', Target_Ref_ID: 'C_GROC', Priority_Type: 'Necessity', Rule_Type: 'Annual', Amount: '6000.00', Start_Month: appState.selectedMonth, Target_Month: '', Is_Demo: '1', Notes: 'Averages 500/mo' }
             ],
             goals: [{ Goal_ID: 'GL_1', Name: 'Vet Emergency', Description: 'Buffer for unexpected pet costs', Linked_Account: 'Savings_1', Linked_GC_ID: 'C_GROC', Target_Value: '50.00' }],
-            transactions: [{ Txn_ID: 'T001', Date: `${appState.selectedMonth}-14`, Month: appState.selectedMonth, Account_ID: 'Chase', Merchant: 'Target Groceries', GC_ID: 'C_GROC', Amount: '145.20', Include: '1' }],
+            transactions: [{ Txn_ID: 'T001', Date: `${appState.selectedMonth}-14`, Month: appState.selectedMonth, Account_ID: 'Chase', Merchant: 'Target Groceries', Group_ID: 'G_NEC', Category_ID: 'C_GROC', Amount: '145.20', Include: '1' }],
             todos: [{ Task: 'Update Salon Allocations', Type: 'Budgeting', Due_Date: '2026-10-31', Priority: 'High' }]
         };
         return demo[table.replace('.csv', '')] || [];
@@ -953,8 +1018,18 @@ Output ONLY valid JSON (no markdown wrapping) matching this exact schema:
       // Ensure all transactions have a Date field and normalized GC_ID
       db.transactions.forEach(t => {
           if(!t.Date) t.Date = t.Month ? `${t.Month}-01` : '';
-          const checkGc = db.group_category.find(gc => gc.GC_ID === t.GC_ID);
-          if(checkGc) t.GC_ID = checkGc.Category_ID;
+          if(t.GC_ID !== undefined) {
+              const checkGc = db.group_category.find(gc => gc.GC_ID === t.GC_ID);
+              if (checkGc) {
+                  t.Category_ID = checkGc.Category_ID;
+                  t.Group_ID = checkGc.Group_ID;
+              } else {
+                  t.Category_ID = t.GC_ID;
+                  const findParentGc = db.group_category.find(gc => gc.Category_ID === t.Category_ID);
+                  t.Group_ID = findParentGc ? findParentGc.Group_ID : '';
+              }
+              delete t.GC_ID;
+          }
       });
 
       db.lastBackup = Date.now(); 
@@ -974,9 +1049,20 @@ Output ONLY valid JSON (no markdown wrapping) matching this exact schema:
               // Backwards compatibility migration & AI Auto-Heal
               db.transactions.forEach(t => {
                   if(!t.Date) t.Date = t.Month ? `${t.Month}-01` : '';
-                  // If AI assigned a GC_ID instead of a Category_ID, heal it permanently
-                  const checkGc = db.group_category.find(gc => gc.GC_ID === t.GC_ID);
-                  if(checkGc) t.GC_ID = checkGc.Category_ID;
+                  
+                  // If AI assigned a GC_ID instead of a Category_ID, heal it permanently into separate fields
+                  if (t.GC_ID !== undefined) {
+                      const checkGc = db.group_category.find(gc => gc.GC_ID === t.GC_ID);
+                      if (checkGc) {
+                          t.Category_ID = checkGc.Category_ID;
+                          t.Group_ID = checkGc.Group_ID;
+                      } else {
+                          t.Category_ID = t.GC_ID;
+                          const findParentGc = db.group_category.find(gc => gc.Category_ID === t.Category_ID);
+                          t.Group_ID = findParentGc ? findParentGc.Group_ID : '';
+                      }
+                      delete t.GC_ID;
+                  }
               });
 
           } catch (e) { await seedDatabase(); }
@@ -995,6 +1081,7 @@ Output ONLY valid JSON (no markdown wrapping) matching this exact schema:
     }
 
     function populateDropdowns() {
+        // Budget Scope Dropdown
         let scopeOptions = '';
         db.groups.forEach(g => {
             scopeOptions += `<option value="Group|${g.Group_ID}" class="font-bold text-slate-900 bg-slate-100">📁 GROUP: ${g.Name}</option>`;
@@ -1006,7 +1093,15 @@ Output ONLY valid JSON (no markdown wrapping) matching this exact schema:
         });
         document.getElementById('newBudgCategory').innerHTML = '<option value="" disabled selected>Select Scope (Group or Category)...</option>' + scopeOptions;
 
-        // Group Categories for Edit/Split Modals
+        // Group Options for Transaction/Split Modals
+        let grpOptions = '<option value="" disabled selected>Select Group...</option>';
+        db.groups.forEach(g => { grpOptions += `<option value="${g.Group_ID}">${g.Name}</option>`; });
+        
+        document.getElementById('newTxnGroup').innerHTML = grpOptions;
+        document.getElementById('splitGrpA').innerHTML = grpOptions;
+        document.getElementById('splitGrpB').innerHTML = grpOptions;
+
+        // Legacy/Goal [Group] Category options
         let catOptions = '';
         db.categories.forEach(c => {
             const gc = db.group_category.find(g => g.Category_ID === c.Category_ID);
@@ -1014,10 +1109,6 @@ Output ONLY valid JSON (no markdown wrapping) matching this exact schema:
             const groupName = grp ? grp.Name : 'Uncategorized';
             catOptions += `<option value="${c.Category_ID}">[${groupName}] ${c.Name}</option>`;
         });
-        
-        document.getElementById('newTxnCategory').innerHTML = '<option value="" disabled selected>Select Group :: Category...</option>' + catOptions;
-        document.getElementById('splitCatA').innerHTML = '<option value="" disabled selected>Select Group :: Category A...</option>' + catOptions;
-        document.getElementById('splitCatB').innerHTML = '<option value="" disabled selected>Select Group :: Category B...</option>' + catOptions;
         document.getElementById('newGoalCategory').innerHTML = '<option value="" disabled selected>Link to Category...</option>' + catOptions;
 
         const accs = db.accounts.map(a => `<option value="${a.Account_ID}">${a.Name} (${a.Type})</option>`).join('');
@@ -1027,14 +1118,25 @@ Output ONLY valid JSON (no markdown wrapping) matching this exact schema:
         // Populate Ledger Filters
         document.getElementById('filterMonth').innerHTML = '<option value="">All Months</option>' + appState.customMonths.map(m => `<option value="${m}">${m}</option>`).join('');
         document.getElementById('filterAccount').innerHTML = '<option value="">All Accounts</option>' + accs;
-        
-        let grpFilters = '<option value="">All Groups</option>';
-        db.groups.forEach(g => { grpFilters += `<option value="${g.Group_ID}">${g.Name}</option>`; });
-        document.getElementById('filterGroup').innerHTML = grpFilters;
+        document.getElementById('filterGroup').innerHTML = '<option value="">All Groups</option>' + db.groups.map(g => `<option value="${g.Group_ID}">${g.Name}</option>`).join('');
+        document.getElementById('filterCategory').innerHTML = '<option value="">All Categories</option>' + db.categories.map(c => `<option value="${c.Category_ID}">${c.Name}</option>`).join('');
+    }
 
-        let catFilters = '<option value="">All Categories</option>';
-        db.categories.forEach(c => { catFilters += `<option value="${c.Category_ID}">${c.Name}</option>`; });
-        document.getElementById('filterCategory').innerHTML = catFilters;
+    function updateCategoryDropdown(targetId, groupId, selectedCatId = '') {
+        const target = document.getElementById(targetId);
+        if (!groupId) {
+            target.innerHTML = '<option value="" disabled selected>Select Category...</option>';
+            return;
+        }
+        
+        const validGcs = db.group_category.filter(gc => gc.Group_ID === groupId);
+        const options = validGcs.map(gc => {
+            const c = db.categories.find(cat => cat.Category_ID === gc.Category_ID);
+            return c ? `<option value="${c.Category_ID}">${c.Name}</option>` : '';
+        }).join('');
+        
+        target.innerHTML = '<option value="" disabled selected>Select Category...</option>' + options;
+        if (selectedCatId) target.value = selectedCatId;
     }
 
     function fmtCurrency(val, showPlus = false) {
@@ -1046,7 +1148,7 @@ Output ONLY valid JSON (no markdown wrapping) matching this exact schema:
     }
 
     function switchTab(tabId) {
-      ['bva', 'ledger', 'canvas', 'accounts', 'importer', 'admin'].forEach(id => {
+      ['bva', 'ledger', 'canvas', 'accounts', 'importer', 'structure', 'admin'].forEach(id => {
         document.getElementById('tab-' + id).classList.toggle('hidden', id !== tabId);
         document.getElementById('tabBtn-' + id).className = id === tabId
           ? 'tab-btn px-3.5 py-2 rounded-lg text-xs font-semibold flex items-center gap-2 transition whitespace-nowrap bg-[#252d5c] text-indigo-200 border border-indigo-500/40'
@@ -1104,7 +1206,7 @@ Output ONLY valid JSON (no markdown wrapping) matching this exact schema:
           }
       });
       
-      renderKpis(); renderBudgetTable(); renderLedger(); renderAccountsAndGoals(); renderBudgetSetup();
+      renderKpis(); renderBudgetTable(); renderLedger(); renderAccountsAndGoals(); renderBudgetSetup(); renderStructure();
     }
 
     function renderKpis() {
@@ -1167,9 +1269,9 @@ Output ONLY valid JSON (no markdown wrapping) matching this exact schema:
           const goalExtra = linkedGoals.reduce((sum, goal) => sum + (Number(goal.Target_Value) || 0), 0);
           target += goalExtra; 
           
-          const actual = db.transactions.filter(t => t.Include === '1' && t.GC_ID === gc.Category_ID && t.Month === appState.selectedMonth).reduce((s, t) => s + (Number(t.Amount) || 0), 0);
-          const priorActual = db.transactions.filter(t => t.Include === '1' && t.GC_ID === gc.Category_ID && t.Month === priorMo).reduce((s, t) => s + (Number(t.Amount) || 0), 0);
-          const ytdActual = db.transactions.filter(t => t.Include === '1' && t.GC_ID === gc.Category_ID && t.Month.startsWith(currYear) && t.Month <= appState.selectedMonth).reduce((s, t) => s + (Number(t.Amount) || 0), 0);
+          const actual = db.transactions.filter(t => t.Include === '1' && t.Category_ID === gc.Category_ID && t.Month === appState.selectedMonth).reduce((s, t) => s + (Number(t.Amount) || 0), 0);
+          const priorActual = db.transactions.filter(t => t.Include === '1' && t.Category_ID === gc.Category_ID && t.Month === priorMo).reduce((s, t) => s + (Number(t.Amount) || 0), 0);
+          const ytdActual = db.transactions.filter(t => t.Include === '1' && t.Category_ID === gc.Category_ID && t.Month.startsWith(currYear) && t.Month <= appState.selectedMonth).reduce((s, t) => s + (Number(t.Amount) || 0), 0);
           const variance = target - actual;
           const meter = target > 0 ? Math.round((actual / target) * 100) : 0;
           const goalNote = goalExtra > 0 ? `<div class="text-[9px] text-emerald-600 font-bold mt-0.5">+${fmtCurrency(goalExtra)} Goal rollup</div>` : '';
@@ -1267,14 +1369,14 @@ Output ONLY valid JSON (no markdown wrapping) matching this exact schema:
                 target = Math.max(grpTarget, catTargetsTotal);
 
                 const catIds = groupGc.map(x => x.Category_ID);
-                actual = db.transactions.filter(t => t.Include === '1' && catIds.includes(t.GC_ID) && t.Month === monthStr).reduce((s,t) => s + (Number(t.Amount)||0), 0);
+                actual = db.transactions.filter(t => t.Include === '1' && catIds.includes(t.Category_ID) && t.Month === monthStr).reduce((s,t) => s + (Number(t.Amount)||0), 0);
             } else {
                 const bg = db.budgets.find(b => b.Target_Ref_ID === refId);
                 const linkedGoals = db.goals.filter(goal => goal.Linked_GC_ID === refId);
                 const goalExtra = linkedGoals.reduce((sum, goal) => sum + (Number(goal.Target_Value) || 0), 0);
                 target = getMonthlyTargetCalculation(bg, monthStr) + goalExtra;
 
-                actual = db.transactions.filter(t => t.Include === '1' && t.GC_ID === refId && t.Month === monthStr).reduce((s,t) => s + (Number(t.Amount)||0), 0);
+                actual = db.transactions.filter(t => t.Include === '1' && t.Category_ID === refId && t.Month === monthStr).reduce((s,t) => s + (Number(t.Amount)||0), 0);
             }
             
             const variance = target - actual;
@@ -1352,17 +1454,17 @@ Output ONLY valid JSON (no markdown wrapping) matching this exact schema:
       // 1. Enrich data for sorting/filtering
       let enrichedTxns = db.transactions.map((t, originalIndex) => {
           const accObj = db.accounts.find(a => a.Account_ID === t.Account_ID);
-          const catObj = db.categories.find(c => c.Category_ID === t.GC_ID);
-          const gcObj = db.group_category.find(gc => gc.Category_ID === t.GC_ID);
-          const grpObj = gcObj ? db.groups.find(g => g.Group_ID === gcObj.Group_ID) : null;
+          const catObj = db.categories.find(c => c.Category_ID === t.Category_ID);
+          const grpObj = db.groups.find(g => g.Group_ID === t.Group_ID);
           
           return {
               ...t,
               originalIndex,
               AccountName: accObj ? accObj.Name : t.Account_ID,
-              GroupName: grpObj ? grpObj.Name : 'Uncategorized',
-              GroupID: grpObj ? grpObj.Group_ID : '',
-              CategoryName: catObj ? catObj.Name : (t.GC_ID || 'Uncategorized')
+              GroupName: grpObj ? grpObj.Name : (t.Group_ID || 'Uncategorized'),
+              GroupID: t.Group_ID || '',
+              CategoryName: catObj ? catObj.Name : (t.Category_ID || 'Uncategorized'),
+              CategoryID: t.Category_ID || ''
           };
       });
 
@@ -1377,7 +1479,7 @@ Output ONLY valid JSON (no markdown wrapping) matching this exact schema:
           enrichedTxns = enrichedTxns.filter(t => t.Account_ID === ledgerState.account);
       }
       if (ledgerState.category) {
-          enrichedTxns = enrichedTxns.filter(t => t.GC_ID === ledgerState.category);
+          enrichedTxns = enrichedTxns.filter(t => t.CategoryID === ledgerState.category);
       }
       if (ledgerState.group) {
           enrichedTxns = enrichedTxns.filter(t => t.GroupID === ledgerState.group);
@@ -1493,33 +1595,182 @@ Output ONLY valid JSON (no markdown wrapping) matching this exact schema:
       }).join('');
     }
 
-    // --- FULL CRUD MODAL LOGIC ---
+    function renderStructure() {
+        // Groups Table
+        document.getElementById('groupsTableBody').innerHTML = db.groups.map((g, i) => `
+            <tr class="hover:bg-slate-50">
+                <td class="py-2.5 pl-3 font-semibold text-slate-800">${g.Name}</td>
+                <td class="py-2.5 text-slate-500">${g.Type || '-'}</td>
+                <td class="py-2.5 pr-3 text-right">
+                    <button onclick="openGroupModal(${i})" class="text-indigo-600 hover:text-indigo-800 font-bold mr-3" title="Edit">✎</button>
+                    <button onclick="deleteGroup(${i})" class="text-slate-400 hover:text-rose-500 font-bold text-lg leading-none align-middle" title="Delete">&times;</button>
+                </td>
+            </tr>
+        `).join('');
+
+        // Categories Table
+        document.getElementById('categoriesTableBody').innerHTML = db.categories.map((c, i) => {
+            const gc = db.group_category.find(x => x.Category_ID === c.Category_ID);
+            const grp = gc ? db.groups.find(x => x.Group_ID === gc.Group_ID) : null;
+            const gName = grp ? grp.Name : '<span class="text-rose-500 text-[10px] font-bold">⚠ UNLINKED</span>';
+            return `
+            <tr class="hover:bg-slate-50">
+                <td class="py-2.5 pl-3 font-semibold text-slate-800">${c.Name}</td>
+                <td class="py-2.5 text-slate-600 font-medium">${gName}</td>
+                <td class="py-2.5 pr-3 text-right">
+                    <button onclick="openCategoryModal(${i})" class="text-indigo-600 hover:text-indigo-800 font-bold mr-3" title="Edit">✎</button>
+                    <button onclick="deleteCategory(${i})" class="text-slate-400 hover:text-rose-500 font-bold text-lg leading-none align-middle" title="Delete">&times;</button>
+                </td>
+            </tr>`;
+        }).join('');
+    }
+
+    // --- STRUCTURE CRUD LOGIC ---
+    let editingGroupIdx = -1;
+    function openGroupModal(idx) {
+        editingGroupIdx = idx;
+        document.getElementById('groupModalTitle').textContent = idx >= 0 ? 'Edit Group' : 'Add Group';
+        if(idx >= 0) {
+            document.getElementById('newGrpName').value = db.groups[idx].Name;
+            document.getElementById('newGrpType').value = db.groups[idx].Type || 'Flexible';
+        } else {
+            document.getElementById('newGrpName').value = '';
+            document.getElementById('newGrpType').value = 'Flexible';
+        }
+        document.getElementById('groupModal').classList.remove('hidden'); document.getElementById('groupModal').classList.add('flex');
+    }
+    function closeGroupModal() { document.getElementById('groupModal').classList.add('hidden'); document.getElementById('groupModal').classList.remove('flex'); }
+    function saveGroup() {
+        const name = document.getElementById('newGrpName').value.trim();
+        const type = document.getElementById('newGrpType').value;
+        if(!name) return alert('Enter a group name');
+        
+        if(editingGroupIdx >= 0) {
+            db.groups[editingGroupIdx].Name = name;
+            db.groups[editingGroupIdx].Type = type;
+            // Update display labels in group_category
+            const gId = db.groups[editingGroupIdx].Group_ID;
+            db.group_category.forEach(gc => {
+                if(gc.Group_ID === gId) {
+                    const c = db.categories.find(cat => cat.Category_ID === gc.Category_ID);
+                    if(c) gc.Display_Label = `${name}::${c.Name}`;
+                }
+            });
+        } else {
+            db.groups.push({ Group_ID: 'G_' + Math.random().toString(36).substr(2,6).toUpperCase(), Name: name, Type: type, Impact: 'personal', Budget: 'Yes' });
+        }
+        saveDataToLocal(); populateDropdowns(); renderAll(); closeGroupModal();
+    }
+    function deleteGroup(idx) {
+        if(confirm('Are you sure you want to delete this group? Any categories mapped to it will become unlinked.')) {
+            const gId = db.groups[idx].Group_ID;
+            db.groups.splice(idx, 1); 
+            // Cleanup mapping table
+            db.group_category = db.group_category.filter(gc => gc.Group_ID !== gId);
+            saveDataToLocal(); populateDropdowns(); renderAll();
+        }
+    }
+
+    let editingCatIdx = -1;
+    function openCategoryModal(idx) {
+        editingCatIdx = idx;
+        document.getElementById('categoryModalTitle').textContent = idx >= 0 ? 'Edit Category' : 'Add Category';
+        
+        let grpOpts = '<option value="" disabled selected>Select Parent Group...</option>';
+        db.groups.forEach(g => grpOpts += `<option value="${g.Group_ID}">${g.Name}</option>`);
+        document.getElementById('newCatGroup').innerHTML = grpOpts;
+
+        if(idx >= 0) {
+            const c = db.categories[idx];
+            document.getElementById('newCatName').value = c.Name;
+            const gc = db.group_category.find(x => x.Category_ID === c.Category_ID);
+            document.getElementById('newCatGroup').value = gc ? gc.Group_ID : '';
+        } else {
+            document.getElementById('newCatName').value = '';
+            document.getElementById('newCatGroup').value = '';
+        }
+        document.getElementById('categoryModal').classList.remove('hidden'); document.getElementById('categoryModal').classList.add('flex');
+    }
+    function closeCategoryModal() { document.getElementById('categoryModal').classList.add('hidden'); document.getElementById('categoryModal').classList.remove('flex'); }
+    function saveCategory() {
+        const name = document.getElementById('newCatName').value.trim();
+        const grpId = document.getElementById('newCatGroup').value;
+        if(!name || !grpId) return alert('Enter a name and select a parent group');
+        
+        let catId;
+        if(editingCatIdx >= 0) {
+            catId = db.categories[editingCatIdx].Category_ID;
+            db.categories[editingCatIdx].Name = name;
+        } else {
+            catId = 'C_' + Math.random().toString(36).substr(2,6).toUpperCase();
+            db.categories.push({ Category_ID: catId, Name: name, Type: 'Flexible', Impact: 'personal', Budget: 'Yes' });
+        }
+
+        // Handle group_category mapping update
+        const grp = db.groups.find(g => g.Group_ID === grpId);
+        const gcIdx = db.group_category.findIndex(x => x.Category_ID === catId);
+        const dispLabel = `${grp.Name}::${name}`;
+        
+        if(gcIdx >= 0) {
+            db.group_category[gcIdx].Group_ID = grpId;
+            db.group_category[gcIdx].Display_Label = dispLabel;
+        } else {
+            db.group_category.push({ GC_ID: 'GC_' + Math.random().toString(36).substr(2,6).toUpperCase(), Group_ID: grpId, Category_ID: catId, Display_Label: dispLabel });
+        }
+        
+        saveDataToLocal(); populateDropdowns(); renderAll(); closeCategoryModal();
+    }
+    function deleteCategory(idx) {
+        if(confirm('Are you sure you want to delete this category?')) {
+            const catId = db.categories[idx].Category_ID;
+            db.categories.splice(idx, 1);
+            db.group_category = db.group_category.filter(x => x.Category_ID !== catId);
+            saveDataToLocal(); populateDropdowns(); renderAll();
+        }
+    }
+    // --- TRANSACTION CRUD & SPLIT LOGIC ---
     let editingTxnIdx = -1;
     function openTransactionModal(idx = -1) {
         editingTxnIdx = idx;
         document.getElementById('txnModalTitle').textContent = idx >= 0 ? 'Edit Transaction' : 'Add Transaction';
         document.getElementById('saveTxnBtn').textContent = idx >= 0 ? 'Update' : 'Save';
+        
+        const accSelect = document.getElementById('newTxnAccount');
+
         if (idx >= 0) {
             const t = db.transactions[idx];
+            
+            // Lock Source (Account) when editing
+            accSelect.disabled = true;
+            accSelect.classList.add('bg-slate-100', 'cursor-not-allowed', 'opacity-70');
+
             if (t.Account_ID && !db.accounts.some(a => a.Account_ID === t.Account_ID)) {
-                const sel = document.getElementById('newTxnAccount');
-                if(!sel.querySelector(`option[value="${t.Account_ID}"]`)) {
-                    sel.innerHTML += `<option value="${t.Account_ID}" class="text-rose-600">⚠ ${t.Account_ID} (Unlinked)</option>`;
+                if(!accSelect.querySelector(`option[value="${t.Account_ID}"]`)) {
+                    accSelect.innerHTML += `<option value="${t.Account_ID}" class="text-rose-600">⚠ ${t.Account_ID} (Unlinked)</option>`;
                 }
             }
             
             document.getElementById('newTxnDate').value = t.Date || `${t.Month}-01`;
             document.getElementById('newTxnMonth').value = t.Month || '';
-            document.getElementById('newTxnAccount').value = t.Account_ID || '';
-            document.getElementById('newTxnCategory').value = t.GC_ID || '';
+            accSelect.value = t.Account_ID || '';
+            
+            // Handle separate Group and Category dropdowns
+            document.getElementById('newTxnGroup').value = t.Group_ID || '';
+            updateCategoryDropdown('newTxnCategory', t.Group_ID, t.Category_ID);
+            
             document.getElementById('newTxnMerchant').value = t.Merchant || '';
             document.getElementById('newTxnAmount').value = t.Amount || '';
         } else {
+            // Unlock Source when adding new
+            accSelect.disabled = false;
+            accSelect.classList.remove('bg-slate-100', 'cursor-not-allowed', 'opacity-70');
+
             const today = new Date().toISOString().split('T')[0];
             document.getElementById('newTxnDate').value = today;
             document.getElementById('newTxnMonth').value = appState.selectedMonth;
-            document.getElementById('newTxnAccount').value = '';
-            document.getElementById('newTxnCategory').value = '';
+            accSelect.value = '';
+            document.getElementById('newTxnGroup').value = '';
+            document.getElementById('newTxnCategory').innerHTML = '<option value="" disabled selected>Select Category...</option>';
             document.getElementById('newTxnMerchant').value = '';
             document.getElementById('newTxnAmount').value = '';
         }
@@ -1532,6 +1783,7 @@ Output ONLY valid JSON (no markdown wrapping) matching this exact schema:
         const txnDate = document.getElementById('newTxnDate').value;
         const txnMonth = document.getElementById('newTxnMonth').value;
         const acc = document.getElementById('newTxnAccount').value;
+        const grp = document.getElementById('newTxnGroup').value;
         const cat = document.getElementById('newTxnCategory').value;
         const merchant = document.getElementById('newTxnMerchant').value.trim() || 'New Expense';
         const amount = parseFloat(document.getElementById('newTxnAmount').value) || 0;
@@ -1542,15 +1794,16 @@ Output ONLY valid JSON (no markdown wrapping) matching this exact schema:
             db.transactions[editingTxnIdx].Date = txnDate;
             db.transactions[editingTxnIdx].Month = txnMonth;
             db.transactions[editingTxnIdx].Account_ID = acc;
-            db.transactions[editingTxnIdx].GC_ID = cat;
+            db.transactions[editingTxnIdx].Group_ID = grp;
+            db.transactions[editingTxnIdx].Category_ID = cat;
             db.transactions[editingTxnIdx].Merchant = merchant;
             db.transactions[editingTxnIdx].Amount = amount;
         } else {
-            db.transactions.push({ Txn_ID: 'T' + Math.floor(Math.random()*10000), Date: txnDate, Month: txnMonth, Account_ID: acc, Merchant: merchant, Amount: amount, GC_ID: cat, Include: '1' });
+            db.transactions.push({ Txn_ID: 'T' + Math.floor(Math.random()*10000), Date: txnDate, Month: txnMonth, Account_ID: acc, Merchant: merchant, Amount: amount, Group_ID: grp, Category_ID: cat, Include: '1' });
         }
-        saveDataToLocal(); closeTransactionModal(); renderAll();
+        saveDataToLocal(); closeTransactionModal(); renderAll(); switchTab('ledger');
     }
-    
+
     function deleteTransaction(idx) {
         if(confirm('Delete transaction?')) {
             db.transactions.splice(idx, 1);
@@ -1564,127 +1817,93 @@ Output ONLY valid JSON (no markdown wrapping) matching this exact schema:
         const t = db.transactions[idx];
         document.getElementById('splitOrigTitle').textContent = t.Merchant + ' (' + t.Date + ', ' + t.Account_ID + ')';
         document.getElementById('splitOrigTotal').textContent = parseFloat(t.Amount).toFixed(2);
-        document.getElementById('splitCatA').value = t.GC_ID; 
+        
+        document.getElementById('splitGrpA').value = t.Group_ID || '';
+        updateCategoryDropdown('splitCatA', t.Group_ID, t.Category_ID);
         document.getElementById('splitAmtA').value = '';
-        document.getElementById('splitCatB').value = '';
+        
+        document.getElementById('splitGrpB').value = '';
+        document.getElementById('splitCatB').innerHTML = '<option value="" disabled selected>Category B...</option>';
         document.getElementById('splitAmtB').value = '';
+        
         document.getElementById('splitModal').classList.remove('hidden'); document.getElementById('splitModal').classList.add('flex');
     }
+    
     function calculateSplitRemainder() {
         if(splittingTxnIdx < 0) return;
-        const origTotal = parseFloat(db.transactions[splittingTxnIdx].Amount);
+        const origTotal = parseFloat(db.transactions[splittingTxnIdx].Amount) || 0;
         const partA = parseFloat(document.getElementById('splitAmtA').value) || 0;
         document.getElementById('splitAmtB').value = Math.max(0, origTotal - partA).toFixed(2);
     }
+    
     function closeSplitModal() { document.getElementById('splitModal').classList.add('hidden'); document.getElementById('splitModal').classList.remove('flex'); }
+    
     function processSplitTransaction() {
         const orig = db.transactions[splittingTxnIdx];
+        const grpA = document.getElementById('splitGrpA').value;
         const catA = document.getElementById('splitCatA').value;
         const amtA = parseFloat(document.getElementById('splitAmtA').value);
+        
+        const grpB = document.getElementById('splitGrpB').value;
         const catB = document.getElementById('splitCatB').value;
         const amtB = parseFloat(document.getElementById('splitAmtB').value);
 
-        if (!catA || !catB || !amtA || !amtB || (amtA + amtB).toFixed(2) !== parseFloat(orig.Amount).toFixed(2)) {
+        if (!catA || !catB || isNaN(amtA) || isNaN(amtB) || (amtA + amtB).toFixed(2) !== parseFloat(orig.Amount).toFixed(2)) {
             return alert('Please select categories and ensure amounts equal the original total.');
         }
 
-        const txnA = { ...orig, Txn_ID: orig.Txn_ID + '-A', Amount: amtA, GC_ID: catA };
-        const txnB = { ...orig, Txn_ID: orig.Txn_ID + '-B', Amount: amtB, GC_ID: catB };
+        const txnA = { ...orig, Txn_ID: orig.Txn_ID + '-A', Amount: amtA, Group_ID: grpA, Category_ID: catA };
+        const txnB = { ...orig, Txn_ID: orig.Txn_ID + '-B', Amount: amtB, Group_ID: grpB, Category_ID: catB };
         
         db.transactions.splice(splittingTxnIdx, 1, txnA, txnB);
-        saveDataToLocal(); closeSplitModal(); renderAll();
+        saveDataToLocal(); closeSplitModal(); renderAll(); switchTab('ledger');
     }
 
-    let editingAccountIdx = -1;
-    function openAccountModal(idx = -1) { 
-        editingAccountIdx = idx;
-        document.getElementById('accountModalTitle').textContent = idx >= 0 ? 'Edit Account' : 'Add New Account';
-        document.getElementById('saveAccountBtn').textContent = idx >= 0 ? 'Update Account' : 'Save Account';
-        if (idx >= 0) {
-            const a = db.accounts[idx];
-            document.getElementById('newAccName').value = a.Name || '';
-            document.getElementById('newAccType').value = a.Type || '';
-            document.getElementById('newAccBalance').value = a.Balance || '';
+    // --- ACCOUNT & BUDGET & GOAL CRUD ---
+    let editingAccIdx = -1;
+    function openAccountModal(idx) {
+        editingAccIdx = idx;
+        document.getElementById('accountModalTitle').textContent = idx >= 0 ? 'Edit Account' : 'Add Account';
+        if(idx >= 0) {
+            document.getElementById('newAccName').value = db.accounts[idx].Name;
+            document.getElementById('newAccType').value = db.accounts[idx].Type;
+            document.getElementById('newAccBalance').value = db.accounts[idx].Balance;
         } else {
             document.getElementById('newAccName').value = '';
             document.getElementById('newAccType').value = '';
             document.getElementById('newAccBalance').value = '';
         }
-        document.getElementById('accountModal').classList.remove('hidden'); document.getElementById('accountModal').classList.add('flex'); 
+        document.getElementById('accountModal').classList.remove('hidden'); document.getElementById('accountModal').classList.add('flex');
     }
     function closeAccountModal() { document.getElementById('accountModal').classList.add('hidden'); document.getElementById('accountModal').classList.remove('flex'); }
     function saveAccount() {
-        const name = document.getElementById('newAccName').value;
+        const name = document.getElementById('newAccName').value.trim();
         const type = document.getElementById('newAccType').value;
-        const balance = document.getElementById('newAccBalance').value;
-        if(name && type) {
-            if (editingAccountIdx >= 0) {
-                db.accounts[editingAccountIdx].Name = name;
-                db.accounts[editingAccountIdx].Type = type;
-                db.accounts[editingAccountIdx].Balance = balance;
-            } else {
-                db.accounts.push({ Account_ID: name.replace(/\s+/g, ''), Name: name, Type: type, Balance: balance });
-            }
-            saveDataToLocal(); populateDropdowns(); renderAll(); closeAccountModal();
-        }
-    }
-
-    let editingGoalIdx = -1;
-    function openGoalModal(idx = -1) {
-        editingGoalIdx = idx;
-        document.getElementById('goalModalTitle').textContent = idx >= 0 ? 'Edit Goal' : 'Add Goal';
-        document.getElementById('saveGoalBtn').textContent = idx >= 0 ? 'Update Goal' : 'Save Goal';
-        if (idx >= 0) {
-            const g = db.goals[idx];
-            document.getElementById('newGoalName').value = g.Name || '';
-            document.getElementById('newGoalDesc').value = g.Description || '';
-            document.getElementById('newGoalAccount').value = g.Linked_Account || '';
-            document.getElementById('newGoalCategory').value = g.Linked_GC_ID || '';
-            document.getElementById('newGoalAmount').value = g.Target_Value || '';
-        } else {
-            document.getElementById('newGoalName').value = '';
-            document.getElementById('newGoalDesc').value = '';
-            document.getElementById('newGoalAccount').value = '';
-            document.getElementById('newGoalCategory').value = '';
-            document.getElementById('newGoalAmount').value = '';
-        }
-        document.getElementById('goalModal').classList.remove('hidden'); document.getElementById('goalModal').classList.add('flex'); 
-    }
-    function closeGoalModal() { document.getElementById('goalModal').classList.add('hidden'); document.getElementById('goalModal').classList.remove('flex'); }
-    function saveGoal() {
-        const name = document.getElementById('newGoalName').value;
-        const desc = document.getElementById('newGoalDesc').value;
-        const acc = document.getElementById('newGoalAccount').value;
-        const cat = document.getElementById('newGoalCategory').value;
-        const amt = document.getElementById('newGoalAmount').value;
-        if(name && acc && cat && amt) {
-            if (editingGoalIdx >= 0) {
-                db.goals[editingGoalIdx].Name = name;
-                db.goals[editingGoalIdx].Description = desc;
-                db.goals[editingGoalIdx].Linked_Account = acc;
-                db.goals[editingGoalIdx].Linked_GC_ID = cat;
-                db.goals[editingGoalIdx].Target_Value = amt;
-            } else {
-                db.goals.push({ Goal_ID: 'GL_' + Math.floor(Math.random()*10000), Name: name, Description: desc, Linked_Account: acc, Linked_GC_ID: cat, Target_Value: amt });
-            }
-            saveDataToLocal(); renderAll(); closeGoalModal();
-        } else {
-            alert('Please complete all fields.');
-        }
-    }
-
-    let editingBudgetIdx = -1;
-    function openBudgetModal(idx = -1) { 
-        editingBudgetIdx = idx;
-        document.getElementById('budgetModalTitle').textContent = idx >= 0 ? 'Edit Budget Target' : 'Add Budget Target';
-        document.getElementById('saveBudgetBtn').textContent = idx >= 0 ? 'Update Budget' : 'Save Budget';
+        const bal = parseFloat(document.getElementById('newAccBalance').value);
+        if(!name || !type || isNaN(bal)) return alert('Fill all account fields.');
         
-        if (idx >= 0) {
+        if(editingAccIdx >= 0) {
+            db.accounts[editingAccIdx].Name = name; db.accounts[editingAccIdx].Type = type; db.accounts[editingAccIdx].Balance = bal;
+        } else {
+            db.accounts.push({ Account_ID: 'A_' + Math.random().toString(36).substr(2,6).toUpperCase(), Name: name, Type: type, Balance: bal });
+        }
+        saveDataToLocal(); populateDropdowns(); renderAll(); closeAccountModal();
+    }
+
+    let editingBudgIdx = -1;
+    function toggleBudgetTargetDate() {
+        const type = document.getElementById('newBudgType').value;
+        document.getElementById('newBudgDate').disabled = (type !== 'Target Month');
+    }
+    function openBudgetModal(idx) {
+        editingBudgIdx = idx;
+        document.getElementById('budgetModalTitle').textContent = idx >= 0 ? 'Edit Budget' : 'Add Budget';
+        if(idx >= 0) {
             const b = db.budgets[idx];
-            document.getElementById('newBudgCategory').value = b.Scope_Level + '|' + b.Target_Ref_ID;
-            document.getElementById('newBudgPriority').value = b.Priority_Type || '';
+            document.getElementById('newBudgCategory').value = `${b.Scope_Level}|${b.Target_Ref_ID}`;
+            document.getElementById('newBudgPriority').value = b.Priority_Type || 'Want';
             document.getElementById('newBudgType').value = b.Rule_Type || b.Type || 'Each Month';
-            document.getElementById('newBudgAmount').value = b.Amount || '';
+            document.getElementById('newBudgAmount').value = b.Amount;
             document.getElementById('newBudgStartMonth').value = b.Start_Month || appState.selectedMonth;
             document.getElementById('newBudgDate').value = b.Target_Month || '';
             document.getElementById('newBudgNotes').value = b.Notes || '';
@@ -1697,46 +1916,68 @@ Output ONLY valid JSON (no markdown wrapping) matching this exact schema:
             document.getElementById('newBudgDate').value = '';
             document.getElementById('newBudgNotes').value = '';
         }
-        document.getElementById('budgetModal').classList.remove('hidden'); document.getElementById('budgetModal').classList.add('flex'); 
+        toggleBudgetTargetDate();
+        document.getElementById('budgetModal').classList.remove('hidden'); document.getElementById('budgetModal').classList.add('flex');
     }
-    
     function closeBudgetModal() { document.getElementById('budgetModal').classList.add('hidden'); document.getElementById('budgetModal').classList.remove('flex'); }
-    
     function saveBudget() {
-        const selection = document.getElementById('newBudgCategory').value;
+        const scopeVal = document.getElementById('newBudgCategory').value;
         const prio = document.getElementById('newBudgPriority').value;
-        const type = document.getElementById('newBudgType').value;
-        const amt = document.getElementById('newBudgAmount').value;
-        const sDate = document.getElementById('newBudgStartMonth').value;
-        const tDate = document.getElementById('newBudgDate').value;
+        const bType = document.getElementById('newBudgType').value;
+        const amt = parseFloat(document.getElementById('newBudgAmount').value);
+        const sMo = document.getElementById('newBudgStartMonth').value;
+        const tMo = document.getElementById('newBudgDate').value;
         const notes = document.getElementById('newBudgNotes').value;
         
-        if(selection && type && amt && sDate) {
-            const [scope, targetRef] = selection.split('|');
-            const bData = {
-                Budget_ID: 'B_' + Math.floor(Math.random()*10000), Scope_Level: scope, Target_Ref_ID: targetRef, Priority_Type: prio, Rule_Type: type, Amount: amt,
-                Start_Month: sDate, Target_Month: tDate, Is_Demo: '0', Notes: notes
-            };
-            if (editingBudgetIdx >= 0) {
-                bData.Budget_ID = db.budgets[editingBudgetIdx].Budget_ID || bData.Budget_ID;
-                bData.Is_Demo = db.budgets[editingBudgetIdx].Is_Demo || '0';
-                db.budgets[editingBudgetIdx] = bData;
-            } else {
-                db.budgets.push(bData);
-            }
-            saveDataToLocal(); renderAll(); closeBudgetModal();
+        if(!scopeVal || !prio || !bType || isNaN(amt) || !sMo) return alert('Fill all required budget fields.');
+        const [scopeLevel, targetRef] = scopeVal.split('|');
+
+        if(editingBudgIdx >= 0) {
+            db.budgets[editingBudgIdx] = { ...db.budgets[editingBudgIdx], Scope_Level: scopeLevel, Target_Ref_ID: targetRef, Priority_Type: prio, Rule_Type: bType, Amount: amt, Start_Month: sMo, Target_Month: tMo, Notes: notes };
         } else {
-            alert('Please complete all required fields, including Start Month.');
+            db.budgets.push({ Budget_ID: 'B_' + Math.floor(Math.random()*10000), Scope_Level: scopeLevel, Target_Ref_ID: targetRef, Priority_Type: prio, Rule_Type: bType, Amount: amt, Start_Month: sMo, Target_Month: tMo, Notes: notes });
         }
+        saveDataToLocal(); renderAll(); closeBudgetModal();
     }
     function deleteBudget(idx) {
-        if(confirm('Remove this budget item?')) {
-            db.budgets.splice(idx, 1);
-            saveDataToLocal(); renderAll();
-        }
+        if(confirm('Delete this budget?')) { db.budgets.splice(idx, 1); saveDataToLocal(); renderAll(); }
     }
 
-    window.addEventListener('DOMContentLoaded', initApp);
+    let editingGoalIdx = -1;
+    function openGoalModal(idx) {
+        editingGoalIdx = idx;
+        document.getElementById('goalModalTitle').textContent = idx >= 0 ? 'Edit Goal' : 'Add Goal';
+        if(idx >= 0) {
+            document.getElementById('newGoalName').value = db.goals[idx].Name;
+            document.getElementById('newGoalDesc').value = db.goals[idx].Description;
+            document.getElementById('newGoalAccount').value = db.goals[idx].Linked_Account;
+            document.getElementById('newGoalCategory').value = db.goals[idx].Linked_GC_ID;
+            document.getElementById('newGoalAmount').value = db.goals[idx].Target_Value;
+        } else {
+            document.getElementById('newGoalName').value = '';
+            document.getElementById('newGoalDesc').value = '';
+            document.getElementById('newGoalAccount').value = '';
+            document.getElementById('newGoalCategory').value = '';
+            document.getElementById('newGoalAmount').value = '';
+        }
+        document.getElementById('goalModal').classList.remove('hidden'); document.getElementById('goalModal').classList.add('flex');
+    }
+    function closeGoalModal() { document.getElementById('goalModal').classList.add('hidden'); document.getElementById('goalModal').classList.remove('flex'); }
+    function saveGoal() {
+        const name = document.getElementById('newGoalName').value.trim();
+        const desc = document.getElementById('newGoalDesc').value.trim();
+        const acc = document.getElementById('newGoalAccount').value;
+        const cat = document.getElementById('newGoalCategory').value;
+        const amt = parseFloat(document.getElementById('newGoalAmount').value);
+        if(!name || !acc || !cat || isNaN(amt)) return alert('Fill required fields.');
+        
+        if(editingGoalIdx >= 0) {
+            db.goals[editingGoalIdx] = { ...db.goals[editingGoalIdx], Name: name, Description: desc, Linked_Account: acc, Linked_GC_ID: cat, Target_Value: amt };
+        } else {
+            db.goals.push({ Goal_ID: 'GL_' + Math.floor(Math.random()*10000), Name: name, Description: desc, Linked_Account: acc, Linked_GC_ID: cat, Target_Value: amt });
+        }
+        saveDataToLocal(); renderAll(); closeGoalModal();
+    }
   </script>
 </body>
 </html>
