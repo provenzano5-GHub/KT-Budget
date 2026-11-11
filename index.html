@@ -641,11 +641,9 @@
     let db = { groups: [], categories: [], group_category: [], accounts: [], budgets: [], goals: [], todos: [], transactions: [], lastModified: 0, lastBackup: 0 };
     let appState = { selectedMonth: '2026-10', customMonths: ['2026-10', '2026-09'], show12Mo: false };
     
-    // Ledger Filter & Sort State
     let ledgerState = { search: '', month: '', account: '', group: '', category: '', sortCol: 'Date', sortDir: 'desc' };
-    let pendingImports = []; // Array to hold parsed CSV rows before saving
+    let pendingImports = [];
 
-    // --- INSTALL SHIELD ---
     function checkInstallMode() {
         const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
         if (!isStandalone && !localStorage.getItem('bypassedInstallShield')) {
@@ -659,7 +657,6 @@
         document.getElementById('installShieldOverlay').classList.remove('flex');
     }
 
-    // --- NAG & PERSISTENCE ---
     function checkBackupStatus() {
         const modTime = db.lastModified || 0;
         const backTime = db.lastBackup || 0;
@@ -714,7 +711,6 @@
         reader.readAsText(file);
     }
 
-    // --- DATA IMPORTER (CSV PARSER WIZARD) ---
     function setupDragAndDrop() {
         const dropZone = document.getElementById('dropZone');
         dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('drag-over'); });
@@ -748,7 +744,6 @@
             const text = e.target.result;
             const lines = text.trim().split(/\r?\n/);
             
-            // Auto-detect headers (look for 'Amount')
             let headerIdx = -1;
             let headers = [];
             for(let i=0; i<Math.min(10, lines.length); i++){
@@ -761,7 +756,6 @@
             }
             if(headerIdx === -1) return alert("Could not auto-detect an 'Amount' column in this file. Please ensure it is a valid bank CSV.");
 
-            // Map core columns
             const dateIdx = headers.findIndex(h => h.includes('date'));
             const descIdx = headers.findIndex(h => h.includes('description') || h.includes('payee') || h.includes('name') || h.includes('merchant'));
             const amtIdx = headers.findIndex(h => h === 'amount' || h.includes('amount'));
@@ -774,9 +768,8 @@
                 const cols = parseCsvLine(lines[i]);
                 if(cols.length <= Math.max(dateIdx, descIdx, amtIdx)) continue;
 
-                // Format Date to YYYY-MM-DD for exact Date, and YYYY-MM for Budget Month
                 let fullDateStr = '';
-                let monthStr = appState.selectedMonth; // Fallback
+                let monthStr = appState.selectedMonth; 
                 const dMatch = cols[dateIdx].match(/(\d{1,4})[\/\-](\d{1,2})[\/\-](\d{1,4})/);
                 
                 if(dMatch) {
@@ -789,11 +782,9 @@
 
                 const rawAmt = parseFloat(cols[amtIdx].replace(/[^0-9.-]+/g,""));
                 if(isNaN(rawAmt)) continue;
-                // Treat negative bank logic (expense) as positive ledger logic
                 const amt = Math.abs(rawAmt); 
                 const merchant = cols[descIdx].replace(/^"|"$/g, '');
 
-                // Auto-Guess mapping based on historical ledger matches
                 let predAcc = '';
                 let predCat = '';
                 const historyMatch = db.transactions.find(t => t.Merchant.toLowerCase() === merchant.toLowerCase());
@@ -903,7 +894,6 @@
         }
     }
 
-    // --- AI PROMPT GENERATOR & RESET WIZARD ---
     function openImportGuideModal() { document.getElementById('importGuideModal').classList.remove('hidden'); document.getElementById('importGuideModal').classList.add('flex'); }
     function closeImportGuideModal() { document.getElementById('importGuideModal').classList.add('hidden'); document.getElementById('importGuideModal').classList.remove('flex'); }
     
@@ -955,7 +945,6 @@ Output ONLY valid JSON (no markdown wrapping) matching this exact schema:
         }
     }
 
-    // --- DEMO DATA SEEDING ---
     function getDemoData(table) {
         const demo = {
             groups: [{ Group_ID: 'G_WANTS', Name: 'Wants', Type: 'Flexible', Impact: 'personal', Budget: 'Yes' }, { Group_ID: 'G_NEC', Name: 'Personal necessities', Type: 'Fixed', Impact: 'personal', Budget: 'Yes' }],
@@ -1015,7 +1004,6 @@ Output ONLY valid JSON (no markdown wrapping) matching this exact schema:
           if (!b.Start_Month) b.Start_Month = appState.selectedMonth; 
       });
       
-      // Ensure all transactions have a Date field and normalized GC_ID
       db.transactions.forEach(t => {
           if(!t.Date) t.Date = t.Month ? `${t.Month}-01` : '';
           if(t.GC_ID !== undefined) {
@@ -1044,13 +1032,18 @@ Output ONLY valid JSON (no markdown wrapping) matching this exact schema:
       const localData = localStorage.getItem(STORAGE_KEY);
       if (localData) {
           try { 
-              db = JSON.parse(localData); 
+              const parsedDb = JSON.parse(localData); 
               
-              // Backwards compatibility migration & AI Auto-Heal
+              // SCHEMA ENFORCER: Fills in any missing arrays from older JSON backups to prevent crashes
+              db = { 
+                  groups: [], categories: [], group_category: [], accounts: [], 
+                  budgets: [], goals: [], todos: [], transactions: [], 
+                  ...parsedDb 
+              };
+              
               db.transactions.forEach(t => {
                   if(!t.Date) t.Date = t.Month ? `${t.Month}-01` : '';
                   
-                  // If AI assigned a GC_ID instead of a Category_ID, heal it permanently into separate fields
                   if (t.GC_ID !== undefined) {
                       const checkGc = db.group_category.find(gc => gc.GC_ID === t.GC_ID);
                       if (checkGc) {
@@ -1065,7 +1058,10 @@ Output ONLY valid JSON (no markdown wrapping) matching this exact schema:
                   }
               });
 
-          } catch (e) { await seedDatabase(); }
+          } catch (e) { 
+              console.error("Migration failed, falling back to seed data:", e);
+              await seedDatabase(); 
+          }
       } else {
           await seedDatabase();
       }
@@ -1081,7 +1077,6 @@ Output ONLY valid JSON (no markdown wrapping) matching this exact schema:
     }
 
     function populateDropdowns() {
-        // Budget Scope Dropdown
         let scopeOptions = '';
         db.groups.forEach(g => {
             scopeOptions += `<option value="Group|${g.Group_ID}" class="font-bold text-slate-900 bg-slate-100">📁 GROUP: ${g.Name}</option>`;
@@ -1093,7 +1088,6 @@ Output ONLY valid JSON (no markdown wrapping) matching this exact schema:
         });
         document.getElementById('newBudgCategory').innerHTML = '<option value="" disabled selected>Select Scope (Group or Category)...</option>' + scopeOptions;
 
-        // Group Options for Transaction/Split Modals
         let grpOptions = '<option value="" disabled selected>Select Group...</option>';
         db.groups.forEach(g => { grpOptions += `<option value="${g.Group_ID}">${g.Name}</option>`; });
         
@@ -1101,7 +1095,6 @@ Output ONLY valid JSON (no markdown wrapping) matching this exact schema:
         document.getElementById('splitGrpA').innerHTML = grpOptions;
         document.getElementById('splitGrpB').innerHTML = grpOptions;
 
-        // Legacy/Goal [Group] Category options
         let catOptions = '';
         db.categories.forEach(c => {
             const gc = db.group_category.find(g => g.Category_ID === c.Category_ID);
@@ -1115,7 +1108,6 @@ Output ONLY valid JSON (no markdown wrapping) matching this exact schema:
         document.getElementById('newGoalAccount').innerHTML = '<option value="" disabled selected>Link to Account...</option>' + accs;
         document.getElementById('newTxnAccount').innerHTML = '<option value="" disabled selected>Select Source Account...</option>' + accs;
 
-        // Populate Ledger Filters
         document.getElementById('filterMonth').innerHTML = '<option value="">All Months</option>' + appState.customMonths.map(m => `<option value="${m}">${m}</option>`).join('');
         document.getElementById('filterAccount').innerHTML = '<option value="">All Accounts</option>' + accs;
         document.getElementById('filterGroup').innerHTML = '<option value="">All Groups</option>' + db.groups.map(g => `<option value="${g.Group_ID}">${g.Name}</option>`).join('');
@@ -1412,7 +1404,6 @@ Output ONLY valid JSON (no markdown wrapping) matching this exact schema:
         document.getElementById('drillDownModal').classList.remove('flex');
     }
 
-    // --- LEDGER FILTERING & SORTING LOGIC ---
     function updateLedgerFilters() {
         ledgerState.search = document.getElementById('filterMerchant').value.toLowerCase();
         ledgerState.month = document.getElementById('filterMonth').value;
@@ -1436,10 +1427,9 @@ Output ONLY valid JSON (no markdown wrapping) matching this exact schema:
             ledgerState.sortDir = ledgerState.sortDir === 'asc' ? 'desc' : 'asc';
         } else {
             ledgerState.sortCol = col;
-            ledgerState.sortDir = col === 'Amount' ? 'desc' : 'asc'; // Amounts default to highest first
+            ledgerState.sortDir = col === 'Amount' ? 'desc' : 'asc'; 
         }
         
-        // Update UI Sort Icons
         document.querySelectorAll('.sort-icon').forEach(el => { el.innerHTML = '⇕'; el.classList.remove('sort-active'); });
         const activeIcon = document.getElementById(`sort-${col}`);
         if(activeIcon) {
@@ -1451,7 +1441,6 @@ Output ONLY valid JSON (no markdown wrapping) matching this exact schema:
     }
 
     function renderLedger() {
-      // 1. Enrich data for sorting/filtering
       let enrichedTxns = db.transactions.map((t, originalIndex) => {
           const accObj = db.accounts.find(a => a.Account_ID === t.Account_ID);
           const catObj = db.categories.find(c => c.Category_ID === t.Category_ID);
@@ -1468,7 +1457,6 @@ Output ONLY valid JSON (no markdown wrapping) matching this exact schema:
           };
       });
 
-      // 2. Apply Filters
       if (ledgerState.search) {
           enrichedTxns = enrichedTxns.filter(t => t.Merchant.toLowerCase().includes(ledgerState.search));
       }
@@ -1485,7 +1473,6 @@ Output ONLY valid JSON (no markdown wrapping) matching this exact schema:
           enrichedTxns = enrichedTxns.filter(t => t.GroupID === ledgerState.group);
       }
 
-      // 3. Apply Sorting
       enrichedTxns.sort((a, b) => {
           let valA = a[ledgerState.sortCol];
           let valB = b[ledgerState.sortCol];
@@ -1503,7 +1490,6 @@ Output ONLY valid JSON (no markdown wrapping) matching this exact schema:
           return 0;
       });
 
-      // 4. Render Table
       const tbody = document.getElementById('ledgerTableBody');
       document.getElementById('ledgerCountBadge').textContent = enrichedTxns.length;
 
@@ -1596,7 +1582,6 @@ Output ONLY valid JSON (no markdown wrapping) matching this exact schema:
     }
 
     function renderStructure() {
-        // Groups Table
         document.getElementById('groupsTableBody').innerHTML = db.groups.map((g, i) => `
             <tr class="hover:bg-slate-50">
                 <td class="py-2.5 pl-3 font-semibold text-slate-800">${g.Name}</td>
@@ -1608,7 +1593,6 @@ Output ONLY valid JSON (no markdown wrapping) matching this exact schema:
             </tr>
         `).join('');
 
-        // Categories Table
         document.getElementById('categoriesTableBody').innerHTML = db.categories.map((c, i) => {
             const gc = db.group_category.find(x => x.Category_ID === c.Category_ID);
             const grp = gc ? db.groups.find(x => x.Group_ID === gc.Group_ID) : null;
@@ -1648,7 +1632,6 @@ Output ONLY valid JSON (no markdown wrapping) matching this exact schema:
         if(editingGroupIdx >= 0) {
             db.groups[editingGroupIdx].Name = name;
             db.groups[editingGroupIdx].Type = type;
-            // Update display labels in group_category
             const gId = db.groups[editingGroupIdx].Group_ID;
             db.group_category.forEach(gc => {
                 if(gc.Group_ID === gId) {
@@ -1665,7 +1648,6 @@ Output ONLY valid JSON (no markdown wrapping) matching this exact schema:
         if(confirm('Are you sure you want to delete this group? Any categories mapped to it will become unlinked.')) {
             const gId = db.groups[idx].Group_ID;
             db.groups.splice(idx, 1); 
-            // Cleanup mapping table
             db.group_category = db.group_category.filter(gc => gc.Group_ID !== gId);
             saveDataToLocal(); populateDropdowns(); renderAll();
         }
@@ -1706,7 +1688,6 @@ Output ONLY valid JSON (no markdown wrapping) matching this exact schema:
             db.categories.push({ Category_ID: catId, Name: name, Type: 'Flexible', Impact: 'personal', Budget: 'Yes' });
         }
 
-        // Handle group_category mapping update
         const grp = db.groups.find(g => g.Group_ID === grpId);
         const gcIdx = db.group_category.findIndex(x => x.Category_ID === catId);
         const dispLabel = `${grp.Name}::${name}`;
@@ -1728,6 +1709,7 @@ Output ONLY valid JSON (no markdown wrapping) matching this exact schema:
             saveDataToLocal(); populateDropdowns(); renderAll();
         }
     }
+
     // --- TRANSACTION CRUD & SPLIT LOGIC ---
     let editingTxnIdx = -1;
     function openTransactionModal(idx = -1) {
@@ -1740,7 +1722,6 @@ Output ONLY valid JSON (no markdown wrapping) matching this exact schema:
         if (idx >= 0) {
             const t = db.transactions[idx];
             
-            // Lock Source (Account) when editing
             accSelect.disabled = true;
             accSelect.classList.add('bg-slate-100', 'cursor-not-allowed', 'opacity-70');
 
@@ -1754,14 +1735,12 @@ Output ONLY valid JSON (no markdown wrapping) matching this exact schema:
             document.getElementById('newTxnMonth').value = t.Month || '';
             accSelect.value = t.Account_ID || '';
             
-            // Handle separate Group and Category dropdowns
             document.getElementById('newTxnGroup').value = t.Group_ID || '';
             updateCategoryDropdown('newTxnCategory', t.Group_ID, t.Category_ID);
             
             document.getElementById('newTxnMerchant').value = t.Merchant || '';
             document.getElementById('newTxnAmount').value = t.Amount || '';
         } else {
-            // Unlock Source when adding new
             accSelect.disabled = false;
             accSelect.classList.remove('bg-slate-100', 'cursor-not-allowed', 'opacity-70');
 
@@ -1978,6 +1957,8 @@ Output ONLY valid JSON (no markdown wrapping) matching this exact schema:
         }
         saveDataToLocal(); renderAll(); closeGoalModal();
     }
+
+    window.addEventListener('DOMContentLoaded', initApp);
   </script>
 </body>
 </html>
