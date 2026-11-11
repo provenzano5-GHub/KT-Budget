@@ -1044,7 +1044,15 @@ Output ONLY valid JSON (no markdown wrapping) matching this exact schema:
       const localData = localStorage.getItem(STORAGE_KEY);
       if (localData) {
           try { 
-              db = JSON.parse(localData); 
+              const parsedDb = JSON.parse(localData); 
+              
+              // THE FIX: Schema Enforcer
+              // Guarantees all arrays exist even if the backup JSON is missing them
+              db = { 
+                  groups: [], categories: [], group_category: [], 
+                  accounts: [], budgets: [], goals: [], todos: [], transactions: [], 
+                  ...parsedDb 
+              };
               
               // Backwards compatibility migration & AI Auto-Heal
               db.transactions.forEach(t => {
@@ -1065,7 +1073,10 @@ Output ONLY valid JSON (no markdown wrapping) matching this exact schema:
                   }
               });
 
-          } catch (e) { await seedDatabase(); }
+          } catch (e) { 
+              console.error("Migration failed, falling back to seed data:", e);
+              await seedDatabase(); 
+          }
       } else {
           await seedDatabase();
       }
