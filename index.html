@@ -1364,6 +1364,20 @@ Output ONLY valid JSON (no markdown wrapping) matching this exact schema:
         for(let m = 1; m <= 12; m++) {
             const monthStr = `${currYear}-${m.toString().padStart(2, '0')}`;
             let target = 0;
+            let actfunction openDrillDown(scope, refId, displayName) {
+        document.getElementById('drillDownTitle').textContent = `12-Month Trend: ${displayName}`;
+        const currYear = appState.selectedMonth.split('-')[0];
+        const tbody = document.getElementById('drillDownTableBody');
+        
+        let html = '';
+        let totalTarget = 0, totalActual = 0;
+        let currentMonthBudget = 0;
+        let sumForAverage = 0;
+        let monthsWithDataCount = 0;
+        
+        for(let m = 1; m <= 12; m++) {
+            const monthStr = `${currYear}-${m.toString().padStart(2, '0')}`;
+            let target = 0;
             let actual = 0;
             
             if (scope === 'Group') {
@@ -1390,6 +1404,17 @@ Output ONLY valid JSON (no markdown wrapping) matching this exact schema:
                 actual = db.transactions.filter(t => t.Include === '1' && t.Category_ID === refId && t.Month === monthStr).reduce((s,t) => s + (Number(t.Amount)||0), 0);
             }
             
+            // Capture the budget for the currently selected active month
+            if (monthStr === appState.selectedMonth) {
+                currentMonthBudget = target;
+            }
+
+            // Only tally averages for months that exist in the ledger
+            if (appState.customMonths.includes(monthStr)) {
+                sumForAverage += actual;
+                monthsWithDataCount++;
+            }
+            
             const variance = target - actual;
             totalTarget += target;
             totalActual += actual;
@@ -1413,6 +1438,11 @@ Output ONLY valid JSON (no markdown wrapping) matching this exact schema:
             <td class="py-3 px-4 text-right font-mono-num ${totalTarget - totalActual < 0 ? 'text-rose-600' : 'text-emerald-600'}">${fmtCurrency(totalTarget - totalActual, true)}</td>
         </tr>`;
         
+        // Update DOM elements
+        document.getElementById('drillDownBudget').textContent = fmtCurrency(currentMonthBudget);
+        const avgActual = monthsWithDataCount > 0 ? (sumForAverage / monthsWithDataCount) : 0;
+        document.getElementById('drillDownAvg').textContent = fmtCurrency(avgActual);
+
         document.getElementById('drillDownTableBody').innerHTML = html;
         document.getElementById('drillDownModal').classList.remove('hidden');
         document.getElementById('drillDownModal').classList.add('flex');
