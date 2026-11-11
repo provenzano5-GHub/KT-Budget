@@ -135,11 +135,21 @@
       <div class="bg-white rounded-xl border border-slate-200 p-5 shadow-sm space-y-4">
         
         <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-100 pb-3">
-          <h2 class="text-base font-bold text-slate-900">Transactions Ledger</h2>
+          <div class="flex items-center gap-3">
+            <h2 class="text-base font-bold text-slate-900">Transactions Ledger</h2>
+            <button onclick="document.getElementById('ledgerHelp').classList.toggle('hidden')" class="text-[10px] uppercase tracking-wider text-indigo-600 hover:text-indigo-800 font-bold bg-indigo-50 px-2 py-1 rounded transition border border-indigo-100">ⓘ Rules & Info</button>
+          </div>
           <div class="flex items-center gap-2">
               <button onclick="clearLedgerFilters()" class="text-xs text-slate-500 hover:text-slate-800 underline">Clear Filters</button>
-              <button onclick="openTransactionModal(-1)" class="bg-[#6c5ce7] hover:bg-[#5b4bc4] text-white text-xs font-semibold px-3.5 py-2 rounded-lg">+ Add Item</button>
+              <button onclick="openTransactionModal(-1)" class="bg-[#6c5ce7] hover:bg-[#5b4bc4] text-white text-xs font-semibold px-3.5 py-2 rounded-lg shadow-sm">+ Add Item</button>
           </div>
+        </div>
+
+        <div id="ledgerHelp" class="hidden bg-slate-50 border border-slate-200 rounded-lg p-4 text-xs text-slate-700 space-y-3 shadow-inner">
+            <p><strong class="text-slate-900">Transfers:</strong> Moving money between tracked accounts (like paying a credit card from checking) should be categorized into a 'Transfer' group. These are net-zero events and do not impact your income or expense budgets.</p>
+            <p><strong class="text-slate-900">Healing (Reconciliation):</strong> If your app balance drifts from your actual bank balance, enter a manual Adjustment transaction to bridge the gap without hunting down missing items.</p>
+            <p><strong class="text-slate-900">Healing (Budgets):</strong> To cover overspending in one category, you can "heal" your budget by adjusting a target amount or splitting a transaction to draw surplus from a different category.</p>
+            <p class="pt-2 border-t border-slate-200"><strong class="text-slate-900">Color Guide:</strong> <span class="text-rose-600 font-bold">Red</span> = Expenses ($ Out) &nbsp;|&nbsp; <span class="text-emerald-600 font-bold">Green</span> = Income ($ In) &nbsp;|&nbsp; <span class="text-slate-500 font-bold">Grey</span> = Transfers (Internal Move)</p>
         </div>
 
         <div class="flex flex-wrap gap-3 bg-slate-50 p-3 rounded-lg border border-slate-200">
@@ -908,7 +918,7 @@
     function openAiPrepGuideModal() { document.getElementById('aiPrepGuideModal').classList.remove('hidden'); document.getElementById('aiPrepGuideModal').classList.add('flex'); }
     function closeAiPrepGuideModal() { document.getElementById('aiPrepGuideModal').classList.add('hidden'); document.getElementById('aiPrepGuideModal').classList.remove('flex'); }
     
-    function copyAiPrepPrompt() {
+   function copyAiPrepPrompt() {
         const prompt = `Act as a financial data architect. I have attached several raw bank and credit card transaction files (or pasted the text below). Your job is to analyze my spending, design a bespoke relational category structure for me, and output a complete, valid JSON database matching my app's schema.
 
 Step 1: Analyze & Architect
@@ -921,7 +931,10 @@ Step 2: Process Transactions
 - Format all transactions to match this schema. Make expenses positive numbers. Format Date as YYYY-MM-DD and Month as YYYY-MM.
 - Assign the correct Account_ID, Group_ID, and Category_ID to every transaction.
 
-Step 3: JSON Output
+Step 3: Review Suggestions
+- You should also produce a set of review suggestions. Since you might have the hardest time understanding what I consider a want vs. necessary, explain your categorization logic and what I might want to review or adjust. The files have been loaded into this new chat window for you to work with.
+
+Step 4: JSON Output
 Output ONLY valid JSON (no markdown wrapping) matching this exact schema:
 {
   "groups": [ {"Group_ID": "G_NEC", "Name": "Necessities", "Type": "Fixed", "Impact": "personal", "Budget": "Yes"} ],
@@ -1494,6 +1507,19 @@ Output ONLY valid JSON (no markdown wrapping) matching this exact schema:
       document.getElementById('ledgerCountBadge').textContent = enrichedTxns.length;
 
       tbody.innerHTML = enrichedTxns.map((t) => {
+        
+        let amountColor = 'text-rose-600'; // Default to Expense (Red)
+        const catLower = t.CategoryName.toLowerCase();
+        const grpLower = t.GroupName.toLowerCase();
+        const rawAmt = parseFloat(t.Amount) || 0;
+        
+        // Dynamically apply colors based on naming conventions or negative values
+        if (catLower.includes('transfer') || grpLower.includes('transfer')) {
+            amountColor = 'text-slate-500'; // Dark Grey for Transfers
+        } else if (catLower.includes('income') || grpLower.includes('income') || rawAmt < 0) {
+            amountColor = 'text-emerald-600'; // Green for Income
+        }
+
         return `
         <tr class="hover:bg-slate-50 ${t.Include !== '1' ? 'opacity-50' : ''}">
           <td class="py-3 pl-4"><input type="checkbox" ${t.Include === '1' ? 'checked' : ''} disabled /></td>
@@ -1505,7 +1531,7 @@ Output ONLY valid JSON (no markdown wrapping) matching this exact schema:
           <td class="py-3 text-slate-800">${t.Merchant}</td>
           <td class="py-3 text-slate-600 font-medium">${t.GroupName}</td>
           <td class="py-3 text-slate-600 font-medium">${t.CategoryName}</td>
-          <td class="py-3 text-right font-mono-num font-bold">${fmtCurrency(t.Amount)}</td>
+          <td class="py-3 text-right font-mono-num font-bold ${amountColor}">${fmtCurrency(t.Amount)}</td>
           <td class="py-3 pl-2 pr-4 text-right whitespace-nowrap">
              <button onclick="openTransactionModal(${t.originalIndex})" class="text-indigo-600 hover:text-indigo-800 font-bold text-sm mr-2" title="Edit">✎</button>
              <button onclick="openSplitModal(${t.originalIndex})" class="text-slate-500 hover:text-slate-700 font-bold text-sm mr-2" title="Split">✂</button>
@@ -1718,12 +1744,18 @@ Output ONLY valid JSON (no markdown wrapping) matching this exact schema:
         document.getElementById('saveTxnBtn').textContent = idx >= 0 ? 'Update' : 'Save';
         
         const accSelect = document.getElementById('newTxnAccount');
+        const dateInput = document.getElementById('newTxnDate');
 
         if (idx >= 0) {
             const t = db.transactions[idx];
             
+            // Lock Source Account
             accSelect.disabled = true;
             accSelect.classList.add('bg-slate-100', 'cursor-not-allowed', 'opacity-70');
+
+            // Lock Transaction Date
+            dateInput.disabled = true;
+            dateInput.classList.add('bg-slate-100', 'cursor-not-allowed', 'opacity-70');
 
             if (t.Account_ID && !db.accounts.some(a => a.Account_ID === t.Account_ID)) {
                 if(!accSelect.querySelector(`option[value="${t.Account_ID}"]`)) {
@@ -1731,7 +1763,7 @@ Output ONLY valid JSON (no markdown wrapping) matching this exact schema:
                 }
             }
             
-            document.getElementById('newTxnDate').value = t.Date || `${t.Month}-01`;
+            dateInput.value = t.Date || `${t.Month}-01`;
             document.getElementById('newTxnMonth').value = t.Month || '';
             accSelect.value = t.Account_ID || '';
             
@@ -1741,11 +1773,16 @@ Output ONLY valid JSON (no markdown wrapping) matching this exact schema:
             document.getElementById('newTxnMerchant').value = t.Merchant || '';
             document.getElementById('newTxnAmount').value = t.Amount || '';
         } else {
+            // Unlock Source Account
             accSelect.disabled = false;
             accSelect.classList.remove('bg-slate-100', 'cursor-not-allowed', 'opacity-70');
 
+            // Unlock Transaction Date
+            dateInput.disabled = false;
+            dateInput.classList.remove('bg-slate-100', 'cursor-not-allowed', 'opacity-70');
+
             const today = new Date().toISOString().split('T')[0];
-            document.getElementById('newTxnDate').value = today;
+            dateInput.value = today;
             document.getElementById('newTxnMonth').value = appState.selectedMonth;
             accSelect.value = '';
             document.getElementById('newTxnGroup').value = '';
