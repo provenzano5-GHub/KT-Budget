@@ -1728,7 +1728,231 @@ Output ONLY valid JSON (no markdown wrapping) matching this exact schema:
             saveDataToLocal(); populateDropdowns(); renderAll();
         }
     }
+    // --- TRANSACTION CRUD & SPLIT LOGIC ---
+    let editingTxnIdx = -1;
+    function openTransactionModal(idx) {
+        editingTxnIdx = idx;
+        document.getElementById('txnModalTitle').textContent = idx >= 0 ? 'Edit Transaction' : 'Add Transaction';
+        
+        if (idx >= 0) {
+            const t = db.transactions[idx];
+            document.getElementById('newTxnDate').value = t.Date || '';
+            document.getElementById('newTxnMonth').value = t.Month || '';
+            document.getElementById('newTxnAccount').value = t.Account_ID || '';
+            document.getElementById('newTxnGroup').value = t.Group_ID || '';
+            updateCategoryDropdown('newTxnCategory', t.Group_ID, t.Category_ID);
+            document.getElementById('newTxnMerchant').value = t.Merchant || '';
+            document.getElementById('newTxnAmount').value = t.Amount || '';
+        } else {
+            const today = new Date();
+            const y = today.getFullYear();
+            const m = String(today.getMonth() + 1).padStart(2, '0');
+            const d = String(today.getDate()).padStart(2, '0');
+            document.getElementById('newTxnDate').value = `${y}-${m}-${d}`;
+            document.getElementById('newTxnMonth').value = appState.selectedMonth;
+            document.getElementById('newTxnAccount').value = '';
+            document.getElementById('newTxnGroup').value = '';
+            document.getElementById('newTxnCategory').innerHTML = '<option value="" disabled selected>Select Category...</option>';
+            document.getElementById('newTxnMerchant').value = '';
+            document.getElementById('newTxnAmount').value = '';
+        }
+        document.getElementById('txnModal').classList.remove('hidden'); document.getElementById('txnModal').classList.add('flex');
+    }
+    
+    function closeTransactionModal() { document.getElementById('txnModal').classList.add('hidden'); document.getElementById('txnModal').classList.remove('flex'); }
+    
+    function saveNewTransaction() {
+        const date = document.getElementById('newTxnDate').value;
+        const month = document.getElementById('newTxnMonth').value;
+        const acc = document.getElementById('newTxnAccount').value;
+        const grp = document.getElementById('newTxnGroup').value;
+        const cat = document.getElementById('newTxnCategory').value;
+        const merch = document.getElementById('newTxnMerchant').value.trim();
+        const amt = parseFloat(document.getElementById('newTxnAmount').value);
 
+        if(!date || !month || !acc || !cat || !merch || isNaN(amt)) return alert('Please fill all required fields correctly.');
+
+        if (editingTxnIdx >= 0) {
+            db.transactions[editingTxnIdx] = { ...db.transactions[editingTxnIdx], Date: date, Month: month, Account_ID: acc, Group_ID: grp, Category_ID: cat, Merchant: merch, Amount: amt };
+        } else {
+            db.transactions.push({ Txn_ID: 'T' + Math.floor(Math.random()*100000), Date: date, Month: month, Account_ID: acc, Group_ID: grp, Category_ID: cat, Merchant: merch, Amount: amt, Include: '1' });
+        }
+        
+        saveDataToLocal(); renderAll(); closeTransactionModal(); switchTab('ledger');
+    }
+
+    function deleteTransaction(idx) {
+        if(confirm('Delete this transaction?')) {
+            db.transactions.splice(idx, 1);
+            saveDataToLocal(); renderAll();
+        }
+    }
+
+    let splitOrigIdx = -1;
+    function openSplitModal(idx) {
+        splitOrigIdx = idx;
+        const t = db.transactions[idx];
+        document.getElementById('splitOrigTitle').textContent = t.Merchant;
+        document.getElementById('splitOrigTotal').textContent = parseFloat(t.Amount).toFixed(2);
+        
+        document.getElementById('splitGrpA').value = t.Group_ID || '';
+        updateCategoryDropdown('splitCatA', t.Group_ID, t.Category_ID);
+        document.getElementById('splitAmtA').value = '';
+        
+        document.getElementById('splitGrpB').value = '';
+        document.getElementById('splitCatB').innerHTML = '<option value="" disabled selected>Category B...</option>';
+        document.getElementById('splitAmtB').value = '';
+        
+        document.getElementById('splitModal').classList.remove('hidden'); document.getElementById('splitModal').classList.add('flex');
+    }
+    
+    function closeSplitModal() { document.getElementById('splitModal').classList.add('hidden'); document.getElementById('splitModal').classList.remove('flex'); }
+    
+    function calculateSplitRemainder() {
+        if (splitOrigIdx < 0) return;
+        const total = parseFloat(db.transactions[splitOrigIdx].Amount) || 0;
+        const amtA = parseFloat(document.getElementById('splitAmtA').value) || 0;
+        document.getElementById('splitAmtB').value = Math.max(0, total - amtA).toFixed(2);
+    }
+    
+    function processSplitTransaction() {
+        const origTxn = db.transactions[splitOrigIdx];
+        const grpA = document.getElementById('splitGrpA').value;
+        const catA = document.getElementById('splitCatA').value;
+        const amtA = parseFloat(document.getElementById('splitAmtA').value);
+        const grpB = document.getElementById('splitGrpB').value;
+        const catB = document.getElementById('splitCatB').value;
+        const amtB = parseFloat(document.getElementById('splitAmtB').value);
+
+        if(!catA || !catB || isNaN(amtA) || isNaN(amtB) || amtA <= 0 || amtB <= 0) return alert('Fill all split fields with valid amounts.');
+        if(Math.abs((amtA + amtB) - origTxn.Amount) > 0.01) return alert('Split amounts must exactly equal the original total.');
+
+        db.transactions.splice(splitOrigIdx, 1);
+        db.transactions.push({ ...origTxn, Txn_ID: origTxn.Txn_ID + '-A', Group_ID: grpA, Category_ID: catA, Amount: amtA });
+        db.transactions.push({ ...origTxn, Txn_ID: origTxn.Txn_ID + '-B', Group_ID: grpB, Category_ID: catB, Amount: amtB });
+
+        saveDataToLocal(); renderAll(); closeSplitModal(); switchTab('ledger');
+    }
+
+    // --- ACCOUNT & BUDGET & GOAL CRUD ---
+    let editingAccIdx = -1;
+    function openAccountModal(idx) {
+        editingAccIdx = idx;
+        document.getElementById('accountModalTitle').textContent = idx >= 0 ? 'Edit Account' : 'Add Account';
+        if(idx >= 0) {
+            document.getElementById('newAccName').value = db.accounts[idx].Name;
+            document.getElementById('newAccType').value = db.accounts[idx].Type;
+            document.getElementById('newAccBalance').value = db.accounts[idx].Balance;
+        } else {
+            document.getElementById('newAccName').value = '';
+            document.getElementById('newAccType').value = '';
+            document.getElementById('newAccBalance').value = '';
+        }
+        document.getElementById('accountModal').classList.remove('hidden'); document.getElementById('accountModal').classList.add('flex');
+    }
+    function closeAccountModal() { document.getElementById('accountModal').classList.add('hidden'); document.getElementById('accountModal').classList.remove('flex'); }
+    function saveAccount() {
+        const name = document.getElementById('newAccName').value.trim();
+        const type = document.getElementById('newAccType').value;
+        const bal = parseFloat(document.getElementById('newAccBalance').value);
+        if(!name || !type || isNaN(bal)) return alert('Fill all account fields.');
+        
+        if(editingAccIdx >= 0) {
+            db.accounts[editingAccIdx].Name = name; db.accounts[editingAccIdx].Type = type; db.accounts[editingAccIdx].Balance = bal;
+        } else {
+            db.accounts.push({ Account_ID: 'A_' + Math.random().toString(36).substr(2,6).toUpperCase(), Name: name, Type: type, Balance: bal });
+        }
+        saveDataToLocal(); populateDropdowns(); renderAll(); closeAccountModal();
+    }
+
+    let editingBudgIdx = -1;
+    function toggleBudgetTargetDate() {
+        const type = document.getElementById('newBudgType').value;
+        document.getElementById('newBudgDate').disabled = (type !== 'Target Month');
+    }
+    function openBudgetModal(idx) {
+        editingBudgIdx = idx;
+        document.getElementById('budgetModalTitle').textContent = idx >= 0 ? 'Edit Budget' : 'Add Budget';
+        if(idx >= 0) {
+            const b = db.budgets[idx];
+            document.getElementById('newBudgCategory').value = `${b.Scope_Level}|${b.Target_Ref_ID}`;
+            document.getElementById('newBudgPriority').value = b.Priority_Type || 'Want';
+            document.getElementById('newBudgType').value = b.Rule_Type || b.Type || 'Each Month';
+            document.getElementById('newBudgAmount').value = b.Amount;
+            document.getElementById('newBudgStartMonth').value = b.Start_Month || appState.selectedMonth;
+            document.getElementById('newBudgDate').value = b.Target_Month || '';
+            document.getElementById('newBudgNotes').value = b.Notes || '';
+        } else {
+            document.getElementById('newBudgCategory').value = '';
+            document.getElementById('newBudgPriority').value = '';
+            document.getElementById('newBudgType').value = '';
+            document.getElementById('newBudgAmount').value = '';
+            document.getElementById('newBudgStartMonth').value = appState.selectedMonth;
+            document.getElementById('newBudgDate').value = '';
+            document.getElementById('newBudgNotes').value = '';
+        }
+        toggleBudgetTargetDate();
+        document.getElementById('budgetModal').classList.remove('hidden'); document.getElementById('budgetModal').classList.add('flex');
+    }
+    function closeBudgetModal() { document.getElementById('budgetModal').classList.add('hidden'); document.getElementById('budgetModal').classList.remove('flex'); }
+    function saveBudget() {
+        const scopeVal = document.getElementById('newBudgCategory').value;
+        const prio = document.getElementById('newBudgPriority').value;
+        const bType = document.getElementById('newBudgType').value;
+        const amt = parseFloat(document.getElementById('newBudgAmount').value);
+        const sMo = document.getElementById('newBudgStartMonth').value;
+        const tMo = document.getElementById('newBudgDate').value;
+        const notes = document.getElementById('newBudgNotes').value;
+        
+        if(!scopeVal || !prio || !bType || isNaN(amt) || !sMo) return alert('Fill all required budget fields.');
+        const [scopeLevel, targetRef] = scopeVal.split('|');
+
+        if(editingBudgIdx >= 0) {
+            db.budgets[editingBudgIdx] = { ...db.budgets[editingBudgIdx], Scope_Level: scopeLevel, Target_Ref_ID: targetRef, Priority_Type: prio, Rule_Type: bType, Amount: amt, Start_Month: sMo, Target_Month: tMo, Notes: notes };
+        } else {
+            db.budgets.push({ Budget_ID: 'B_' + Math.floor(Math.random()*10000), Scope_Level: scopeLevel, Target_Ref_ID: targetRef, Priority_Type: prio, Rule_Type: bType, Amount: amt, Start_Month: sMo, Target_Month: tMo, Notes: notes });
+        }
+        saveDataToLocal(); renderAll(); closeBudgetModal();
+    }
+    function deleteBudget(idx) {
+        if(confirm('Delete this budget?')) { db.budgets.splice(idx, 1); saveDataToLocal(); renderAll(); }
+    }
+
+    let editingGoalIdx = -1;
+    function openGoalModal(idx) {
+        editingGoalIdx = idx;
+        document.getElementById('goalModalTitle').textContent = idx >= 0 ? 'Edit Goal' : 'Add Goal';
+        if(idx >= 0) {
+            document.getElementById('newGoalName').value = db.goals[idx].Name;
+            document.getElementById('newGoalDesc').value = db.goals[idx].Description;
+            document.getElementById('newGoalAccount').value = db.goals[idx].Linked_Account;
+            document.getElementById('newGoalCategory').value = db.goals[idx].Linked_GC_ID;
+            document.getElementById('newGoalAmount').value = db.goals[idx].Target_Value;
+        } else {
+            document.getElementById('newGoalName').value = '';
+            document.getElementById('newGoalDesc').value = '';
+            document.getElementById('newGoalAccount').value = '';
+            document.getElementById('newGoalCategory').value = '';
+            document.getElementById('newGoalAmount').value = '';
+        }
+        document.getElementById('goalModal').classList.remove('hidden'); document.getElementById('goalModal').classList.add('flex');
+    }
+    function closeGoalModal() { document.getElementById('goalModal').classList.add('hidden'); document.getElementById('goalModal').classList.remove('flex'); }
+    function saveGoal() {
+        const name = document.getElementById('newGoalName').value.trim();
+        const desc = document.getElementById('newGoalDesc').value.trim();
+        const acc = document.getElementById('newGoalAccount').value;
+        const cat = document.getElementById('newGoalCategory').value;
+        const amt = parseFloat(document.getElementById('newGoalAmount').value);
+        if(!name || !acc || !cat || isNaN(amt)) return alert('Fill required fields.');
+        
+        if(editingGoalIdx >= 0) {
+            db.goals[editingGoalIdx] = { ...db.goals[editingGoalIdx], Name: name, Description: desc, Linked_Account: acc, Linked_GC_ID: cat, Target_Value: amt };
+        } else {
+            db.goals.push({ Goal_ID: 'GL_' + Math.floor(Math.random()*10000), Name: name, Description: desc, Linked_Account: acc, Linked_GC_ID: cat, Target_Value: amt });
+        }
+        saveDataToLocal(); renderAll(); closeGoalModal();
+    }
   </script>
 </body>
 </html>
