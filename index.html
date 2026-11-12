@@ -1242,7 +1242,7 @@ Output ONLY valid JSON (no markdown wrapping) matching this exact schema:
               catTargetsTotal += getMonthlyTargetCalculation(bg, appState.selectedMonth) + goalExtra;
           });
           const grpBg = db.budgets.find(b => b.Target_Ref_ID === g.Group_ID);
-          const grpTarget = getMonthlyTargetCalculation(grpBg, appState.selectedMonth);
+          let grpTarget = getMonthlyTargetCalculation(grpBg, appState.selectedMonth);
           const grpLinkedGoals = db.goals.filter(goal => goal.Linked_GC_ID === g.Group_ID);
           grpTarget += grpLinkedGoals.reduce((sum, goal) => sum + (Number(goal.Target_Value) || 0), 0);
           totT += Math.max(grpTarget, catTargetsTotal);
@@ -1318,7 +1318,7 @@ Output ONLY valid JSON (no markdown wrapping) matching this exact schema:
         });
 
         const grpBg = db.budgets.find(b => b.Target_Ref_ID === g.Group_ID);
-        const explicitGroupTarget = getMonthlyTargetCalculation(grpBg, appState.selectedMonth);
+        let explicitGroupTarget = getMonthlyTargetCalculation(grpBg, appState.selectedMonth);
         const grpLinkedGoals = db.goals.filter(goal => goal.Linked_GC_ID === g.Group_ID);
         explicitGroupTarget += grpLinkedGoals.reduce((sum, goal) => sum + (Number(goal.Target_Value) || 0), 0);
         const effectiveGroupTarget = Math.max(explicitGroupTarget, sumCatTargets);
@@ -1392,7 +1392,7 @@ Output ONLY valid JSON (no markdown wrapping) matching this exact schema:
                     catTargetsTotal += getMonthlyTargetCalculation(bg, monthStr) + goalExtra;
                 });
                 const grpBg = db.budgets.find(b => b.Target_Ref_ID === refId);
-                const grpTarget = getMonthlyTargetCalculation(grpBg, monthStr);
+                let grpTarget = getMonthlyTargetCalculation(grpBg, monthStr);
                 const grpLinkedGoals = db.goals.filter(goal => goal.Linked_GC_ID === refId);
                 grpTarget += grpLinkedGoals.reduce((sum, goal) => sum + (Number(goal.Target_Value) || 0), 0);
                 target = Math.max(grpTarget, catTargetsTotal);
