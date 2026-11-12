@@ -1354,17 +1354,7 @@ Output ONLY valid JSON (no markdown wrapping) matching this exact schema:
       }).join('');
     }
 
-    function openDrillDown(scope, refId, displayName) {
-        document.getElementById('drillDownTitle').textContent = `12-Month Trend: ${displayName}`;
-        const currYear = appState.selectedMonth.split('-')[0];
-        const tbody = document.getElementById('drillDownTableBody');
-        let html = '';
-        let totalTarget = 0, totalActual = 0;
-        
-        for(let m = 1; m <= 12; m++) {
-            const monthStr = `${currYear}-${m.toString().padStart(2, '0')}`;
-            let target = 0;
-            let actfunction openDrillDown(scope, refId, displayName) {
+   function openDrillDown(scope, refId, displayName) {
         document.getElementById('drillDownTitle').textContent = `12-Month Trend: ${displayName}`;
         const currYear = appState.selectedMonth.split('-')[0];
         const tbody = document.getElementById('drillDownTableBody');
