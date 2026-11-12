@@ -1130,8 +1130,7 @@ Output ONLY valid JSON (no markdown wrapping) matching this exact schema:
         document.getElementById('splitGrpB').innerHTML = grpOptions;
 
         document.getElementById('newGoalCategory').innerHTML = '<option value="" disabled selected>Link to Scope (Group or Category)...</option>' + scopeOptions;
-        document.getElementById('newGoalCategory').innerHTML = '<option value="" disabled selected>Link to Category...</option>' + catOptions;
-
+        
         const accs = db.accounts.map(a => `<option value="${a.Account_ID}">${a.Name} (${a.Type})</option>`).join('');
         document.getElementById('newGoalAccount').innerHTML = '<option value="" disabled selected>Link to Account...</option>' + accs;
         document.getElementById('newTxnAccount').innerHTML = '<option value="" disabled selected>Select Source Account...</option>' + accs;
@@ -1626,7 +1625,7 @@ Output ONLY valid JSON (no markdown wrapping) matching this exact schema:
       }
     }
 
-    function renderAccountsAndGoals() {
+   function renderAccountsAndGoals() {
       document.getElementById('accountsGrid').innerHTML = db.accounts.map((a, idx) => `
         <div class="p-4 rounded-xl border border-slate-200 bg-slate-50 space-y-2 relative group">
           <button onclick="openAccountModal(${idx})" class="absolute top-3 right-3 text-indigo-500 hover:text-indigo-700 text-xs font-bold opacity-0 group-hover:opacity-100 transition">✎ Edit</button>
@@ -1636,9 +1635,6 @@ Output ONLY valid JSON (no markdown wrapping) matching this exact schema:
       `).join('');
 
       document.getElementById('goalsGrid').innerHTML = db.goals.map((g, idx) => {
-         const linkedAcc = db.accounts.find(a => a.Account_ID === g.Linked_Account);
-         const accName = linkedAcc ? linkedAcc.Name : g.Linked_Account;
-         document.getElementById('goalsGrid').innerHTML = db.goals.map((g, idx) => {
          const linkedAcc = db.accounts.find(a => a.Account_ID === g.Linked_Account);
          const accName = linkedAcc ? linkedAcc.Name : g.Linked_Account;
          
@@ -1659,7 +1655,7 @@ Output ONLY valid JSON (no markdown wrapping) matching this exact schema:
           <p class="text-[11px] text-emerald-600 font-semibold leading-tight">Account: ${accName}<br/>Scope: ${scopeName}</p>
         </div>
       `}).join('');         
-   }
+    }
 
     function renderBudgetSetup() {
       const tbody = document.getElementById('budgetSetupTableBody');
