@@ -1414,7 +1414,7 @@ Output ONLY valid JSON (no markdown wrapping) matching this exact schema:
             const isCurrent = monthStr === appState.selectedMonth;
             const rowClass = isFuture ? 'opacity-60 bg-slate-50' : (isCurrent ? 'bg-indigo-50/70 font-semibold' : '');
             
-            html += `<tr class="border-b border-slate-100 ${rowClass} hover:bg-slate-50">
+            html += `<tr onclick="jumpToLedger('${monthStr}', '${scope}', '${refId}')" class="border-b border-slate-100 ${rowClass} hover:bg-indigo-50 cursor-pointer transition" title="Click to view ledger for this month">
                 <td class="py-2.5 px-4">${monthStr} ${isFuture ? '<span class="text-[9px] uppercase tracking-wide text-slate-400 ml-1">Proj</span>' : ''}</td>
                 <td class="py-2.5 px-4 text-right font-mono-num text-slate-800">${fmtCurrency(target)}</td>
                 <td class="py-2.5 px-4 text-right font-mono-num text-slate-800 ${isCurrent ? 'font-bold' : ''}">${fmtCurrency(actual)}</td>
@@ -1456,6 +1456,34 @@ Output ONLY valid JSON (no markdown wrapping) matching this exact schema:
         document.getElementById('drillDownModal').classList.remove('flex');
     }
 
+    function jumpToLedger(month, scope, refId) {
+        closeDrillDown();
+        
+        // Safely add the month to the dropdown if it is a projected future month with no data yet
+        const monthSelect = document.getElementById('filterMonth');
+        if (!Array.from(monthSelect.options).some(opt => opt.value === month)) {
+            monthSelect.innerHTML += `<option value="${month}">${month}</option>`;
+        }
+        
+        // Clear old filters
+        document.getElementById('filterMerchant').value = '';
+        document.getElementById('filterAccount').value = '';
+        document.getElementById('filterGroup').value = '';
+        document.getElementById('filterCategory').value = '';
+        
+        // Inject the specific month and category/group
+        document.getElementById('filterMonth').value = month;
+        if (scope === 'Group') {
+            document.getElementById('filterGroup').value = refId;
+        } else if (scope === 'Category') {
+            document.getElementById('filterCategory').value = refId;
+        }
+        
+        // Trigger the ledger to re-render and switch views
+        updateLedgerFilters();
+        switchTab('ledger');
+    }
+    
     function updateLedgerFilters() {
         ledgerState.search = document.getElementById('filterMerchant').value.toLowerCase();
         ledgerState.month = document.getElementById('filterMonth').value;
