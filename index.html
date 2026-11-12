@@ -40,10 +40,10 @@
           <div class="flex items-center gap-2.5 flex-wrap">
             <h1 class="text-xl font-extrabold tracking-tight text-white">KTBudget 4.0</h1>
             <span class="px-2.5 py-0.5 text-[11px] font-semibold rounded-full bg-indigo-950/90 text-indigo-300 border border-indigo-700/60">
-              Relational 8-Table Engine • v4.0.0
+              Relational 8-Table Engine • v4.1.0
             </span>
           </div>
-          <p class="text-xs text-slate-400 mt-0.5">Native Bulk-Import Wizard • AI Prompt Generator</p>
+          <p class="text-xs text-slate-400 mt-0.5">Native Bulk-Import Wizard • Peer Goals &amp; Budgets</p>
         </div>
       </div>
 
@@ -63,7 +63,7 @@
       <button id="tabBtn-bva" onclick="switchTab('bva')" class="tab-btn px-3.5 py-2 rounded-lg text-xs font-semibold flex items-center gap-2 transition whitespace-nowrap bg-[#252d5c] text-indigo-200 border border-indigo-500/40">Budget vs Actual</button>
       <button id="tabBtn-ledger" onclick="switchTab('ledger')" class="tab-btn px-3.5 py-2 rounded-lg text-xs font-semibold flex items-center gap-2 transition whitespace-nowrap text-slate-300 hover:bg-[#1e2548]">Transactions Ledger (<span id="ledgerCountBadge">0</span>)</button>
       <button id="tabBtn-canvas" onclick="switchTab('canvas')" class="tab-btn px-3.5 py-2 rounded-lg text-xs font-semibold flex items-center gap-2 transition whitespace-nowrap text-slate-300 hover:bg-[#1e2548]">Budget Canvas &amp; Goals</button>
-      <button id="tabBtn-accounts" onclick="switchTab('accounts')" class="tab-btn px-3.5 py-2 rounded-lg text-xs font-semibold flex items-center gap-2 transition whitespace-nowrap text-slate-300 hover:bg-[#1e2548]">Accounts &amp; Goals</button>
+      <button id="tabBtn-accounts" onclick="switchTab('accounts')" class="tab-btn px-3.5 py-2 rounded-lg text-xs font-semibold flex items-center gap-2 transition whitespace-nowrap text-slate-300 hover:bg-[#1e2548]">Accounts &amp; Todos</button>
       <button id="tabBtn-structure" onclick="switchTab('structure')" class="tab-btn px-3.5 py-2 rounded-lg text-xs font-semibold flex items-center gap-2 transition whitespace-nowrap text-slate-300 hover:bg-[#1e2548]">🗂️ Groups &amp; Categories</button>
       <button id="tabBtn-importer" onclick="switchTab('importer')" class="tab-btn px-3.5 py-2 rounded-lg text-xs font-semibold flex items-center gap-2 transition whitespace-nowrap text-slate-300 hover:bg-[#1e2548]">📥 Data Importer</button>
       <button id="tabBtn-admin" onclick="switchTab('admin')" class="tab-btn px-3.5 py-2 rounded-lg text-xs font-semibold flex items-center gap-2 transition whitespace-nowrap text-slate-300 hover:bg-[#1e2548]">⚙️ Admin &amp; Backup</button>
@@ -83,7 +83,7 @@
         <div class="bg-white rounded-xl p-5 border border-slate-200 shadow-sm relative overflow-hidden">
           <div class="text-xs font-bold uppercase tracking-wider text-slate-400">Monthly Target</div>
           <div id="kpiMonthlyTarget" class="text-3xl font-extrabold text-slate-900 mt-2 font-mono-num">$0.00</div>
-          <div id="kpiTargetSub" class="text-xs text-slate-400 mt-2">Includes Unallocated Group Buffers</div>
+          <div id="kpiTargetSub" class="text-xs text-slate-400 mt-2">Includes Categories, Goals &amp; Group Buffers</div>
         </div>
         <div class="bg-white rounded-xl p-5 border border-slate-200 shadow-sm relative overflow-hidden">
           <div class="text-xs font-bold uppercase tracking-wider text-slate-400">Current Actual</div>
@@ -105,16 +105,16 @@
       <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
         <div class="p-5 border-b border-slate-100 flex flex-col lg:flex-row lg:items-center justify-between gap-4">
           <div>
-            <h2 class="text-base font-bold text-slate-900">Relational Group &amp; Category Budget Allocations</h2>
-            <p class="text-xs text-slate-400">Group rows dynamically show the highest target between the explicit Group budget or sum of its Category budgets.</p>
+            <h2 class="text-base font-bold text-slate-900">Relational Group, Category &amp; Goal Allocations</h2>
+            <p class="text-xs text-slate-400">Goals sit alongside Categories inside their parent Group. Group rows dynamically show the higher of the explicit Group budget or the sum of its Category + Goal targets.</p>
           </div>
         </div>
         <div class="overflow-x-auto">
           <table class="w-full text-left border-collapse min-w-[1050px]">
             <thead>
               <tr class="border-b border-slate-200 bg-slate-50 text-[11px] font-bold uppercase tracking-wider text-slate-400">
-                <th class="py-3.5 pl-5 pr-3">Group / Category</th>
-                <th class="py-3.5 px-3">Priority / Type</th>
+                <th class="py-3.5 pl-5 pr-3">Group / Category / Goal</th>
+                <th class="py-3.5 px-3">Priority / Rule</th>
                 <th class="py-3.5 px-3 text-right">Monthly Target</th>
                 <th class="py-3.5 px-3 text-right">Current Actual</th>
                 <th class="py-3.5 px-3 text-right">Variance</th>
@@ -135,21 +135,27 @@
       <div class="bg-white rounded-xl border border-slate-200 p-5 shadow-sm space-y-4">
         
         <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-100 pb-3">
-          <div class="flex items-center gap-3">
+          <div class="flex items-center gap-3 flex-wrap">
             <h2 class="text-base font-bold text-slate-900">Transactions Ledger</h2>
-            <button onclick="document.getElementById('ledgerHelp').classList.toggle('hidden')" class="text-[10px] uppercase tracking-wider text-indigo-600 hover:text-indigo-800 font-bold bg-indigo-50 px-2 py-1 rounded transition border border-indigo-100">ⓘ Rules & Info</button>
+            <span id="ledgerStatusText" class="text-xs text-slate-500 font-mono-num"></span>
+            <button onclick="document.getElementById('ledgerHelp').classList.toggle('hidden')" class="text-[10px] uppercase tracking-wider text-indigo-600 hover:text-indigo-800 font-bold bg-indigo-50 px-2 py-1 rounded transition border border-indigo-100">ⓘ Rules &amp; Info</button>
           </div>
           <div class="flex items-center gap-2">
-              <button onclick="clearLedgerFilters()" class="text-xs text-slate-500 hover:text-slate-800 underline">Clear Filters</button>
+              <button onclick="clearLedgerFilters()" class="text-xs text-indigo-600 hover:text-indigo-800 font-semibold underline px-2 py-1">Reset / Clear Filters</button>
               <button onclick="openTransactionModal(-1)" class="bg-[#6c5ce7] hover:bg-[#5b4bc4] text-white text-xs font-semibold px-3.5 py-2 rounded-lg shadow-sm">+ Add Item</button>
           </div>
         </div>
 
         <div id="ledgerHelp" class="hidden bg-slate-50 border border-slate-200 rounded-lg p-4 text-xs text-slate-700 space-y-3 shadow-inner">
             <p><strong class="text-slate-900">Transfers:</strong> Moving money between tracked accounts (like paying a credit card from checking) should be categorized into a 'Transfer' group. These are net-zero events and do not impact your income or expense budgets.</p>
-            <p><strong class="text-slate-900">Healing (Reconciliation):</strong> If your app balance drifts from your actual bank balance, enter a manual Adjustment transaction to bridge the gap without hunting down missing items.</p>
-            <p><strong class="text-slate-900">Healing (Budgets):</strong> To cover overspending in one category, you can "heal" your budget by adjusting a target amount or splitting a transaction to draw surplus from a different category.</p>
+            <p><strong class="text-slate-900">Goals vs. Categories:</strong> Every transaction under a Group can be allocated directly to either a standard <strong>Category</strong> or a <strong>🎯 Goal</strong> (or split between both using the ✂ Split tool).</p>
+            <p><strong class="text-slate-900">Healing (Reconciliation &amp; Budgets):</strong> If your app balance drifts from your actual bank balance, enter a manual Adjustment transaction. To cover overspending in one category or goal, you can adjust a target amount or split a transaction to draw surplus from a different category.</p>
             <p class="pt-2 border-t border-slate-200"><strong class="text-slate-900">Color Guide:</strong> <span class="text-rose-600 font-bold">Red</span> = Expenses ($ Out) &nbsp;|&nbsp; <span class="text-emerald-600 font-bold">Green</span> = Income ($ In) &nbsp;|&nbsp; <span class="text-slate-500 font-bold">Grey</span> = Transfers (Internal Move)</p>
+        </div>
+
+        <div id="activeFilterNotice" class="hidden bg-amber-50 border border-amber-200 text-amber-900 px-3.5 py-2 rounded-lg text-xs flex items-center justify-between">
+            <span><strong>Filter Active:</strong> Only a subset of your transactions is currently displayed.</span>
+            <button onclick="clearLedgerFilters()" class="bg-amber-200/70 hover:bg-amber-300 text-amber-950 font-bold px-2.5 py-1 rounded text-[11px] transition">Show All Transactions</button>
         </div>
 
         <div class="flex flex-wrap gap-3 bg-slate-50 p-3 rounded-lg border border-slate-200">
@@ -157,7 +163,7 @@
             <select id="filterMonth" class="border border-slate-300 rounded px-3 py-1.5 text-xs shadow-sm" onchange="updateLedgerFilters()"><option value="">All Months</option></select>
             <select id="filterAccount" class="border border-slate-300 rounded px-3 py-1.5 text-xs shadow-sm" onchange="updateLedgerFilters()"><option value="">All Accounts</option></select>
             <select id="filterGroup" class="border border-slate-300 rounded px-3 py-1.5 text-xs shadow-sm" onchange="updateLedgerFilters()"><option value="">All Groups</option></select>
-            <select id="filterCategory" class="border border-slate-300 rounded px-3 py-1.5 text-xs shadow-sm" onchange="updateLedgerFilters()"><option value="">All Categories</option></select>
+            <select id="filterCategory" class="border border-slate-300 rounded px-3 py-1.5 text-xs shadow-sm" onchange="updateLedgerFilters()"><option value="">All Categories &amp; Goals</option></select>
         </div>
 
         <div class="overflow-x-auto">
@@ -169,7 +175,7 @@
                 <th class="py-3 hover:text-slate-700 transition cursor-pointer" onclick="sortLedger('AccountName')">Source <span id="sort-AccountName" class="sort-icon">⇕</span></th>
                 <th class="py-3 hover:text-slate-700 transition cursor-pointer" onclick="sortLedger('Merchant')">Merchant <span id="sort-Merchant" class="sort-icon">⇕</span></th>
                 <th class="py-3 hover:text-slate-700 transition cursor-pointer" onclick="sortLedger('GroupName')">Group <span id="sort-GroupName" class="sort-icon">⇕</span></th>
-                <th class="py-3 hover:text-slate-700 transition cursor-pointer" onclick="sortLedger('CategoryName')">Category <span id="sort-CategoryName" class="sort-icon">⇕</span></th>
+                <th class="py-3 hover:text-slate-700 transition cursor-pointer" onclick="sortLedger('TargetName')">Category / Goal <span id="sort-TargetName" class="sort-icon">⇕</span></th>
                 <th class="py-3 text-right hover:text-slate-700 transition cursor-pointer" onclick="sortLedger('Amount')">Amount <span id="sort-Amount" class="sort-icon">⇕</span></th>
                 <th class="py-3 pl-2 pr-4 text-right cursor-default">Actions</th>
               </tr>
@@ -180,11 +186,15 @@
       </div>
     </section>
 
-    <!-- TAB 3: CANVAS & GOALS (BUDGET SETUP) -->
+    <!-- TAB 3: BUDGET CANVAS & GOALS -->
     <section id="tab-canvas" class="hidden space-y-6">
+      <!-- Budgets Setup Card -->
       <div class="bg-white rounded-xl border border-slate-200 p-5 shadow-sm space-y-4">
-        <div class="flex items-center justify-between border-b border-slate-100 pb-3">
-            <h2 class="text-base font-bold text-slate-900">Budget Canvas (Setup &amp; Adjustments)</h2>
+        <div class="flex items-center justify-between border-b border-slate-100 pb-3 flex-wrap gap-2">
+            <div>
+              <h2 class="text-base font-bold text-slate-900">Budget Canvas (Group &amp; Category Targets)</h2>
+              <p class="text-xs text-slate-400">Manage ongoing monthly, annual, or target-month spending limits for Groups and Categories.</p>
+            </div>
             <button onclick="openBudgetModal(-1)" class="bg-[#6c5ce7] hover:bg-[#5b4bc4] text-white text-xs font-semibold px-3.5 py-2 rounded-lg transition">+ Add Budget</button>
         </div>
         <div class="overflow-x-auto">
@@ -196,6 +206,7 @@
                 <th class="py-3">Rule Type</th>
                 <th class="py-3 text-right">Base Amount</th>
                 <th class="py-3 text-center">Start &rarr; End (Effective Dates)</th>
+                <th class="py-3">Notes</th>
                 <th class="py-3 pl-2 pr-4 text-right">Actions</th>
               </tr>
             </thead>
@@ -203,25 +214,78 @@
           </table>
         </div>
       </div>
-    </section>
 
-    <!-- TAB 4: ACCOUNTS & GOALS -->
-    <section id="tab-accounts" class="hidden space-y-6">
-      <div class="bg-white rounded-xl border border-slate-200 p-5 shadow-sm space-y-4">
-        <div class="flex items-center justify-between border-b border-slate-100 pb-3 flex-wrap gap-2">
-            <h2 class="text-base font-bold text-slate-900">Accounts &amp; Goal Balances</h2>
-            <div class="flex gap-2">
-                <button onclick="openAccountModal(-1)" class="bg-slate-800 hover:bg-slate-700 text-white text-xs font-semibold px-3.5 py-2 rounded-lg transition">+ Add Account</button>
-                <button onclick="openGoalModal(-1)" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold px-3.5 py-2 rounded-lg transition">+ Add Goal</button>
+      <!-- Goals Setup Card -->
+      <div class="bg-white rounded-xl border border-emerald-200 p-5 shadow-sm space-y-4">
+        <div class="flex items-center justify-between border-b border-emerald-100 pb-3 flex-wrap gap-2">
+            <div>
+              <h2 class="text-base font-bold text-emerald-950 flex items-center gap-2">🎯 Goals &amp; Special Projects</h2>
+              <p class="text-xs text-slate-500">Goals live inside a Parent Group alongside Categories, appear as highlighted rows in Budget vs Actual, and receive transactions directly.</p>
             </div>
+            <button onclick="openGoalModal(-1)" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold px-3.5 py-2 rounded-lg transition">+ Add Goal</button>
         </div>
-        <div id="accountsGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
-        <h3 class="text-sm font-bold text-slate-900 mt-6 border-b border-slate-100 pb-2">Active Goals</h3>
-        <div id="goalsGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+        <div class="overflow-x-auto">
+          <table class="w-full text-left border-collapse min-w-[950px]">
+            <thead>
+              <tr class="border-b border-emerald-200 bg-emerald-50/60 text-[11px] font-bold uppercase tracking-wider text-emerald-900">
+                <th class="py-3 pl-4">Goal Name &amp; Description</th>
+                <th class="py-3">Parent Group</th>
+                <th class="py-3">Impact / Priority</th>
+                <th class="py-3">Rule Type</th>
+                <th class="py-3 text-right">Target Amount</th>
+                <th class="py-3 text-center">Start &rarr; End</th>
+                <th class="py-3">Funding Account (Opt.)</th>
+                <th class="py-3 pl-2 pr-4 text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="goalsSetupTableBody" class="divide-y divide-slate-100 text-xs"></tbody>
+          </table>
+        </div>
       </div>
     </section>
 
-    <!-- TAB 7: GROUPS & CATEGORIES -->
+    <!-- TAB 4: ACCOUNTS & TODOS -->
+    <section id="tab-accounts" class="hidden space-y-6">
+      <!-- Accounts Grid -->
+      <div class="bg-white rounded-xl border border-slate-200 p-5 shadow-sm space-y-4">
+        <div class="flex items-center justify-between border-b border-slate-100 pb-3 flex-wrap gap-2">
+            <div>
+              <h2 class="text-base font-bold text-slate-900">Accounts &amp; Balances</h2>
+              <p class="text-xs text-slate-400">Tracked bank, credit card, savings, loan, and business accounts.</p>
+            </div>
+            <button onclick="openAccountModal(-1)" class="bg-slate-800 hover:bg-slate-700 text-white text-xs font-semibold px-3.5 py-2 rounded-lg transition">+ Add Account</button>
+        </div>
+        <div id="accountsGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+      </div>
+
+      <!-- Todos Manager -->
+      <div class="bg-white rounded-xl border border-slate-200 p-5 shadow-sm space-y-4">
+        <div class="flex items-center justify-between border-b border-slate-100 pb-3 flex-wrap gap-2">
+            <div>
+              <h2 class="text-base font-bold text-slate-900">Financial Todos &amp; Action Items</h2>
+              <p class="text-xs text-slate-400">Track upcoming personal or salon business tasks, tax deadlines, and budget adjustments.</p>
+            </div>
+            <button onclick="openTodoModal(-1)" class="bg-[#6c5ce7] hover:bg-[#5b4bc4] text-white text-xs font-semibold px-3.5 py-2 rounded-lg transition">+ Add Todo</button>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="w-full text-left border-collapse min-w-[700px]">
+            <thead>
+              <tr class="border-b border-slate-200 bg-slate-50 text-[11px] font-bold uppercase tracking-wider text-slate-400">
+                <th class="py-3 pl-4 w-10">Done</th>
+                <th class="py-3">Task Description</th>
+                <th class="py-3">Type</th>
+                <th class="py-3">Due Date</th>
+                <th class="py-3">Priority</th>
+                <th class="py-3 pl-2 pr-4 text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="todosTableBody" class="divide-y divide-slate-100 text-xs"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 5: GROUPS & CATEGORIES -->
     <section id="tab-structure" class="hidden space-y-6">
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
         
@@ -230,7 +294,7 @@
             <div class="flex items-center justify-between border-b border-slate-100 pb-3">
                 <div>
                     <h2 class="text-base font-bold text-slate-900">Groups</h2>
-                    <p class="text-[10px] text-slate-500">High-level containers for categories.</p>
+                    <p class="text-[10px] text-slate-500">High-level containers for categories and goals.</p>
                 </div>
                 <button onclick="openGroupModal(-1)" class="bg-slate-800 hover:bg-slate-700 text-white text-xs font-semibold px-3.5 py-2 rounded-lg">+ Add Group</button>
             </div>
@@ -239,6 +303,8 @@
                     <thead><tr class="border-b border-slate-200 bg-slate-50 text-[10px] font-bold uppercase tracking-wider text-slate-400">
                         <th class="py-2 pl-3">Group Name</th>
                         <th class="py-2">Type</th>
+                        <th class="py-2">Impact</th>
+                        <th class="py-2">Budgeted</th>
                         <th class="py-2 text-right pr-3">Actions</th>
                     </tr></thead>
                     <tbody id="groupsTableBody" class="divide-y divide-slate-100 text-xs"></tbody>
@@ -251,7 +317,7 @@
             <div class="flex items-center justify-between border-b border-slate-100 pb-3">
                 <div>
                     <h2 class="text-base font-bold text-slate-900">Categories &amp; Mapping</h2>
-                    <p class="text-[10px] text-slate-500">Assign categories to parent groups.</p>
+                    <p class="text-[10px] text-slate-500">Assign categories to parent groups and set personal/business impact.</p>
                 </div>
                 <button onclick="openCategoryModal(-1)" class="bg-[#6c5ce7] hover:bg-[#5b4bc4] text-white text-xs font-semibold px-3.5 py-2 rounded-lg">+ Add Category</button>
             </div>
@@ -260,6 +326,7 @@
                     <thead><tr class="border-b border-slate-200 bg-slate-50 text-[10px] font-bold uppercase tracking-wider text-slate-400">
                         <th class="py-2 pl-3">Category Name</th>
                         <th class="py-2">Parent Group</th>
+                        <th class="py-2">Type / Impact</th>
                         <th class="py-2 text-right pr-3">Actions</th>
                     </tr></thead>
                     <tbody id="categoriesTableBody" class="divide-y divide-slate-100 text-xs"></tbody>
@@ -269,17 +336,17 @@
       </div>
     </section>
 
-    <!-- TAB 5: DATA IMPORTER (NATIVE BULK WIZARD) -->
+    <!-- TAB 6: DATA IMPORTER (NATIVE BULK WIZARD) -->
     <section id="tab-importer" class="hidden space-y-6">
       <div class="bg-white rounded-xl border border-slate-200 p-6 shadow-sm space-y-6">
         <div class="border-b border-slate-100 pb-3">
             <h2 class="text-lg font-bold text-slate-900">Native Bulk-Import Wizard</h2>
-            <p class="text-sm text-slate-500 mt-1">Drag and drop raw bank CSV files (Chase, PayPal, Venmo, etc.) here to auto-map and rapidly categorize transactions.</p>
+            <p class="text-sm text-slate-500 mt-1">Drag and drop raw bank CSV files (Chase, PayPal, Venmo, etc.) here to auto-map and rapidly categorize transactions into Categories or Goals.</p>
         </div>
 
         <div id="dropZone" class="border-2 border-dashed border-slate-300 rounded-xl p-10 text-center transition hover:bg-slate-50 bg-slate-50/50">
             <div class="text-4xl mb-3">📁</div>
-            <p class="text-sm text-slate-600 font-semibold mb-2">Drag & Drop raw Bank CSV file here</p>
+            <p class="text-sm text-slate-600 font-semibold mb-2">Drag &amp; Drop raw Bank CSV file here</p>
             <p class="text-xs text-slate-400 mb-4">Or click to browse your computer</p>
             <input type="file" id="bankCsvInput" accept=".csv" class="hidden" onchange="handleBankCsvUpload(event)" />
             <button onclick="document.getElementById('bankCsvInput').click()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-6 rounded-lg text-xs transition">Select CSV File</button>
@@ -290,7 +357,7 @@
                 <h3 class="font-bold text-slate-800 text-base">Rapid-Fire Review</h3>
                 <button onclick="saveAllPendingImports()" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2 px-6 rounded-lg text-xs shadow transition">✓ Save All to Ledger</button>
             </div>
-            <p class="text-xs text-slate-500 italic">The engine has attempted to auto-guess categories and accounts based on your ledger history. Adjust any rows and click Save All.</p>
+            <p class="text-xs text-slate-500 italic">The engine has attempted to auto-guess categories/goals and accounts based on your ledger history. Adjust any rows and click Save All.</p>
             
             <div class="overflow-x-auto border border-slate-200 rounded-lg">
                 <table class="w-full text-left border-collapse">
@@ -301,7 +368,7 @@
                             <th class="py-3 px-4">Parsed Merchant</th>
                             <th class="py-3 px-4 text-right">Amount</th>
                             <th class="py-3 px-4">Source Account</th>
-                            <th class="py-3 px-4">Destination (Group :: Category)</th>
+                            <th class="py-3 px-4">Destination (Group :: Category or Goal)</th>
                             <th class="py-3 px-4 text-center">Action</th>
                         </tr>
                     </thead>
@@ -312,7 +379,7 @@
       </div>
     </section>
 
-    <!-- TAB 6: ADMIN & BACKUP -->
+    <!-- TAB 7: ADMIN & BACKUP -->
     <section id="tab-admin" class="hidden space-y-6">
       <div class="bg-indigo-900 rounded-xl p-6 shadow-sm text-indigo-50 flex flex-col md:flex-row gap-6 items-center justify-between">
           <div class="space-y-2">
@@ -350,7 +417,7 @@
             <div class="border border-slate-200 rounded-lg p-5 space-y-4">
                 <div>
                     <h3 class="font-bold text-slate-800 text-sm">Download Backup</h3>
-                    <p class="text-xs text-slate-500 mt-1">Save a JSON copy of all your accounts, budgets, goals, and transactions to your device.</p>
+                    <p class="text-xs text-slate-500 mt-1">Save a JSON copy of all your accounts, budgets, goals, todos, and transactions to your device.</p>
                 </div>
                 <button onclick="exportData()" class="bg-slate-800 hover:bg-slate-700 text-white text-xs font-semibold px-4 py-2.5 rounded transition w-full">
                     ⬇️ Download Backup (JSON)
@@ -411,7 +478,7 @@
               <li>Log into your bank and click <strong>"Download Activity as CSV"</strong>.</li>
               <li>In this app, click the <strong>📥 Data Importer</strong> tab.</li>
               <li>Drag and drop your raw bank CSV file into the designated zone.</li>
-              <li>The engine will instantly parse the file, flip expenses to positive values, and attempt to auto-guess the Categories based on your past ledger entries.</li>
+              <li>The engine will instantly parse the file, flip expenses to positive values, and attempt to auto-guess the Categories or Goals based on your past ledger entries.</li>
           </ul>
       </div>
       <div class="border-t border-slate-200 pt-6 space-y-4">
@@ -451,7 +518,7 @@
       <div class="flex justify-between items-start border-b border-slate-100 pb-3">
         <div>
           <h3 id="drillDownTitle" class="text-base font-bold text-slate-900 mb-1">12-Month View</h3>
-          <div class="flex items-center gap-3">
+          <div class="flex items-center gap-3 flex-wrap">
             <span class="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Budget: <span id="drillDownBudget" class="text-indigo-600 font-mono-num ml-0.5">$0.00</span></span>
             <span class="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Average: <span id="drillDownAvg" class="text-emerald-600 font-mono-num ml-0.5">$0.00</span></span>
             <button id="drillDownEditBudgetBtn" class="bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold px-2.5 py-1 rounded transition ml-2 border border-indigo-100 text-[10px]">✎ Adjust Target</button>
@@ -479,11 +546,28 @@
   </div>
 
   <!-- CRUD MODALS -->
+  <!-- Group Modal -->
   <div id="groupModal" class="fixed inset-0 bg-slate-900/60 hidden items-center justify-center p-4 z-50">
     <div class="bg-white rounded-2xl max-w-sm w-full p-6 shadow-2xl space-y-4 text-xs">
       <h3 id="groupModalTitle" class="text-base font-bold">Add Group</h3>
-      <input id="newGrpName" type="text" placeholder="Group Name (e.g. Necessities)" class="w-full border rounded px-3 py-2" />
-      <select id="newGrpType" class="w-full border rounded px-3 py-2"><option value="Fixed">Fixed</option><option value="Flexible">Flexible</option></select>
+      <div class="space-y-1">
+        <label class="text-[10px] text-slate-500 font-bold uppercase">Group Name</label>
+        <input id="newGrpName" type="text" placeholder="e.g. Personal Necessities" class="w-full border rounded px-3 py-2" />
+      </div>
+      <div class="grid grid-cols-3 gap-2">
+        <div class="space-y-1">
+          <label class="text-[10px] text-slate-500 font-bold uppercase">Type</label>
+          <select id="newGrpType" class="w-full border rounded px-2 py-2"><option value="Fixed">Fixed</option><option value="Flexible">Flexible</option></select>
+        </div>
+        <div class="space-y-1">
+          <label class="text-[10px] text-slate-500 font-bold uppercase">Impact</label>
+          <select id="newGrpImpact" class="w-full border rounded px-2 py-2"><option value="personal">personal</option><option value="business">business</option></select>
+        </div>
+        <div class="space-y-1">
+          <label class="text-[10px] text-slate-500 font-bold uppercase">Budgeted</label>
+          <select id="newGrpBudget" class="w-full border rounded px-2 py-2"><option value="Yes">Yes</option><option value="No">No</option></select>
+        </div>
+      </div>
       <div class="flex justify-end gap-2 pt-2">
         <button onclick="closeGroupModal()" class="px-3 py-1.5 border rounded hover:bg-slate-50">Cancel</button>
         <button onclick="saveGroup()" class="px-3 py-1.5 bg-slate-800 text-white rounded">Save</button>
@@ -491,13 +575,31 @@
     </div>
   </div>
 
+  <!-- Category Modal -->
   <div id="categoryModal" class="fixed inset-0 bg-slate-900/60 hidden items-center justify-center p-4 z-50">
     <div class="bg-white rounded-2xl max-w-sm w-full p-6 shadow-2xl space-y-4 text-xs">
       <h3 id="categoryModalTitle" class="text-base font-bold">Add Category</h3>
-      <input id="newCatName" type="text" placeholder="Category Name (e.g. Groceries)" class="w-full border rounded px-3 py-2" />
       <div class="space-y-1">
-          <label class="text-[10px] text-slate-500 font-bold uppercase">Assign to Group</label>
-          <select id="newCatGroup" class="w-full border rounded px-3 py-2"><option value="" disabled selected>Select Parent Group...</option></select>
+        <label class="text-[10px] text-slate-500 font-bold uppercase">Category Name</label>
+        <input id="newCatName" type="text" placeholder="e.g. Groceries" class="w-full border rounded px-3 py-2" />
+      </div>
+      <div class="space-y-1">
+        <label class="text-[10px] text-slate-500 font-bold uppercase">Assign to Parent Group</label>
+        <select id="newCatGroup" class="w-full border rounded px-3 py-2"><option value="" disabled selected>Select Parent Group...</option></select>
+      </div>
+      <div class="grid grid-cols-3 gap-2">
+        <div class="space-y-1">
+          <label class="text-[10px] text-slate-500 font-bold uppercase">Type</label>
+          <select id="newCatType" class="w-full border rounded px-2 py-2"><option value="Flexible">Flexible</option><option value="Fixed">Fixed</option></select>
+        </div>
+        <div class="space-y-1">
+          <label class="text-[10px] text-slate-500 font-bold uppercase">Impact</label>
+          <select id="newCatImpact" class="w-full border rounded px-2 py-2"><option value="personal">personal</option><option value="business">business</option></select>
+        </div>
+        <div class="space-y-1">
+          <label class="text-[10px] text-slate-500 font-bold uppercase">Budgeted</label>
+          <select id="newCatBudget" class="w-full border rounded px-2 py-2"><option value="Yes">Yes</option><option value="No">No</option></select>
+        </div>
       </div>
       <div class="flex justify-end gap-2 pt-2">
         <button onclick="closeCategoryModal()" class="px-3 py-1.5 border rounded hover:bg-slate-50">Cancel</button>
@@ -506,6 +608,7 @@
     </div>
   </div>
 
+  <!-- Transaction Modal -->
   <div id="txnModal" class="fixed inset-0 bg-slate-900/60 hidden items-center justify-center p-4 z-50">
     <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4 text-xs">
       <h3 id="txnModalTitle" class="text-base font-bold">Add Transaction</h3>
@@ -532,18 +635,19 @@
               <select id="newTxnGroup" class="w-full border rounded px-3 py-2" onchange="updateCategoryDropdown('newTxnCategory', this.value)"><option value="" disabled selected>Select Group...</option></select>
           </div>
           <div class="space-y-1">
-              <label class="text-[10px] text-slate-500 font-bold uppercase">Category</label>
-              <select id="newTxnCategory" class="w-full border rounded px-3 py-2"><option value="" disabled selected>Select Category...</option></select>
+              <label class="text-[10px] text-slate-500 font-bold uppercase">Category or Goal</label>
+              <select id="newTxnCategory" class="w-full border rounded px-3 py-2"><option value="" disabled selected>Select Category / Goal...</option></select>
           </div>
       </div>
-
-      <div class="space-y-1 mb-2">
-          <label class="text-[10px] text-slate-500 font-bold uppercase">Link to Goal (Optional)</label>
-          <select id="newTxnGoal" class="w-full border rounded px-3 py-2 bg-emerald-50/50 text-emerald-800 border-emerald-200"><option value="">No Goal Linked</option></select>
-      </div>
       
-      <input id="newTxnMerchant" type="text" placeholder="Merchant name..." class="w-full border rounded px-3 py-2" />
-      <input id="newTxnAmount" type="number" step="0.01" placeholder="Amount ($)..." class="w-full border rounded px-3 py-2 font-mono-num" />
+      <div class="space-y-1">
+          <label class="text-[10px] text-slate-500 font-bold uppercase">Merchant / Description</label>
+          <input id="newTxnMerchant" type="text" placeholder="Merchant name..." class="w-full border rounded px-3 py-2" />
+      </div>
+      <div class="space-y-1">
+          <label class="text-[10px] text-slate-500 font-bold uppercase">Amount ($)</label>
+          <input id="newTxnAmount" type="number" step="0.01" placeholder="Amount ($)..." class="w-full border rounded px-3 py-2 font-mono-num" />
+      </div>
       
       <div class="flex justify-end gap-2 pt-2">
         <button onclick="closeTransactionModal()" class="px-3 py-1.5 border rounded hover:bg-slate-50">Cancel</button>
@@ -552,9 +656,10 @@
     </div>
   </div>
 
+  <!-- Split Modal -->
   <div id="splitModal" class="fixed inset-0 bg-slate-900/60 hidden items-center justify-center p-4 z-50">
     <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4 text-xs">
-      <h3 class="text-base font-bold text-indigo-900 border-b pb-2">✂ Split Transaction</h3>
+      <h3 class="text-base font-bold text-indigo-900 border-b pb-2">✂ Split Transaction (Categories or Goals)</h3>
       <div class="bg-indigo-50 p-3 rounded-lg border border-indigo-100">
           <p class="font-bold text-indigo-900" id="splitOrigTitle">Merchant</p>
           <p class="font-mono-num text-indigo-700">Total: $<span id="splitOrigTotal">0.00</span></p>
@@ -563,7 +668,7 @@
           <h4 class="font-bold text-slate-700">Part A (ID-A)</h4>
           <div class="grid grid-cols-2 gap-2">
               <select id="splitGrpA" class="w-full border rounded px-3 py-2" onchange="updateCategoryDropdown('splitCatA', this.value)"><option value="" disabled selected>Group A...</option></select>
-              <select id="splitCatA" class="w-full border rounded px-3 py-2"><option value="" disabled selected>Category A...</option></select>
+              <select id="splitCatA" class="w-full border rounded px-3 py-2"><option value="" disabled selected>Category / Goal A...</option></select>
           </div>
           <input id="splitAmtA" type="number" step="0.01" placeholder="Amount A..." class="w-full border rounded px-3 py-2 font-mono-num" oninput="calculateSplitRemainder()" />
       </div>
@@ -571,7 +676,7 @@
           <h4 class="font-bold text-slate-700">Part B (ID-B)</h4>
           <div class="grid grid-cols-2 gap-2">
               <select id="splitGrpB" class="w-full border rounded px-3 py-2" onchange="updateCategoryDropdown('splitCatB', this.value)"><option value="" disabled selected>Group B...</option></select>
-              <select id="splitCatB" class="w-full border rounded px-3 py-2"><option value="" disabled selected>Category B...</option></select>
+              <select id="splitCatB" class="w-full border rounded px-3 py-2"><option value="" disabled selected>Category / Goal B...</option></select>
           </div>
           <div class="flex items-center gap-2 mt-2">
               <span class="text-slate-500 font-bold flex-1 text-right">Auto-Calculated Remainder:</span>
@@ -585,6 +690,7 @@
     </div>
   </div>
 
+  <!-- Account Modal -->
   <div id="accountModal" class="fixed inset-0 bg-slate-900/60 hidden items-center justify-center p-4 z-50">
     <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4 text-xs">
       <h3 id="accountModalTitle" class="text-base font-bold">Add New Account</h3>
@@ -604,6 +710,7 @@
     </div>
   </div>
 
+  <!-- Budget Modal -->
   <div id="budgetModal" class="fixed inset-0 bg-slate-900/60 hidden items-center justify-center p-4 z-50">
     <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4 text-xs">
       <h3 id="budgetModalTitle" class="text-base font-bold">Add/Edit Budget Target</h3>
@@ -637,23 +744,111 @@
     </div>
   </div>
 
+  <!-- Goal Modal (Peer to Budget Item at Group Level) -->
   <div id="goalModal" class="fixed inset-0 bg-slate-900/60 hidden items-center justify-center p-4 z-50">
-    <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4 text-xs">
-      <h3 id="goalModalTitle" class="text-base font-bold">Add Goal</h3>
-      <input id="newGoalName" type="text" placeholder="Goal Name..." class="w-full border rounded px-3 py-2" />
-      <input id="newGoalDesc" type="text" placeholder="Description..." class="w-full border rounded px-3 py-2" />
-      <div class="space-y-1">
-          <label class="text-[10px] text-slate-500 font-bold uppercase">Funding Source</label>
-          <select id="newGoalAccount" class="w-full border rounded px-3 py-2"><option value="" disabled selected>Link to Account...</option></select>
+    <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-3.5 text-xs max-h-[92vh] overflow-y-auto">
+      <h3 id="goalModalTitle" class="text-base font-bold text-emerald-950">Add/Edit Goal</h3>
+      
+      <div class="grid grid-cols-2 gap-2">
+        <div class="space-y-1 col-span-2 sm:col-span-1">
+          <label class="text-[10px] text-slate-500 font-bold uppercase">Goal Name</label>
+          <input id="newGoalName" type="text" placeholder="e.g. Salon Station Remodel" class="w-full border rounded px-3 py-2" />
+        </div>
+        <div class="space-y-1 col-span-2 sm:col-span-1">
+          <label class="text-[10px] text-slate-500 font-bold uppercase">Parent Group</label>
+          <select id="newGoalGroup" class="w-full border rounded px-3 py-2"><option value="" disabled selected>Select Group...</option></select>
+        </div>
       </div>
+
       <div class="space-y-1">
-          <label class="text-[10px] text-slate-500 font-bold uppercase">Budget Target Category</label>
-          <select id="newGoalCategory" class="w-full border rounded px-3 py-2"><option value="" disabled selected>Link to Category...</option></select>
+        <label class="text-[10px] text-slate-500 font-bold uppercase">Description / Notes</label>
+        <input id="newGoalDesc" type="text" placeholder="Project details or purpose..." class="w-full border rounded px-3 py-2" />
       </div>
-      <input id="newGoalAmount" type="number" step="0.01" placeholder="Target Value ($)..." class="w-full border rounded px-3 py-2 font-mono-num" />
-      <div class="flex justify-end gap-2 pt-2">
+
+      <div class="grid grid-cols-2 gap-2">
+        <div class="space-y-1">
+          <label class="text-[10px] text-slate-500 font-bold uppercase">Impact</label>
+          <select id="newGoalImpact" class="w-full border rounded px-3 py-2">
+            <option value="personal">personal</option>
+            <option value="business">business</option>
+          </select>
+        </div>
+        <div class="space-y-1">
+          <label class="text-[10px] text-slate-500 font-bold uppercase">Priority Type</label>
+          <select id="newGoalPriority" class="w-full border rounded px-3 py-2">
+            <option value="Want">Want</option>
+            <option value="Necessity">Necessity</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-2 gap-2">
+        <div class="space-y-1">
+          <label class="text-[10px] text-slate-500 font-bold uppercase">Budget Rule Type</label>
+          <select id="newGoalRuleType" class="w-full border rounded px-3 py-2">
+            <option value="Each Month">Each Month</option>
+            <option value="Annual">Annual (divided by 12)</option>
+            <option value="Target Month">Target Month (Spread)</option>
+          </select>
+        </div>
+        <div class="space-y-1">
+          <label class="text-[10px] text-slate-500 font-bold uppercase">Target Value ($)</label>
+          <input id="newGoalAmount" type="number" step="0.01" placeholder="Amount ($)..." class="w-full border rounded px-3 py-2 font-mono-num" />
+        </div>
+      </div>
+
+      <div class="grid grid-cols-2 gap-2">
+        <div class="space-y-1">
+          <label class="text-[10px] text-slate-500 font-bold uppercase">Start Month</label>
+          <input id="newGoalStartMonth" type="month" class="w-full border rounded px-3 py-2" />
+        </div>
+        <div class="space-y-1">
+          <label class="text-[10px] text-slate-500 font-bold uppercase">End Month (Optional)</label>
+          <input id="newGoalTargetMonth" type="month" class="w-full border rounded px-3 py-2" />
+        </div>
+      </div>
+
+      <div class="space-y-1">
+          <label class="text-[10px] text-slate-500 font-bold uppercase">Funding Source Account (Optional)</label>
+          <select id="newGoalAccount" class="w-full border rounded px-3 py-2"><option value="">None / Multiple Accounts</option></select>
+      </div>
+
+      <div class="flex justify-end gap-2 pt-3 border-t">
         <button onclick="closeGoalModal()" class="px-3 py-1.5 border rounded hover:bg-slate-50">Cancel</button>
-        <button id="saveGoalBtn" onclick="saveGoal()" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded">Save Goal</button>
+        <button id="saveGoalBtn" onclick="saveGoal()" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded font-semibold">Save Goal</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Todo Modal -->
+  <div id="todoModal" class="fixed inset-0 bg-slate-900/60 hidden items-center justify-center p-4 z-50">
+    <div class="bg-white rounded-2xl max-w-sm w-full p-6 shadow-2xl space-y-4 text-xs">
+      <h3 id="todoModalTitle" class="text-base font-bold">Add Todo Item</h3>
+      <div class="space-y-1">
+        <label class="text-[10px] text-slate-500 font-bold uppercase">Task Description</label>
+        <input id="newTodoTask" type="text" placeholder="e.g. Update Salon Allocations" class="w-full border rounded px-3 py-2" />
+      </div>
+      <div class="grid grid-cols-2 gap-2">
+        <div class="space-y-1">
+          <label class="text-[10px] text-slate-500 font-bold uppercase">Type / Area</label>
+          <input id="newTodoType" type="text" placeholder="e.g. Budgeting, Salon, Tax" class="w-full border rounded px-3 py-2" />
+        </div>
+        <div class="space-y-1">
+          <label class="text-[10px] text-slate-500 font-bold uppercase">Priority</label>
+          <select id="newTodoPriority" class="w-full border rounded px-3 py-2">
+            <option value="High">High</option>
+            <option value="Medium" selected>Medium</option>
+            <option value="Low">Low</option>
+          </select>
+        </div>
+      </div>
+      <div class="space-y-1">
+        <label class="text-[10px] text-slate-500 font-bold uppercase">Due Date</label>
+        <input id="newTodoDueDate" type="date" class="w-full border rounded px-3 py-2" />
+      </div>
+      <div class="flex justify-end gap-2 pt-2">
+        <button onclick="closeTodoModal()" class="px-3 py-1.5 border rounded hover:bg-slate-50">Cancel</button>
+        <button onclick="saveTodo()" class="px-3 py-1.5 bg-[#6c5ce7] hover:bg-[#5b4bc4] text-white rounded font-semibold">Save Todo</button>
       </div>
     </div>
   </div>
@@ -702,16 +897,14 @@
         db.lastBackup = Date.now();
         localStorage.setItem(STORAGE_KEY, JSON.stringify(db)); 
         
-        // 1. Get the true local date to prevent the UTC "next day" shift
         const now = new Date();
         const y = now.getFullYear();
         const m = String(now.getMonth() + 1).padStart(2, '0');
         const d = String(now.getDate()).padStart(2, '0');
         const localDate = `${y}-${m}-${d}`;
 
-        // 2. Calculate the alphabetical increment (a, b, c...) for today
         let backupCount = parseInt(localStorage.getItem('ktbackup_count_' + localDate) || '0');
-        let alpha = String.fromCharCode(97 + (backupCount % 26)); // 97 is ASCII for 'a'
+        let alpha = String.fromCharCode(97 + (backupCount % 26));
         localStorage.setItem('ktbackup_count_' + localDate, backupCount + 1);
 
         const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(db));
@@ -823,16 +1016,17 @@
                 const merchant = cols[descIdx].replace(/^"|"$/g, '');
 
                 let predAcc = '';
-                let predCat = '';
+                let predDest = '';
                 const historyMatch = db.transactions.find(t => t.Merchant.toLowerCase() === merchant.toLowerCase());
                 if(historyMatch) { 
                     predAcc = historyMatch.Account_ID; 
-                    predCat = historyMatch.Category_ID || historyMatch.GC_ID; 
+                    if (historyMatch.Goal_ID) predDest = `Goal|${historyMatch.Goal_ID}`;
+                    else if (historyMatch.Category_ID) predDest = `Category|${historyMatch.Category_ID}`;
                 }
 
                 pendingImports.push({
                     id: 'P_' + Math.random().toString(36).substr(2,9),
-                    Date: fullDateStr, Month: monthStr, Merchant: merchant, Amount: amt, Account_ID: predAcc, Category_ID: predCat
+                    Date: fullDateStr, Month: monthStr, Merchant: merchant, Amount: amt, Account_ID: predAcc, Dest_Val: predDest
                 });
             }
             
@@ -849,12 +1043,17 @@
     function renderPendingImports() {
         const tbody = document.getElementById('pendingImportsTableBody');
         
-        let catOptions = '<option value="" disabled>Select Category...</option>';
+        let destOptions = '<option value="" disabled>Select Category or Goal...</option>';
         db.categories.forEach(c => {
             const gc = db.group_category.find(g => g.Category_ID === c.Category_ID);
             const grp = gc ? db.groups.find(g => g.Group_ID === gc.Group_ID) : null;
             const groupName = grp ? grp.Name : 'Uncategorized';
-            catOptions += `<option value="${c.Category_ID}">[${groupName}] ${c.Name}</option>`;
+            destOptions += `<option value="Category|${c.Category_ID}">[${groupName}] ${c.Name}</option>`;
+        });
+        db.goals.forEach(gl => {
+            const grp = db.groups.find(g => g.Group_ID === gl.Group_ID);
+            const groupName = grp ? grp.Name : 'Uncategorized';
+            destOptions += `<option value="Goal|${gl.Goal_ID}">[${groupName}] 🎯 GOAL: ${gl.Name}</option>`;
         });
         
         let accOptions = '<option value="" disabled>Select Source...</option>';
@@ -862,9 +1061,9 @@
             accOptions += `<option value="${a.Account_ID}">${a.Name} (${a.Type})</option>`;
         });
 
-        tbody.innerHTML = pendingImports.map((p, idx) => {
+        tbody.innerHTML = pendingImports.map((p) => {
             const rowAccOptions = accOptions.replace(`value="${p.Account_ID}"`, `value="${p.Account_ID}" selected`);
-            const rowCatOptions = catOptions.replace(`value="${p.Category_ID}"`, `value="${p.Category_ID}" selected`);
+            const rowDestOptions = destOptions.replace(`value="${p.Dest_Val}"`, `value="${p.Dest_Val}" selected`);
             
             return `
             <tr id="pendingRow_${p.id}" class="hover:bg-slate-50">
@@ -873,7 +1072,7 @@
               <td class="py-2 px-4 font-semibold text-slate-800"><input type="text" id="impMerch_${p.id}" value="${p.Merchant.replace(/"/g, '&quot;')}" class="w-full bg-transparent border-b border-dashed border-slate-300 focus:border-indigo-500 focus:outline-none" /></td>
               <td class="py-2 px-4 text-right font-mono-num font-bold text-slate-900">$${p.Amount.toFixed(2)}</td>
               <td class="py-2 px-4"><select id="impAcc_${p.id}" class="w-full border rounded px-2 py-1 text-[11px] ${p.Account_ID ? 'bg-emerald-50 border-emerald-200' : 'bg-rose-50 border-rose-200'}">${rowAccOptions}</select></td>
-              <td class="py-2 px-4"><select id="impCat_${p.id}" class="w-full border rounded px-2 py-1 text-[11px] ${p.Category_ID ? 'bg-emerald-50 border-emerald-200' : 'bg-rose-50 border-rose-200'}">${rowCatOptions}</select></td>
+              <td class="py-2 px-4"><select id="impDest_${p.id}" class="w-full border rounded px-2 py-1 text-[11px] ${p.Dest_Val ? 'bg-emerald-50 border-emerald-200' : 'bg-rose-50 border-rose-200'}">${rowDestOptions}</select></td>
               <td class="py-2 px-4 text-center"><button onclick="removePendingImport('${p.id}')" class="text-slate-400 hover:text-rose-600 font-bold text-lg leading-none" title="Ignore/Remove">&times;</button></td>
             </tr>
             `;
@@ -892,13 +1091,24 @@
         
         pendingImports.forEach(p => {
             const accSelect = document.getElementById(`impAcc_${p.id}`);
-            const catSelect = document.getElementById(`impCat_${p.id}`);
+            const destSelect = document.getElementById(`impDest_${p.id}`);
             const merchInput = document.getElementById(`impMerch_${p.id}`);
             
-            if(accSelect.value && catSelect.value) {
-                const selectedCat = catSelect.value;
-                const findParentGc = db.group_category.find(gc => gc.Category_ID === selectedCat);
-                const groupId = findParentGc ? findParentGc.Group_ID : '';
+            if(accSelect.value && destSelect.value) {
+                const [destType, destId] = destSelect.value.split('|');
+                let groupId = '';
+                let catId = '';
+                let goalId = '';
+
+                if (destType === 'Goal') {
+                    goalId = destId;
+                    const gl = db.goals.find(g => g.Goal_ID === goalId);
+                    groupId = gl ? gl.Group_ID : '';
+                } else {
+                    catId = destId;
+                    const findParentGc = db.group_category.find(gc => gc.Category_ID === catId);
+                    groupId = findParentGc ? findParentGc.Group_ID : '';
+                }
                 
                 db.transactions.push({
                     Txn_ID: 'T' + Math.floor(Math.random()*100000),
@@ -908,7 +1118,8 @@
                     Merchant: merchInput.value || p.Merchant,
                     Amount: p.Amount,
                     Group_ID: groupId,
-                    Category_ID: selectedCat,
+                    Category_ID: catId,
+                    Goal_ID: goalId,
                     Include: '1'
                 });
                 savedCount++;
@@ -927,7 +1138,7 @@
             renderAll();
             switchTab('ledger'); 
         } else {
-            alert("No rows saved. Please ensure Account and Category are selected for rows you want to import.");
+            alert("No rows saved. Please ensure Account and Category/Goal are selected for rows you want to import.");
         }
     }
 
@@ -945,7 +1156,7 @@
     function openAiPrepGuideModal() { document.getElementById('aiPrepGuideModal').classList.remove('hidden'); document.getElementById('aiPrepGuideModal').classList.add('flex'); }
     function closeAiPrepGuideModal() { document.getElementById('aiPrepGuideModal').classList.add('hidden'); document.getElementById('aiPrepGuideModal').classList.remove('flex'); }
     
-   function copyAiPrepPrompt() {
+    function copyAiPrepPrompt() {
         const prompt = `Act as a financial data architect. I have attached several raw bank and credit card transaction files (or pasted the text below). Your job is to analyze my spending, design a bespoke relational category structure for me, and output a complete, valid JSON database matching my app's schema.
 
 Step 1: Analyze & Architect
@@ -987,18 +1198,36 @@ Output ONLY valid JSON (no markdown wrapping) matching this exact schema:
 
     function getDemoData(table) {
         const demo = {
-            groups: [{ Group_ID: 'G_WANTS', Name: 'Wants', Type: 'Flexible', Impact: 'personal', Budget: 'Yes' }, { Group_ID: 'G_NEC', Name: 'Personal necessities', Type: 'Fixed', Impact: 'personal', Budget: 'Yes' }],
-            categories: [{ Category_ID: 'C_CLOTH', Name: 'Clothing & online shopping', Type: 'Flexible', Impact: 'personal', Budget: 'Yes' }, { Category_ID: 'C_GROC', Name: 'Groceries & household', Type: 'Flexible', Impact: 'personal', Budget: 'Yes' }],
-            group_category: [{ GC_ID: 'GC_1', Group_ID: 'G_WANTS', Category_ID: 'C_CLOTH', Display_Label: 'Wants::Clothing & online shopping' }, { GC_ID: 'GC_2', Group_ID: 'G_NEC', Category_ID: 'C_GROC', Display_Label: 'Personal necessities::Groceries & household' }],
-            accounts: [{ Account_ID: 'Chase', Name: 'Chase Checking', Type: 'CCard', Balance: '5471.25' }, { Account_ID: 'Savings_1', Name: 'Dog Emergency Fund', Type: 'Savings', Balance: '150.00' }],
+            groups: [
+                { Group_ID: 'G_WANTS', Name: 'Wants', Type: 'Flexible', Impact: 'personal', Budget: 'Yes' },
+                { Group_ID: 'G_NEC', Name: 'Personal necessities', Type: 'Fixed', Impact: 'personal', Budget: 'Yes' }
+            ],
+            categories: [
+                { Category_ID: 'C_CLOTH', Name: 'Clothing & online shopping', Type: 'Flexible', Impact: 'personal', Budget: 'Yes' },
+                { Category_ID: 'C_GROC', Name: 'Groceries & household', Type: 'Flexible', Impact: 'personal', Budget: 'Yes' }
+            ],
+            group_category: [
+                { GC_ID: 'GC_1', Group_ID: 'G_WANTS', Category_ID: 'C_CLOTH', Display_Label: 'Wants::Clothing & online shopping' },
+                { GC_ID: 'GC_2', Group_ID: 'G_NEC', Category_ID: 'C_GROC', Display_Label: 'Personal necessities::Groceries & household' }
+            ],
+            accounts: [
+                { Account_ID: 'Chase', Name: 'Chase Checking', Type: 'CCard', Balance: '5471.25' },
+                { Account_ID: 'Savings_1', Name: 'Dog Emergency Fund', Type: 'Savings', Balance: '150.00' }
+            ],
             budgets: [
                 { Budget_ID: 'B_000', Scope_Level: 'Group', Target_Ref_ID: 'G_WANTS', Priority_Type: 'Want', Rule_Type: 'Each Month', Amount: '300.00', Start_Month: appState.selectedMonth, Target_Month: '', Is_Demo: '1', Notes: 'Overall Wants Group Budget' },
                 { Budget_ID: 'B_001', Scope_Level: 'Category', Target_Ref_ID: 'C_CLOTH', Priority_Type: 'Want', Rule_Type: 'Each Month', Amount: '125.00', Start_Month: appState.selectedMonth, Target_Month: '', Is_Demo: '1', Notes: 'Standard allowance' },
                 { Budget_ID: 'B_002', Scope_Level: 'Category', Target_Ref_ID: 'C_GROC', Priority_Type: 'Necessity', Rule_Type: 'Annual', Amount: '6000.00', Start_Month: appState.selectedMonth, Target_Month: '', Is_Demo: '1', Notes: 'Averages 500/mo' }
             ],
-            goals: [{ Goal_ID: 'GL_1', Name: 'Vet Emergency', Description: 'Buffer for unexpected pet costs', Linked_Account: 'Savings_1', Linked_GC_ID: 'C_GROC', Target_Value: '50.00' }],
-            transactions: [{ Txn_ID: 'T001', Date: `${appState.selectedMonth}-14`, Month: appState.selectedMonth, Account_ID: 'Chase', Merchant: 'Target Groceries', Group_ID: 'G_NEC', Category_ID: 'C_GROC', Amount: '145.20', Include: '1' }],
-            todos: [{ Task: 'Update Salon Allocations', Type: 'Budgeting', Due_Date: '2026-10-31', Priority: 'High' }]
+            goals: [
+                { Goal_ID: 'GL_1', Name: 'Vet Emergency', Description: 'Buffer for unexpected pet costs', Group_ID: 'G_NEC', Impact: 'personal', Priority_Type: 'Necessity', Rule_Type: 'Each Month', Target_Value: '50.00', Amount: '50.00', Start_Month: appState.selectedMonth, Target_Month: '', Linked_Account: 'Savings_1' }
+            ],
+            transactions: [
+                { Txn_ID: 'T001', Date: `${appState.selectedMonth}-14`, Month: appState.selectedMonth, Account_ID: 'Chase', Merchant: 'Target Groceries', Group_ID: 'G_NEC', Category_ID: 'C_GROC', Goal_ID: '', Amount: '145.20', Include: '1' }
+            ],
+            todos: [
+                { Todo_ID: 'TD_1', Task: 'Update Salon Allocations', Type: 'Budgeting', Due_Date: '2026-10-31', Priority: 'High', Completed: '0' }
+            ]
         };
         return demo[table.replace('.csv', '')] || [];
     }
@@ -1026,6 +1255,71 @@ Output ONLY valid JSON (no markdown wrapping) matching this exact schema:
       });
     }
 
+    function normalizeAndMigrateDatabase() {
+        db.budgets.forEach(b => {
+            if (!b.Scope_Level) {
+                if (db.groups.some(g => g.Group_ID === b.Target_Ref_ID)) b.Scope_Level = 'Group';
+                else b.Scope_Level = 'Category';
+            }
+            if (!b.Start_Month) b.Start_Month = appState.selectedMonth;
+        });
+
+        // Normalize Goals to sit directly inside a Group with full budget rules
+        db.goals.forEach(g => {
+            if (!g.Group_ID) {
+                if (g.Linked_GC_ID) {
+                    if (db.groups.some(grp => grp.Group_ID === g.Linked_GC_ID)) {
+                        g.Group_ID = g.Linked_GC_ID;
+                    } else {
+                        const gc = db.group_category.find(x => x.Category_ID === g.Linked_GC_ID || x.GC_ID === g.Linked_GC_ID);
+                        g.Group_ID = gc ? gc.Group_ID : (db.groups[0] ? db.groups[0].Group_ID : '');
+                    }
+                } else if (db.groups[0]) {
+                    g.Group_ID = db.groups[0].Group_ID;
+                }
+            }
+            if (!g.Rule_Type) g.Rule_Type = 'Each Month';
+            if (!g.Priority_Type) g.Priority_Type = 'Want';
+            if (!g.Impact) {
+                const parentGrp = db.groups.find(grp => grp.Group_ID === g.Group_ID);
+                g.Impact = parentGrp && parentGrp.Impact ? parentGrp.Impact : 'personal';
+            }
+            if (g.Amount === undefined) g.Amount = g.Target_Value || '0.00';
+            if (g.Target_Value === undefined) g.Target_Value = g.Amount || '0.00';
+            if (!g.Start_Month) g.Start_Month = appState.selectedMonth;
+            if (g.Target_Month === undefined) g.Target_Month = '';
+        });
+
+        // Normalize Transactions
+        db.transactions.forEach(t => {
+            if(!t.Date) t.Date = t.Month ? `${t.Month}-01` : '';
+            if(t.GC_ID !== undefined) {
+                const checkGc = db.group_category.find(gc => gc.GC_ID === t.GC_ID);
+                if (checkGc) {
+                    t.Category_ID = checkGc.Category_ID;
+                    t.Group_ID = checkGc.Group_ID;
+                } else {
+                    t.Category_ID = t.GC_ID;
+                    const findParentGc = db.group_category.find(gc => gc.Category_ID === t.Category_ID);
+                    t.Group_ID = findParentGc ? findParentGc.Group_ID : '';
+                }
+                delete t.GC_ID;
+            }
+            if (t.Goal_ID === undefined) t.Goal_ID = '';
+            // If a transaction is linked to a Goal, ensure its Group_ID matches the Goal's Group_ID if missing
+            if (t.Goal_ID && !t.Group_ID) {
+                const gl = db.goals.find(g => g.Goal_ID === t.Goal_ID);
+                if (gl) t.Group_ID = gl.Group_ID;
+            }
+        });
+
+        // Normalize Todos
+        db.todos.forEach((td, i) => {
+            if (!td.Todo_ID) td.Todo_ID = 'TD_' + (i + 1);
+            if (td.Completed === undefined) td.Completed = '0';
+        });
+    }
+
     async function seedDatabase() {
       db.groups = await loadCsv('groups.csv');
       db.categories = await loadCsv('categories.csv');
@@ -1036,29 +1330,7 @@ Output ONLY valid JSON (no markdown wrapping) matching this exact schema:
       db.todos = await loadCsv('todos.csv');
       db.transactions = await loadCsv('transactions.csv');
       
-      db.budgets.forEach(b => {
-          if (!b.Scope_Level) {
-              if (db.groups.some(g => g.Group_ID === b.Target_Ref_ID)) b.Scope_Level = 'Group';
-              else b.Scope_Level = 'Category';
-          }
-          if (!b.Start_Month) b.Start_Month = appState.selectedMonth; 
-      });
-      
-      db.transactions.forEach(t => {
-          if(!t.Date) t.Date = t.Month ? `${t.Month}-01` : '';
-          if(t.GC_ID !== undefined) {
-              const checkGc = db.group_category.find(gc => gc.GC_ID === t.GC_ID);
-              if (checkGc) {
-                  t.Category_ID = checkGc.Category_ID;
-                  t.Group_ID = checkGc.Group_ID;
-              } else {
-                  t.Category_ID = t.GC_ID;
-                  const findParentGc = db.group_category.find(gc => gc.Category_ID === t.Category_ID);
-                  t.Group_ID = findParentGc ? findParentGc.Group_ID : '';
-              }
-              delete t.GC_ID;
-          }
-      });
+      normalizeAndMigrateDatabase();
 
       db.lastBackup = Date.now(); 
       saveDataToLocal(); 
@@ -1073,31 +1345,12 @@ Output ONLY valid JSON (no markdown wrapping) matching this exact schema:
       if (localData) {
           try { 
               const parsedDb = JSON.parse(localData); 
-              
-              // SCHEMA ENFORCER: Fills in any missing arrays from older JSON backups to prevent crashes
               db = { 
                   groups: [], categories: [], group_category: [], accounts: [], 
                   budgets: [], goals: [], todos: [], transactions: [], 
                   ...parsedDb 
               };
-              
-              db.transactions.forEach(t => {
-                  if(!t.Date) t.Date = t.Month ? `${t.Month}-01` : '';
-                  
-                  if (t.GC_ID !== undefined) {
-                      const checkGc = db.group_category.find(gc => gc.GC_ID === t.GC_ID);
-                      if (checkGc) {
-                          t.Category_ID = checkGc.Category_ID;
-                          t.Group_ID = checkGc.Group_ID;
-                      } else {
-                          t.Category_ID = t.GC_ID;
-                          const findParentGc = db.group_category.find(gc => gc.Category_ID === t.Category_ID);
-                          t.Group_ID = findParentGc ? findParentGc.Group_ID : '';
-                      }
-                      delete t.GC_ID;
-                  }
-              });
-
+              normalizeAndMigrateDatabase();
           } catch (e) { 
               console.error("Migration failed, falling back to seed data:", e);
               await seedDatabase(); 
@@ -1113,6 +1366,7 @@ Output ONLY valid JSON (no markdown wrapping) matching this exact schema:
       if (!appState.customMonths.includes(appState.selectedMonth)) appState.selectedMonth = appState.customMonths[0];
 
       populateDropdowns();
+      clearLedgerFilters(false);
       renderAll();
     }
 
@@ -1129,41 +1383,53 @@ Output ONLY valid JSON (no markdown wrapping) matching this exact schema:
         document.getElementById('newBudgCategory').innerHTML = '<option value="" disabled selected>Select Scope (Group or Category)...</option>' + scopeOptions;
 
         let grpOptions = '<option value="" disabled selected>Select Group...</option>';
-        db.groups.forEach(g => { grpOptions += `<option value="${g.Group_ID}">${g.Name}</option>`; });
+        db.groups.forEach(g => { grpOptions += `<option value="${g.Group_ID}">${g.Name} (${g.Impact || 'personal'})</option>`; });
         
         document.getElementById('newTxnGroup').innerHTML = grpOptions;
         document.getElementById('splitGrpA').innerHTML = grpOptions;
         document.getElementById('splitGrpB').innerHTML = grpOptions;
+        document.getElementById('newGoalGroup').innerHTML = grpOptions;
 
-        document.getElementById('newGoalCategory').innerHTML = '<option value="" disabled selected>Link to Scope (Group or Category)...</option>' + scopeOptions;
-        
         const accs = db.accounts.map(a => `<option value="${a.Account_ID}">${a.Name} (${a.Type})</option>`).join('');
-        document.getElementById('newGoalAccount').innerHTML = '<option value="" disabled selected>Link to Account...</option>' + accs;
+        document.getElementById('newGoalAccount').innerHTML = '<option value="">None / Multiple Accounts</option>' + accs;
         document.getElementById('newTxnAccount').innerHTML = '<option value="" disabled selected>Select Source Account...</option>' + accs;
 
         document.getElementById('filterMonth').innerHTML = '<option value="">All Months</option>' + appState.customMonths.map(m => `<option value="${m}">${m}</option>`).join('');
         document.getElementById('filterAccount').innerHTML = '<option value="">All Accounts</option>' + accs;
         document.getElementById('filterGroup').innerHTML = '<option value="">All Groups</option>' + db.groups.map(g => `<option value="${g.Group_ID}">${g.Name}</option>`).join('');
-        document.getElementById('filterCategory').innerHTML = '<option value="">All Categories</option>' + db.categories.map(c => `<option value="${c.Category_ID}">${c.Name}</option>`).join('');
-        const goalOpts = db.goals.map(g => `<option value="${g.Goal_ID}">${g.Name}</option>`).join('');
-        document.getElementById('newTxnGoal').innerHTML = '<option value="">No Goal Linked</option>' + goalOpts;
+        
+        let filterCatAndGoals = '<option value="">All Categories &amp; Goals</option>';
+        filterCatAndGoals += '<optgroup label="Categories">' + db.categories.map(c => `<option value="Category|${c.Category_ID}">${c.Name}</option>`).join('') + '</optgroup>';
+        if (db.goals.length > 0) {
+            filterCatAndGoals += '<optgroup label="🎯 Goals">' + db.goals.map(gl => `<option value="Goal|${gl.Goal_ID}">🎯 ${gl.Name}</option>`).join('') + '</optgroup>';
+        }
+        document.getElementById('filterCategory').innerHTML = filterCatAndGoals;
     }
 
-    function updateCategoryDropdown(targetId, groupId, selectedCatId = '') {
+    function updateCategoryDropdown(targetId, groupId, selectedVal = '') {
         const target = document.getElementById(targetId);
         if (!groupId) {
-            target.innerHTML = '<option value="" disabled selected>Select Category...</option>';
+            target.innerHTML = '<option value="" disabled selected>Select Category / Goal...</option>';
             return;
         }
         
         const validGcs = db.group_category.filter(gc => gc.Group_ID === groupId);
-        const options = validGcs.map(gc => {
+        const catOpts = validGcs.map(gc => {
             const c = db.categories.find(cat => cat.Category_ID === gc.Category_ID);
-            return c ? `<option value="${c.Category_ID}">${c.Name}</option>` : '';
+            return c ? `<option value="Category|${c.Category_ID}">${c.Name}</option>` : '';
+        }).join('');
+
+        const validGoals = db.goals.filter(gl => gl.Group_ID === groupId);
+        const goalOpts = validGoals.map(gl => {
+            return `<option value="Goal|${gl.Goal_ID}">🎯 GOAL: ${gl.Name}</option>`;
         }).join('');
         
-        target.innerHTML = '<option value="" disabled selected>Select Category...</option>' + options;
-        if (selectedCatId) target.value = selectedCatId;
+        let html = '<option value="" disabled selected>Select Category / Goal...</option>';
+        if (catOpts) html += `<optgroup label="Categories">${catOpts}</optgroup>`;
+        if (goalOpts) html += `<optgroup label="Goals in this Group">${goalOpts}</optgroup>`;
+        
+        target.innerHTML = html;
+        if (selectedVal) target.value = selectedVal;
     }
 
     function fmtCurrency(val, showPlus = false) {
@@ -1189,9 +1455,12 @@ Output ONLY valid JSON (no markdown wrapping) matching this exact schema:
     function promptAddMonth() {
       const m = prompt('Enter new Month (YYYY-MM):', '2026-11');
       if (m && /^\d{4}-\d{2}$/.test(m.trim())) {
-        appState.customMonths.push(m.trim());
-        appState.customMonths.sort().reverse();
+        if (!appState.customMonths.includes(m.trim())) {
+            appState.customMonths.push(m.trim());
+            appState.customMonths.sort().reverse();
+        }
         appState.selectedMonth = m.trim();
+        populateDropdowns();
         renderAll();
       }
     }
@@ -1203,18 +1472,18 @@ Output ONLY valid JSON (no markdown wrapping) matching this exact schema:
         return `${y}-${m.toString().padStart(2, '0')}`;
     }
 
-    function getMonthlyTargetCalculation(bg, calcMonthStr) {
-        if (!bg) return 0;
-        if (bg.Start_Month && calcMonthStr < bg.Start_Month) return 0;
-        if (bg.Target_Month && calcMonthStr > bg.Target_Month) return 0;
+    function getMonthlyTargetCalculation(item, calcMonthStr) {
+        if (!item) return 0;
+        if (item.Start_Month && calcMonthStr < item.Start_Month) return 0;
+        if (item.Target_Month && calcMonthStr > item.Target_Month) return 0;
 
-        const baseAmt = Number(bg.Amount) || 0;
-        const rType = bg.Rule_Type || bg.Type || 'Each Month'; 
+        const baseAmt = Number(item.Amount !== undefined ? item.Amount : item.Target_Value) || 0;
+        const rType = item.Rule_Type || item.Type || 'Each Month'; 
         
         if (rType === 'Annual') return baseAmt / 12;
-        if (rType === 'Target Month' && bg.Start_Month && bg.Target_Month) {
-            const [sy, sm] = bg.Start_Month.split('-').map(Number);
-            const [ty, tm] = bg.Target_Month.split('-').map(Number);
+        if (rType === 'Target Month' && item.Start_Month && item.Target_Month) {
+            const [sy, sm] = item.Start_Month.split('-').map(Number);
+            const [ty, tm] = item.Target_Month.split('-').map(Number);
             const span = ((ty - sy) * 12) + (tm - sm) + 1;
             return span > 0 ? (baseAmt / span) : 0;
         }
@@ -1226,14 +1495,12 @@ Output ONLY valid JSON (no markdown wrapping) matching this exact schema:
       mSel.innerHTML = appState.customMonths.map(m => `<option value="${m}">${m}</option>`).join('');
       mSel.value = appState.selectedMonth;
       
-      db.budgets.forEach(b => {
-          if (!b.Scope_Level) {
-              if (db.groups.some(g => g.Group_ID === b.Target_Ref_ID)) b.Scope_Level = 'Group';
-              else b.Scope_Level = 'Category';
-          }
-      });
-      
-      renderKpis(); renderBudgetTable(); renderLedger(); renderAccountsAndGoals(); renderBudgetSetup(); renderStructure();
+      renderKpis();
+      renderBudgetTable();
+      renderLedger();
+      renderAccountsAndTodos();
+      renderBudgetAndGoalSetup();
+      renderStructure();
     }
 
     function renderKpis() {
@@ -1242,18 +1509,21 @@ Output ONLY valid JSON (no markdown wrapping) matching this exact schema:
       
       db.groups.forEach(g => {
           const groupGc = db.group_category.filter(gc => gc.Group_ID === g.Group_ID);
-          let catTargetsTotal = 0;
+          const groupGoals = db.goals.filter(gl => gl.Group_ID === g.Group_ID);
+          let childrenTargetsTotal = 0;
+
           groupGc.forEach(gc => {
               const bg = db.budgets.find(b => b.Target_Ref_ID === gc.Category_ID);
-              const linkedGoals = db.goals.filter(goal => goal.Linked_GC_ID === gc.Category_ID);
-              const goalExtra = linkedGoals.reduce((sum, goal) => sum + (Number(goal.Target_Value) || 0), 0);
-              catTargetsTotal += getMonthlyTargetCalculation(bg, appState.selectedMonth) + goalExtra;
+              childrenTargetsTotal += getMonthlyTargetCalculation(bg, appState.selectedMonth);
           });
+
+          groupGoals.forEach(gl => {
+              childrenTargetsTotal += getMonthlyTargetCalculation(gl, appState.selectedMonth);
+          });
+
           const grpBg = db.budgets.find(b => b.Target_Ref_ID === g.Group_ID);
-          let grpTarget = getMonthlyTargetCalculation(grpBg, appState.selectedMonth);
-          const grpLinkedGoals = db.goals.filter(goal => goal.Linked_GC_ID === g.Group_ID);
-          grpTarget += grpLinkedGoals.reduce((sum, goal) => sum + (Number(goal.Target_Value) || 0), 0);
-          totT += Math.max(grpTarget, catTargetsTotal);
+          const grpTarget = getMonthlyTargetCalculation(grpBg, appState.selectedMonth);
+          totT += Math.max(grpTarget, childrenTargetsTotal);
       });
 
       db.transactions.forEach(t => {
@@ -1284,35 +1554,35 @@ Output ONLY valid JSON (no markdown wrapping) matching this exact schema:
       const tbody = document.getElementById('relationalBudgetTableBody');
       tbody.innerHTML = db.groups.map(g => {
         const groupGc = db.group_category.filter(gc => gc.Group_ID === g.Group_ID);
+        const groupGoals = db.goals.filter(gl => gl.Group_ID === g.Group_ID);
         
-        let catRowsHtml = '';
-        let sumCatTargets = 0, sumCatActuals = 0, sumCatPrior = 0, sumCatYtd = 0;
+        let childRowsHtml = '';
+        let sumChildTargets = 0, sumChildActuals = 0, sumChildPrior = 0, sumChildYtd = 0;
 
+        // 1. Render Category Rows
         groupGc.forEach(gc => {
+          const catObj = db.categories.find(c => c.Category_ID === gc.Category_ID);
           const bg = db.budgets.find(b => b.Target_Ref_ID === gc.Category_ID);
-          let target = getMonthlyTargetCalculation(bg, appState.selectedMonth);
+          const target = getMonthlyTargetCalculation(bg, appState.selectedMonth);
           const rType = bg ? (bg.Rule_Type || bg.Type || 'Each Month') : '-';
-          const priorityBadge = (bg && bg.Priority_Type) ? `<span class="mr-1 text-[9px] uppercase tracking-wider text-slate-400 font-bold">${bg.Priority_Type.substring(0,1)}</span>` : '';
+          const priorityBadge = (bg && bg.Priority_Type) ? `<span class="mr-1.5 px-1.5 py-0.5 rounded bg-slate-100 text-[9px] uppercase tracking-wider text-slate-500 font-bold">${bg.Priority_Type.substring(0,1)}</span>` : '';
+          const impactBadge = (catObj && catObj.Impact === 'business') ? `<span class="ml-1.5 text-[9px] font-semibold text-amber-700 bg-amber-50 border border-amber-200 px-1 py-0.2 rounded">biz</span>` : '';
           
-          const linkedGoals = db.goals.filter(goal => goal.Linked_GC_ID === gc.Category_ID);
-          const goalExtra = linkedGoals.reduce((sum, goal) => sum + (Number(goal.Target_Value) || 0), 0);
-          target += goalExtra; 
-          
-          const actual = db.transactions.filter(t => t.Include === '1' && t.Category_ID === gc.Category_ID && t.Month === appState.selectedMonth).reduce((s, t) => s + (Number(t.Amount) || 0), 0);
-          const priorActual = db.transactions.filter(t => t.Include === '1' && t.Category_ID === gc.Category_ID && t.Month === priorMo).reduce((s, t) => s + (Number(t.Amount) || 0), 0);
-          const ytdActual = db.transactions.filter(t => t.Include === '1' && t.Category_ID === gc.Category_ID && t.Month.startsWith(currYear) && t.Month <= appState.selectedMonth).reduce((s, t) => s + (Number(t.Amount) || 0), 0);
+          const actual = db.transactions.filter(t => t.Include === '1' && !t.Goal_ID && t.Category_ID === gc.Category_ID && t.Month === appState.selectedMonth).reduce((s, t) => s + (Number(t.Amount) || 0), 0);
+          const priorActual = db.transactions.filter(t => t.Include === '1' && !t.Goal_ID && t.Category_ID === gc.Category_ID && t.Month === priorMo).reduce((s, t) => s + (Number(t.Amount) || 0), 0);
+          const ytdActual = db.transactions.filter(t => t.Include === '1' && !t.Goal_ID && t.Category_ID === gc.Category_ID && t.Month.startsWith(currYear) && t.Month <= appState.selectedMonth).reduce((s, t) => s + (Number(t.Amount) || 0), 0);
           const variance = target - actual;
           const meter = target > 0 ? Math.round((actual / target) * 100) : 0;
-          const goalNote = goalExtra > 0 ? `<div class="text-[9px] text-emerald-600 font-bold mt-0.5">+${fmtCurrency(goalExtra)} Goal rollup</div>` : '';
 
-          sumCatTargets += target; sumCatActuals += actual; sumCatPrior += priorActual; sumCatYtd += ytdActual;
+          sumChildTargets += target; sumChildActuals += actual; sumChildPrior += priorActual; sumChildYtd += ytdActual;
 
-          const escapedCatName = (gc.Display_Label.split('::')[1] || gc.Display_Label).replace(/'/g, "\\'");
-          catRowsHtml += `
+          const catDisplayName = catObj ? catObj.Name : (gc.Display_Label.split('::')[1] || gc.Display_Label);
+          const escapedCatName = catDisplayName.replace(/'/g, "\\'");
+          childRowsHtml += `
             <tr class="hover:bg-slate-50">
-              <td class="py-2 pl-8 pr-3 text-slate-700 font-medium text-[11px]">${priorityBadge}${gc.Display_Label.split('::')[1] || gc.Display_Label}</td>
+              <td class="py-2 pl-8 pr-3 text-slate-700 font-medium text-[11px]">${priorityBadge}${catDisplayName}${impactBadge}</td>
               <td class="py-2 px-3"><span class="px-2 py-0.5 rounded text-[10px] bg-slate-100 text-slate-600">${rType}</span></td>
-              <td class="py-2 px-3 text-right font-mono-num">${fmtCurrency(target)}${goalNote}</td>
+              <td class="py-2 px-3 text-right font-mono-num">${fmtCurrency(target)}</td>
               <td class="py-2 px-3 text-right font-mono-num font-bold text-slate-900">${fmtCurrency(actual)}</td>
               <td class="py-2 px-3 text-right font-mono-num ${variance < 0 ? 'text-rose-600' : 'text-emerald-600'}">${fmtCurrency(variance, true)}</td>
               <td class="py-2 px-3 text-right font-mono-num text-slate-500">${fmtCurrency(priorActual)}</td>
@@ -1325,14 +1595,47 @@ Output ONLY valid JSON (no markdown wrapping) matching this exact schema:
           `;
         });
 
+        // 2. Render Peer Goal Rows under the same Group
+        groupGoals.forEach(gl => {
+          const target = getMonthlyTargetCalculation(gl, appState.selectedMonth);
+          const rType = gl.Rule_Type || 'Each Month';
+          const priorityBadge = gl.Priority_Type ? `<span class="mr-1.5 px-1.5 py-0.5 rounded bg-emerald-100 text-[9px] uppercase tracking-wider text-emerald-800 font-bold">${gl.Priority_Type.substring(0,1)}</span>` : '';
+          const impactBadge = gl.Impact === 'business' ? `<span class="ml-1.5 text-[9px] font-semibold text-amber-700 bg-amber-50 border border-amber-200 px-1 py-0.2 rounded">biz</span>` : '';
+
+          const actual = db.transactions.filter(t => t.Include === '1' && t.Goal_ID === gl.Goal_ID && t.Month === appState.selectedMonth).reduce((s, t) => s + (Number(t.Amount) || 0), 0);
+          const priorActual = db.transactions.filter(t => t.Include === '1' && t.Goal_ID === gl.Goal_ID && t.Month === priorMo).reduce((s, t) => s + (Number(t.Amount) || 0), 0);
+          const ytdActual = db.transactions.filter(t => t.Include === '1' && t.Goal_ID === gl.Goal_ID && t.Month.startsWith(currYear) && t.Month <= appState.selectedMonth).reduce((s, t) => s + (Number(t.Amount) || 0), 0);
+          const variance = target - actual;
+          const meter = target > 0 ? Math.round((actual / target) * 100) : 0;
+
+          sumChildTargets += target; sumChildActuals += actual; sumChildPrior += priorActual; sumChildYtd += ytdActual;
+
+          const escapedGoalName = gl.Name.replace(/'/g, "\\'");
+          childRowsHtml += `
+            <tr class="bg-emerald-50/40 hover:bg-emerald-50/80 border-l-4 border-emerald-500">
+              <td class="py-2 pl-7 pr-3 text-emerald-950 font-semibold text-[11px]">
+                ${priorityBadge}<span class="inline-block mr-1 px-1.5 py-0.5 rounded bg-emerald-600 text-white text-[9px] font-extrabold uppercase tracking-wider">🎯 Goal</span> ${gl.Name}${impactBadge}
+              </td>
+              <td class="py-2 px-3"><span class="px-2 py-0.5 rounded text-[10px] bg-emerald-100/80 text-emerald-800 font-medium">${rType}</span></td>
+              <td class="py-2 px-3 text-right font-mono-num text-emerald-950 font-semibold">${fmtCurrency(target)}</td>
+              <td class="py-2 px-3 text-right font-mono-num font-bold text-emerald-950">${fmtCurrency(actual)}</td>
+              <td class="py-2 px-3 text-right font-mono-num ${variance < 0 ? 'text-rose-600' : 'text-emerald-700'}">${fmtCurrency(variance, true)}</td>
+              <td class="py-2 px-3 text-right font-mono-num text-slate-500">${fmtCurrency(priorActual)}</td>
+              <td class="py-2 px-3 text-right font-mono-num text-indigo-700">${fmtCurrency(ytdActual)}</td>
+              <td class="py-2 px-3 text-center font-mono-num text-emerald-800 font-semibold">${meter}%</td>
+              <td class="py-2 pl-3 pr-5 text-right">
+                <button onclick="openDrillDown('Goal', '${gl.Goal_ID}', 'GOAL: ${escapedGoalName}')" class="px-2 py-1 bg-emerald-100 hover:bg-emerald-200 text-emerald-800 rounded text-[10px] font-semibold transition">[12-Mo]</button>
+              </td>
+            </tr>
+          `;
+        });
+
         const grpBg = db.budgets.find(b => b.Target_Ref_ID === g.Group_ID);
-        let explicitGroupTarget = getMonthlyTargetCalculation(grpBg, appState.selectedMonth);
-        const grpLinkedGoals = db.goals.filter(goal => goal.Linked_GC_ID === g.Group_ID);
-        explicitGroupTarget += grpLinkedGoals.reduce((sum, goal) => sum + (Number(goal.Target_Value) || 0), 0);
-        const effectiveGroupTarget = Math.max(explicitGroupTarget, sumCatTargets);
-        const unallocated = effectiveGroupTarget - sumCatTargets;
-        const grpVariance = effectiveGroupTarget - sumCatActuals;
-        const grpMeter = effectiveGroupTarget > 0 ? Math.round((sumCatActuals / effectiveGroupTarget) * 100) : 0;
+        const explicitGroupTarget = getMonthlyTargetCalculation(grpBg, appState.selectedMonth);
+        const effectiveGroupTarget = Math.max(explicitGroupTarget, sumChildTargets);
+        const unallocated = effectiveGroupTarget - sumChildTargets;
+        const grpVariance = effectiveGroupTarget - sumChildActuals;
+        const grpMeter = effectiveGroupTarget > 0 ? Math.round((sumChildActuals / effectiveGroupTarget) * 100) : 0;
 
         let unallocatedRow = '';
         if (unallocated > 0.001) {
@@ -1352,17 +1655,18 @@ Output ONLY valid JSON (no markdown wrapping) matching this exact schema:
         }
 
         const escapedGrpName = g.Name.replace(/'/g, "\\'");
+        const grpImpactClass = g.Impact === 'business' ? 'bg-amber-100 text-amber-800 border border-amber-300' : 'bg-slate-200 text-slate-600';
         const groupHeader = `
           <tr class="bg-slate-100 font-bold text-slate-900 border-t-2 border-slate-300">
             <td class="py-3 pl-4 uppercase tracking-wide text-xs">
-                ${g.Name} <span class="ml-2 text-[9px] font-normal text-slate-500 bg-slate-200 px-1.5 py-0.5 rounded">${g.Impact}</span>
+                ${g.Name} <span class="ml-2 text-[9px] font-semibold px-1.5 py-0.5 rounded ${grpImpactClass}">${g.Impact || 'personal'}</span>
             </td>
-            <td class="py-3 px-3"></td>
+            <td class="py-3 px-3"><span class="text-[10px] font-medium text-slate-500">${g.Type || ''}</span></td>
             <td class="py-3 px-3 text-right font-mono-num">${fmtCurrency(effectiveGroupTarget)}</td>
-            <td class="py-3 px-3 text-right font-mono-num">${fmtCurrency(sumCatActuals)}</td>
+            <td class="py-3 px-3 text-right font-mono-num">${fmtCurrency(sumChildActuals)}</td>
             <td class="py-3 px-3 text-right font-mono-num ${grpVariance < 0 ? 'text-rose-600' : 'text-emerald-700'}">${fmtCurrency(grpVariance, true)}</td>
-            <td class="py-3 px-3 text-right font-mono-num text-slate-600">${fmtCurrency(sumCatPrior)}</td>
-            <td class="py-3 px-3 text-right font-mono-num text-indigo-800">${fmtCurrency(sumCatYtd)}</td>
+            <td class="py-3 px-3 text-right font-mono-num text-slate-600">${fmtCurrency(sumChildPrior)}</td>
+            <td class="py-3 px-3 text-right font-mono-num text-indigo-800">${fmtCurrency(sumChildYtd)}</td>
             <td class="py-3 px-3 text-center font-mono-num text-slate-700">${grpMeter}%</td>
             <td class="py-3 pl-3 pr-5 text-right">
               <button onclick="openDrillDown('Group', '${g.Group_ID}', 'GROUP: ${escapedGrpName}')" class="px-2 py-1 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded text-[10px] font-semibold transition">[12-Mo]</button>
@@ -1370,14 +1674,13 @@ Output ONLY valid JSON (no markdown wrapping) matching this exact schema:
           </tr>
         `;
 
-        return groupHeader + catRowsHtml + unallocatedRow;
+        return groupHeader + childRowsHtml + unallocatedRow;
       }).join('');
     }
 
-   function openDrillDown(scope, refId, displayName) {
+    function openDrillDown(scope, refId, displayName) {
         document.getElementById('drillDownTitle').textContent = `12-Month Trend: ${displayName}`;
         const currYear = appState.selectedMonth.split('-')[0];
-        const tbody = document.getElementById('drillDownTableBody');
         
         let html = '';
         let totalTarget = 0, totalActual = 0;
@@ -1392,36 +1695,38 @@ Output ONLY valid JSON (no markdown wrapping) matching this exact schema:
             
             if (scope === 'Group') {
                 const groupGc = db.group_category.filter(x => x.Group_ID === refId);
-                let catTargetsTotal = 0;
+                const groupGoals = db.goals.filter(gl => gl.Group_ID === refId);
+                let childrenTargetsTotal = 0;
+
                 groupGc.forEach(gc => {
                     const bg = db.budgets.find(b => b.Target_Ref_ID === gc.Category_ID);
-                    const linkedGoals = db.goals.filter(goal => goal.Linked_GC_ID === gc.Category_ID);
-                    const goalExtra = linkedGoals.reduce((sum, goal) => sum + (Number(goal.Target_Value) || 0), 0);
-                    catTargetsTotal += getMonthlyTargetCalculation(bg, monthStr) + goalExtra;
+                    childrenTargetsTotal += getMonthlyTargetCalculation(bg, monthStr);
                 });
+                groupGoals.forEach(gl => {
+                    childrenTargetsTotal += getMonthlyTargetCalculation(gl, monthStr);
+                });
+
                 const grpBg = db.budgets.find(b => b.Target_Ref_ID === refId);
-                let grpTarget = getMonthlyTargetCalculation(grpBg, monthStr);
-                const grpLinkedGoals = db.goals.filter(goal => goal.Linked_GC_ID === refId);
-                grpTarget += grpLinkedGoals.reduce((sum, goal) => sum + (Number(goal.Target_Value) || 0), 0);
-                target = Math.max(grpTarget, catTargetsTotal);
+                const grpTarget = getMonthlyTargetCalculation(grpBg, monthStr);
+                target = Math.max(grpTarget, childrenTargetsTotal);
 
                 const catIds = groupGc.map(x => x.Category_ID);
-                actual = db.transactions.filter(t => t.Include === '1' && catIds.includes(t.Category_ID) && t.Month === monthStr).reduce((s,t) => s + (Number(t.Amount)||0), 0);
+                const goalIds = groupGoals.map(x => x.Goal_ID);
+                actual = db.transactions.filter(t => t.Include === '1' && t.Month === monthStr && (t.Group_ID === refId || (!t.Goal_ID && catIds.includes(t.Category_ID)) || (t.Goal_ID && goalIds.includes(t.Goal_ID)))).reduce((s,t) => s + (Number(t.Amount)||0), 0);
+            } else if (scope === 'Goal') {
+                const gl = db.goals.find(g => g.Goal_ID === refId);
+                target = getMonthlyTargetCalculation(gl, monthStr);
+                actual = db.transactions.filter(t => t.Include === '1' && t.Goal_ID === refId && t.Month === monthStr).reduce((s,t) => s + (Number(t.Amount)||0), 0);
             } else {
                 const bg = db.budgets.find(b => b.Target_Ref_ID === refId);
-                const linkedGoals = db.goals.filter(goal => goal.Linked_GC_ID === refId);
-                const goalExtra = linkedGoals.reduce((sum, goal) => sum + (Number(goal.Target_Value) || 0), 0);
-                target = getMonthlyTargetCalculation(bg, monthStr) + goalExtra;
-
-                actual = db.transactions.filter(t => t.Include === '1' && t.Category_ID === refId && t.Month === monthStr).reduce((s,t) => s + (Number(t.Amount)||0), 0);
+                target = getMonthlyTargetCalculation(bg, monthStr);
+                actual = db.transactions.filter(t => t.Include === '1' && !t.Goal_ID && t.Category_ID === refId && t.Month === monthStr).reduce((s,t) => s + (Number(t.Amount)||0), 0);
             }
             
-            // Capture the budget for the currently selected active month
             if (monthStr === appState.selectedMonth) {
                 currentMonthBudget = target;
             }
 
-            // Only tally averages for months that exist in the ledger
             if (appState.customMonths.includes(monthStr)) {
                 sumForAverage += actual;
                 monthsWithDataCount++;
@@ -1450,7 +1755,6 @@ Output ONLY valid JSON (no markdown wrapping) matching this exact schema:
             <td class="py-3 px-4 text-right font-mono-num ${totalTarget - totalActual < 0 ? 'text-rose-600' : 'text-emerald-600'}">${fmtCurrency(totalTarget - totalActual, true)}</td>
         </tr>`;
         
-        // Update DOM elements
         document.getElementById('drillDownBudget').textContent = fmtCurrency(currentMonthBudget);
         const avgActual = monthsWithDataCount > 0 ? (sumForAverage / monthsWithDataCount) : 0;
         document.getElementById('drillDownAvg').textContent = fmtCurrency(avgActual);
@@ -1458,16 +1762,18 @@ Output ONLY valid JSON (no markdown wrapping) matching this exact schema:
         document.getElementById('drillDownTableBody').innerHTML = html;
         document.getElementById('drillDownModal').classList.remove('hidden');
         document.getElementById('drillDownModal').classList.add('flex');
-     // --- DYNAMIC EDIT BUDGET BUTTON LOGIC ---
+
         document.getElementById('drillDownEditBudgetBtn').onclick = function() {
-            closeDrillDown(); // Drop the current modal to prevent overlay trapping
-            
-            const existingIdx = db.budgets.findIndex(b => b.Target_Ref_ID === refId);
-            openBudgetModal(existingIdx); // Opens in Edit mode if found, Add mode if -1
-            
-            if (existingIdx === -1) {
-                // If it's a new budget, auto-fill the dropdown to save the user a click!
-                document.getElementById('newBudgCategory').value = `${scope}|${refId}`;
+            closeDrillDown();
+            if (scope === 'Goal') {
+                const gIdx = db.goals.findIndex(g => g.Goal_ID === refId);
+                openGoalModal(gIdx);
+            } else {
+                const existingIdx = db.budgets.findIndex(b => b.Target_Ref_ID === refId);
+                openBudgetModal(existingIdx);
+                if (existingIdx === -1) {
+                    document.getElementById('newBudgCategory').value = `${scope}|${refId}`;
+                }
             }
         };
     }
@@ -1480,27 +1786,25 @@ Output ONLY valid JSON (no markdown wrapping) matching this exact schema:
     function jumpToLedger(month, scope, refId) {
         closeDrillDown();
         
-        // Safely add the month to the dropdown if it is a projected future month with no data yet
         const monthSelect = document.getElementById('filterMonth');
         if (!Array.from(monthSelect.options).some(opt => opt.value === month)) {
             monthSelect.innerHTML += `<option value="${month}">${month}</option>`;
         }
         
-        // Clear old filters
         document.getElementById('filterMerchant').value = '';
         document.getElementById('filterAccount').value = '';
         document.getElementById('filterGroup').value = '';
         document.getElementById('filterCategory').value = '';
         
-        // Inject the specific month and category/group
         document.getElementById('filterMonth').value = month;
         if (scope === 'Group') {
             document.getElementById('filterGroup').value = refId;
         } else if (scope === 'Category') {
-            document.getElementById('filterCategory').value = refId;
+            document.getElementById('filterCategory').value = `Category|${refId}`;
+        } else if (scope === 'Goal') {
+            document.getElementById('filterCategory').value = `Goal|${refId}`;
         }
         
-        // Trigger the ledger to re-render and switch views
         updateLedgerFilters();
         switchTab('ledger');
     }
@@ -1514,13 +1818,18 @@ Output ONLY valid JSON (no markdown wrapping) matching this exact schema:
         renderLedger();
     }
 
-    function clearLedgerFilters() {
+    function clearLedgerFilters(doRender = true) {
         document.getElementById('filterMerchant').value = '';
         document.getElementById('filterMonth').value = '';
         document.getElementById('filterAccount').value = '';
         document.getElementById('filterGroup').value = '';
         document.getElementById('filterCategory').value = '';
-        updateLedgerFilters();
+        ledgerState.search = '';
+        ledgerState.month = '';
+        ledgerState.account = '';
+        ledgerState.group = '';
+        ledgerState.category = '';
+        if (doRender) renderLedger();
     }
 
     function sortLedger(col) {
@@ -1542,22 +1851,31 @@ Output ONLY valid JSON (no markdown wrapping) matching this exact schema:
     }
 
     function renderLedger() {
+      const totalCount = db.transactions.length;
       let enrichedTxns = db.transactions.map((t, originalIndex) => {
           const accObj = db.accounts.find(a => a.Account_ID === t.Account_ID);
           const catObj = db.categories.find(c => c.Category_ID === t.Category_ID);
+          const goalObj = db.goals.find(g => g.Goal_ID === t.Goal_ID);
           const grpObj = db.groups.find(g => g.Group_ID === t.Group_ID);
           
+          const isGoal = Boolean(t.Goal_ID && goalObj);
+          const targetName = isGoal ? `🎯 ${goalObj.Name}` : (catObj ? catObj.Name : (t.Category_ID || 'Uncategorized'));
+
           return {
               ...t,
               originalIndex,
+              IsGoal: isGoal,
               AccountName: accObj ? accObj.Name : t.Account_ID,
               GroupName: grpObj ? grpObj.Name : (t.Group_ID || 'Uncategorized'),
               GroupID: t.Group_ID || '',
-              CategoryName: catObj ? catObj.Name : (t.Category_ID || 'Uncategorized'),
+              TargetName: targetName,
               CategoryID: t.Category_ID || '',
-              GoalName: (db.goals.find(g => g.Goal_ID === t.Goal_ID) || {}).Name || ''
+              GoalID: t.Goal_ID || ''
           };
       });
+
+      const isFiltered = Boolean(ledgerState.search || ledgerState.month || ledgerState.account || ledgerState.group || ledgerState.category);
+      document.getElementById('activeFilterNotice').classList.toggle('hidden', !isFiltered);
 
       if (ledgerState.search) {
           enrichedTxns = enrichedTxns.filter(t => t.Merchant.toLowerCase().includes(ledgerState.search));
@@ -1568,11 +1886,16 @@ Output ONLY valid JSON (no markdown wrapping) matching this exact schema:
       if (ledgerState.account) {
           enrichedTxns = enrichedTxns.filter(t => t.Account_ID === ledgerState.account);
       }
-      if (ledgerState.category) {
-          enrichedTxns = enrichedTxns.filter(t => t.CategoryID === ledgerState.category);
-      }
       if (ledgerState.group) {
           enrichedTxns = enrichedTxns.filter(t => t.GroupID === ledgerState.group);
+      }
+      if (ledgerState.category) {
+          const [filterScope, filterId] = ledgerState.category.split('|');
+          if (filterScope === 'Goal') {
+              enrichedTxns = enrichedTxns.filter(t => t.GoalID === filterId);
+          } else {
+              enrichedTxns = enrichedTxns.filter(t => !t.GoalID && t.CategoryID === filterId);
+          }
       }
 
       enrichedTxns.sort((a, b) => {
@@ -1593,25 +1916,28 @@ Output ONLY valid JSON (no markdown wrapping) matching this exact schema:
       });
 
       const tbody = document.getElementById('ledgerTableBody');
-      document.getElementById('ledgerCountBadge').textContent = enrichedTxns.length;
+      document.getElementById('ledgerCountBadge').textContent = isFiltered ? `${enrichedTxns.length}/${totalCount}` : `${totalCount}`;
+      document.getElementById('ledgerStatusText').textContent = isFiltered ? `(Showing ${enrichedTxns.length} of ${totalCount} total)` : `(${totalCount} total)`;
 
       tbody.innerHTML = enrichedTxns.map((t) => {
-        
-        let amountColor = 'text-rose-600'; // Default to Expense (Red)
-        const catLower = t.CategoryName.toLowerCase();
+        let amountColor = 'text-rose-600';
+        const targetLower = t.TargetName.toLowerCase();
         const grpLower = t.GroupName.toLowerCase();
         const rawAmt = parseFloat(t.Amount) || 0;
         
-        // Dynamically apply colors based on naming conventions or negative values
-        if (catLower.includes('transfer') || grpLower.includes('transfer')) {
-            amountColor = 'text-slate-500'; // Dark Grey for Transfers
-        } else if (catLower.includes('income') || grpLower.includes('income') || rawAmt < 0) {
-            amountColor = 'text-emerald-600'; // Green for Income
+        if (targetLower.includes('transfer') || grpLower.includes('transfer')) {
+            amountColor = 'text-slate-500';
+        } else if (targetLower.includes('income') || grpLower.includes('income') || rawAmt < 0) {
+            amountColor = 'text-emerald-600';
         }
+
+        const targetBadge = t.IsGoal
+            ? `<span class="inline-flex items-center px-2 py-0.5 rounded bg-emerald-100 text-emerald-900 font-bold text-[11px] border border-emerald-300">${t.TargetName}</span>`
+            : `<span class="text-slate-600 font-medium">${t.TargetName}</span>`;
 
         return `
         <tr class="hover:bg-slate-50 ${t.Include !== '1' ? 'opacity-50' : ''}">
-          <td class="py-3 pl-4"><input type="checkbox" ${t.Include === '1' ? 'checked' : ''} disabled /></td>
+          <td class="py-3 pl-4"><input type="checkbox" ${t.Include === '1' ? 'checked' : ''} onchange="toggleTransactionInclude(${t.originalIndex}, this.checked)" class="cursor-pointer" /></td>
           <td class="py-3 font-mono-num text-[11px] text-slate-500 whitespace-nowrap">
             <span class="block text-slate-800 font-bold">${t.Date}</span>
             <span class="block text-[9px] text-slate-400 mt-0.5">ID: ${t.Txn_ID}</span>
@@ -1619,10 +1945,7 @@ Output ONLY valid JSON (no markdown wrapping) matching this exact schema:
           <td class="py-3 font-semibold text-slate-700">${t.AccountName}</td>
           <td class="py-3 text-slate-800">${t.Merchant}</td>
           <td class="py-3 text-slate-600 font-medium">${t.GroupName}</td>
-          <td class="py-3 text-slate-600 font-medium">
-            ${t.CategoryName}
-            ${t.GoalName ? `<br><span class="inline-block mt-0.5 px-1.5 py-0.5 bg-emerald-100 text-emerald-700 text-[9px] font-bold rounded-sm uppercase tracking-wide">Goal: ${t.GoalName}</span>` : ''}
-          </td>
+          <td class="py-3">${targetBadge}</td>
           <td class="py-3 text-right font-mono-num font-bold ${amountColor}">${fmtCurrency(t.Amount)}</td>
           <td class="py-3 pl-2 pr-4 text-right whitespace-nowrap">
              <button onclick="openTransactionModal(${t.originalIndex})" class="text-indigo-600 hover:text-indigo-800 font-bold text-sm mr-2" title="Edit">✎</button>
@@ -1637,39 +1960,51 @@ Output ONLY valid JSON (no markdown wrapping) matching this exact schema:
       }
     }
 
-   function renderAccountsAndGoals() {
+    function toggleTransactionInclude(idx, isChecked) {
+        if (db.transactions[idx]) {
+            db.transactions[idx].Include = isChecked ? '1' : '0';
+            saveDataToLocal();
+            renderAll();
+        }
+    }
+
+    function renderAccountsAndTodos() {
       document.getElementById('accountsGrid').innerHTML = db.accounts.map((a, idx) => `
         <div class="p-4 rounded-xl border border-slate-200 bg-slate-50 space-y-2 relative group">
-          <button onclick="openAccountModal(${idx})" class="absolute top-3 right-3 text-indigo-500 hover:text-indigo-700 text-xs font-bold opacity-0 group-hover:opacity-100 transition">✎ Edit</button>
-          <div class="flex justify-between items-center pr-10"><h3 class="font-bold text-slate-900">${a.Name}</h3><span class="text-xs px-2 py-0.5 rounded bg-slate-200 text-slate-800 font-semibold">${a.Type}</span></div>
+          <div class="absolute top-3 right-3 flex items-center gap-2 opacity-0 group-hover:opacity-100 transition">
+            <button onclick="openAccountModal(${idx})" class="text-indigo-600 hover:text-indigo-800 text-xs font-bold">✎ Edit</button>
+            <button onclick="deleteAccount(${idx})" class="text-slate-400 hover:text-rose-600 text-sm font-bold leading-none">&times;</button>
+          </div>
+          <div class="flex justify-between items-center pr-14"><h3 class="font-bold text-slate-900">${a.Name}</h3><span class="text-xs px-2 py-0.5 rounded bg-slate-200 text-slate-800 font-semibold">${a.Type}</span></div>
           <div class="text-2xl font-extrabold font-mono-num text-slate-900">${fmtCurrency(a.Balance)}</div>
         </div>
       `).join('');
 
-      document.getElementById('goalsGrid').innerHTML = db.goals.map((g, idx) => {
-         const linkedAcc = db.accounts.find(a => a.Account_ID === g.Linked_Account);
-         const accName = linkedAcc ? linkedAcc.Name : g.Linked_Account;
-         
-         let scopeName = g.Linked_GC_ID;
-         const linkedCat = db.categories.find(c => c.Category_ID === g.Linked_GC_ID);
-         if (linkedCat) scopeName = 'Cat: ' + linkedCat.Name;
-         else {
-             const linkedGrp = db.groups.find(gr => gr.Group_ID === g.Linked_GC_ID);
-             if (linkedGrp) scopeName = 'Grp: ' + linkedGrp.Name;
-         }
-
-         return `
-        <div class="p-4 rounded-xl border border-emerald-100 bg-emerald-50 space-y-2 relative group">
-          <button onclick="openGoalModal(${idx})" class="absolute top-3 right-3 text-emerald-600 hover:text-emerald-800 text-xs font-bold opacity-0 group-hover:opacity-100 transition">✎ Edit</button>
-          <div class="flex justify-between items-center pr-10"><h3 class="font-bold text-emerald-900">${g.Name}</h3><span class="text-[10px] uppercase tracking-wide font-bold text-emerald-600">${g.Goal_ID}</span></div>
-          <p class="text-xs text-emerald-700">${g.Description}</p>
-          <div class="text-lg font-bold font-mono-num text-emerald-800">Target: ${fmtCurrency(g.Target_Value)}</div>
-          <p class="text-[11px] text-emerald-600 font-semibold leading-tight">Account: ${accName}<br/>Scope: ${scopeName}</p>
-        </div>
-      `}).join('');         
+      const todosBody = document.getElementById('todosTableBody');
+      if (!db.todos || db.todos.length === 0) {
+          todosBody.innerHTML = `<tr><td colspan="6" class="py-6 text-center text-slate-400 italic">No Todo items yet. Click "+ Add Todo" to create one.</td></tr>`;
+      } else {
+          todosBody.innerHTML = db.todos.map((td, idx) => {
+              const isDone = td.Completed === '1';
+              const prioColor = td.Priority === 'High' ? 'bg-rose-100 text-rose-800' : (td.Priority === 'Low' ? 'bg-slate-100 text-slate-600' : 'bg-amber-100 text-amber-800');
+              return `
+              <tr class="hover:bg-slate-50 ${isDone ? 'opacity-50 line-through' : ''}">
+                <td class="py-3 pl-4"><input type="checkbox" ${isDone ? 'checked' : ''} onchange="toggleTodoComplete(${idx}, this.checked)" class="cursor-pointer" /></td>
+                <td class="py-3 font-semibold text-slate-800">${td.Task || ''}</td>
+                <td class="py-3 text-slate-600"><span class="px-2 py-0.5 rounded bg-slate-100 text-slate-700 text-[10px] font-bold">${td.Type || 'General'}</span></td>
+                <td class="py-3 font-mono-num text-slate-600">${td.Due_Date || '-'}</td>
+                <td class="py-3"><span class="px-2 py-0.5 rounded text-[10px] font-bold ${prioColor}">${td.Priority || 'Medium'}</span></td>
+                <td class="py-3 pl-2 pr-4 text-right whitespace-nowrap">
+                  <button onclick="openTodoModal(${idx})" class="text-indigo-600 hover:text-indigo-800 font-bold text-sm mr-3" title="Edit">✎</button>
+                  <button onclick="deleteTodo(${idx})" class="text-slate-400 hover:text-rose-600 font-bold text-lg leading-none align-middle" title="Delete">&times;</button>
+                </td>
+              </tr>`;
+          }).join('');
+      }
     }
 
-    function renderBudgetSetup() {
+    function renderBudgetAndGoalSetup() {
+      // 1. Budgets Table
       const tbody = document.getElementById('budgetSetupTableBody');
       tbody.innerHTML = db.budgets.map((b, index) => {
         let dispName = b.Target_Ref_ID;
@@ -1681,7 +2016,8 @@ Output ONLY valid JSON (no markdown wrapping) matching this exact schema:
             const cat = db.categories.find(c => c.Category_ID === b.Target_Ref_ID);
             if (cat) {
                 const gc = db.group_category.find(g => g.Category_ID === cat.Category_ID);
-                dispName = gc ? `&nbsp;&nbsp;↳ Category: ${gc.Display_Label.split('::')[1] || gc.Display_Label}` : `&nbsp;&nbsp;↳ Category: ${cat.Name}`;
+                const grp = gc ? db.groups.find(x => x.Group_ID === gc.Group_ID) : null;
+                dispName = grp ? `&nbsp;&nbsp;↳ [${grp.Name}] ${cat.Name}` : `&nbsp;&nbsp;↳ Category: ${cat.Name}`;
             }
         }
 
@@ -1697,6 +2033,7 @@ Output ONLY valid JSON (no markdown wrapping) matching this exact schema:
           <td class="py-3 text-slate-600 font-medium">${bType}</td>
           <td class="py-3 text-right font-mono-num font-bold text-slate-900">${fmtCurrency(amt)}</td>
           <td class="py-3 text-center text-xs text-slate-500 font-mono-num">${startTarget}</td>
+          <td class="py-3 text-slate-500 text-[11px]">${b.Notes || ''}</td>
           <td class="py-3 pl-2 pr-4 text-right whitespace-nowrap">
              <button onclick="openBudgetModal(${index})" class="text-indigo-600 hover:text-indigo-800 font-bold text-sm mr-3" title="Edit Budget">✎ Edit</button>
              <button onclick="deleteBudget(${index})" class="text-slate-400 hover:text-rose-600 font-bold text-lg leading-none align-middle" title="Delete Budget">&times;</button>
@@ -1704,28 +2041,79 @@ Output ONLY valid JSON (no markdown wrapping) matching this exact schema:
         </tr>
         `;
       }).join('');
+
+      // 2. Goals Table
+      const goalsBody = document.getElementById('goalsSetupTableBody');
+      if (!db.goals || db.goals.length === 0) {
+          goalsBody.innerHTML = `<tr><td colspan="8" class="py-6 text-center text-slate-400 italic">No Goals configured yet. Click "+ Add Goal" to create a project or savings goal under any Group.</td></tr>`;
+      } else {
+          goalsBody.innerHTML = db.goals.map((gl, idx) => {
+              const grp = db.groups.find(g => g.Group_ID === gl.Group_ID);
+              const grpName = grp ? grp.Name : '<span class="text-rose-500 font-bold">Unassigned</span>';
+              const acc = db.accounts.find(a => a.Account_ID === gl.Linked_Account);
+              const accName = acc ? acc.Name : (gl.Linked_Account || '<span class="text-slate-400 italic">None / Multi</span>');
+              const amt = Number(gl.Amount !== undefined ? gl.Amount : gl.Target_Value) || 0;
+              const rType = gl.Rule_Type || 'Each Month';
+              const prio = gl.Priority_Type || 'Want';
+              const impact = gl.Impact || 'personal';
+              const impactBadge = impact === 'business' ? 'bg-amber-100 text-amber-800' : 'bg-slate-100 text-slate-600';
+              const startTarget = `${gl.Start_Month || appState.selectedMonth} &rarr; ${gl.Target_Month ? gl.Target_Month : '<span class="text-slate-300 italic">Continuous</span>'}`;
+
+              return `
+              <tr class="hover:bg-emerald-50/40">
+                <td class="py-3 pl-4">
+                  <div class="font-bold text-emerald-950 flex items-center gap-1.5"><span>🎯 ${gl.Name}</span> <span class="text-[9px] font-mono-num text-emerald-600 uppercase">(${gl.Goal_ID})</span></div>
+                  <div class="text-[11px] text-slate-500">${gl.Description || ''}</div>
+                </td>
+                <td class="py-3 font-semibold text-slate-700">${grpName}</td>
+                <td class="py-3">
+                  <span class="px-1.5 py-0.5 rounded text-[10px] font-bold ${impactBadge}">${impact}</span>
+                  <span class="ml-1 px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-800 text-[10px] font-bold">${prio}</span>
+                </td>
+                <td class="py-3 text-slate-600 font-medium">${rType}</td>
+                <td class="py-3 text-right font-mono-num font-bold text-emerald-900">${fmtCurrency(amt)}</td>
+                <td class="py-3 text-center text-xs text-slate-500 font-mono-num">${startTarget}</td>
+                <td class="py-3 text-slate-600 text-[11px]">${accName}</td>
+                <td class="py-3 pl-2 pr-4 text-right whitespace-nowrap">
+                  <button onclick="openGoalModal(${idx})" class="text-emerald-700 hover:text-emerald-900 font-bold text-sm mr-3" title="Edit Goal">✎ Edit</button>
+                  <button onclick="deleteGoal(${idx})" class="text-slate-400 hover:text-rose-600 font-bold text-lg leading-none align-middle" title="Delete Goal">&times;</button>
+                </td>
+              </tr>`;
+          }).join('');
+      }
     }
 
     function renderStructure() {
-        document.getElementById('groupsTableBody').innerHTML = db.groups.map((g, i) => `
+        document.getElementById('groupsTableBody').innerHTML = db.groups.map((g, i) => {
+            const imp = g.Impact || 'personal';
+            const impBadge = imp === 'business' ? 'bg-amber-100 text-amber-800' : 'bg-slate-100 text-slate-600';
+            return `
             <tr class="hover:bg-slate-50">
                 <td class="py-2.5 pl-3 font-semibold text-slate-800">${g.Name}</td>
                 <td class="py-2.5 text-slate-500">${g.Type || '-'}</td>
+                <td class="py-2.5"><span class="px-2 py-0.5 rounded text-[10px] font-bold ${impBadge}">${imp}</span></td>
+                <td class="py-2.5 text-slate-500">${g.Budget || 'Yes'}</td>
                 <td class="py-2.5 pr-3 text-right">
                     <button onclick="openGroupModal(${i})" class="text-indigo-600 hover:text-indigo-800 font-bold mr-3" title="Edit">✎</button>
                     <button onclick="deleteGroup(${i})" class="text-slate-400 hover:text-rose-500 font-bold text-lg leading-none align-middle" title="Delete">&times;</button>
                 </td>
-            </tr>
-        `).join('');
+            </tr>`;
+        }).join('');
 
         document.getElementById('categoriesTableBody').innerHTML = db.categories.map((c, i) => {
             const gc = db.group_category.find(x => x.Category_ID === c.Category_ID);
             const grp = gc ? db.groups.find(x => x.Group_ID === gc.Group_ID) : null;
             const gName = grp ? grp.Name : '<span class="text-rose-500 text-[10px] font-bold">⚠ UNLINKED</span>';
+            const imp = c.Impact || 'personal';
+            const impBadge = imp === 'business' ? 'bg-amber-100 text-amber-800' : 'bg-slate-100 text-slate-600';
             return `
             <tr class="hover:bg-slate-50">
                 <td class="py-2.5 pl-3 font-semibold text-slate-800">${c.Name}</td>
                 <td class="py-2.5 text-slate-600 font-medium">${gName}</td>
+                <td class="py-2.5">
+                  <span class="text-slate-500 text-[11px] mr-1">${c.Type || 'Flexible'}</span>
+                  <span class="px-1.5 py-0.5 rounded text-[10px] font-bold ${impBadge}">${imp}</span>
+                </td>
                 <td class="py-2.5 pr-3 text-right">
                     <button onclick="openCategoryModal(${i})" class="text-indigo-600 hover:text-indigo-800 font-bold mr-3" title="Edit">✎</button>
                     <button onclick="deleteCategory(${i})" class="text-slate-400 hover:text-rose-500 font-bold text-lg leading-none align-middle" title="Delete">&times;</button>
@@ -1740,11 +2128,16 @@ Output ONLY valid JSON (no markdown wrapping) matching this exact schema:
         editingGroupIdx = idx;
         document.getElementById('groupModalTitle').textContent = idx >= 0 ? 'Edit Group' : 'Add Group';
         if(idx >= 0) {
-            document.getElementById('newGrpName').value = db.groups[idx].Name;
-            document.getElementById('newGrpType').value = db.groups[idx].Type || 'Flexible';
+            const g = db.groups[idx];
+            document.getElementById('newGrpName').value = g.Name;
+            document.getElementById('newGrpType').value = g.Type || 'Flexible';
+            document.getElementById('newGrpImpact').value = g.Impact || 'personal';
+            document.getElementById('newGrpBudget').value = g.Budget || 'Yes';
         } else {
             document.getElementById('newGrpName').value = '';
             document.getElementById('newGrpType').value = 'Flexible';
+            document.getElementById('newGrpImpact').value = 'personal';
+            document.getElementById('newGrpBudget').value = 'Yes';
         }
         document.getElementById('groupModal').classList.remove('hidden'); document.getElementById('groupModal').classList.add('flex');
     }
@@ -1752,11 +2145,15 @@ Output ONLY valid JSON (no markdown wrapping) matching this exact schema:
     function saveGroup() {
         const name = document.getElementById('newGrpName').value.trim();
         const type = document.getElementById('newGrpType').value;
+        const impact = document.getElementById('newGrpImpact').value;
+        const budget = document.getElementById('newGrpBudget').value;
         if(!name) return alert('Enter a group name');
         
         if(editingGroupIdx >= 0) {
             db.groups[editingGroupIdx].Name = name;
             db.groups[editingGroupIdx].Type = type;
+            db.groups[editingGroupIdx].Impact = impact;
+            db.groups[editingGroupIdx].Budget = budget;
             const gId = db.groups[editingGroupIdx].Group_ID;
             db.group_category.forEach(gc => {
                 if(gc.Group_ID === gId) {
@@ -1765,7 +2162,7 @@ Output ONLY valid JSON (no markdown wrapping) matching this exact schema:
                 }
             });
         } else {
-            db.groups.push({ Group_ID: 'G_' + Math.random().toString(36).substr(2,6).toUpperCase(), Name: name, Type: type, Impact: 'personal', Budget: 'Yes' });
+            db.groups.push({ Group_ID: 'G_' + Math.random().toString(36).substr(2,6).toUpperCase(), Name: name, Type: type, Impact: impact, Budget: budget });
         }
         saveDataToLocal(); populateDropdowns(); renderAll(); closeGroupModal();
     }
@@ -1784,7 +2181,7 @@ Output ONLY valid JSON (no markdown wrapping) matching this exact schema:
         document.getElementById('categoryModalTitle').textContent = idx >= 0 ? 'Edit Category' : 'Add Category';
         
         let grpOpts = '<option value="" disabled selected>Select Parent Group...</option>';
-        db.groups.forEach(g => grpOpts += `<option value="${g.Group_ID}">${g.Name}</option>`);
+        db.groups.forEach(g => grpOpts += `<option value="${g.Group_ID}">${g.Name} (${g.Impact || 'personal'})</option>`);
         document.getElementById('newCatGroup').innerHTML = grpOpts;
 
         if(idx >= 0) {
@@ -1792,9 +2189,15 @@ Output ONLY valid JSON (no markdown wrapping) matching this exact schema:
             document.getElementById('newCatName').value = c.Name;
             const gc = db.group_category.find(x => x.Category_ID === c.Category_ID);
             document.getElementById('newCatGroup').value = gc ? gc.Group_ID : '';
+            document.getElementById('newCatType').value = c.Type || 'Flexible';
+            document.getElementById('newCatImpact').value = c.Impact || 'personal';
+            document.getElementById('newCatBudget').value = c.Budget || 'Yes';
         } else {
             document.getElementById('newCatName').value = '';
             document.getElementById('newCatGroup').value = '';
+            document.getElementById('newCatType').value = 'Flexible';
+            document.getElementById('newCatImpact').value = 'personal';
+            document.getElementById('newCatBudget').value = 'Yes';
         }
         document.getElementById('categoryModal').classList.remove('hidden'); document.getElementById('categoryModal').classList.add('flex');
     }
@@ -1802,15 +2205,21 @@ Output ONLY valid JSON (no markdown wrapping) matching this exact schema:
     function saveCategory() {
         const name = document.getElementById('newCatName').value.trim();
         const grpId = document.getElementById('newCatGroup').value;
+        const type = document.getElementById('newCatType').value;
+        const impact = document.getElementById('newCatImpact').value;
+        const budget = document.getElementById('newCatBudget').value;
         if(!name || !grpId) return alert('Enter a name and select a parent group');
         
         let catId;
         if(editingCatIdx >= 0) {
             catId = db.categories[editingCatIdx].Category_ID;
             db.categories[editingCatIdx].Name = name;
+            db.categories[editingCatIdx].Type = type;
+            db.categories[editingCatIdx].Impact = impact;
+            db.categories[editingCatIdx].Budget = budget;
         } else {
             catId = 'C_' + Math.random().toString(36).substr(2,6).toUpperCase();
-            db.categories.push({ Category_ID: catId, Name: name, Type: 'Flexible', Impact: 'personal', Budget: 'Yes' });
+            db.categories.push({ Category_ID: catId, Name: name, Type: type, Impact: impact, Budget: budget });
         }
 
         const grp = db.groups.find(g => g.Group_ID === grpId);
@@ -1836,7 +2245,7 @@ Output ONLY valid JSON (no markdown wrapping) matching this exact schema:
     }
 
     // --- TRANSACTION CRUD & SPLIT LOGIC ---
-   let editingTxnIdx = -1;
+    let editingTxnIdx = -1;
     function openTransactionModal(idx = -1) {
         editingTxnIdx = idx;
         document.getElementById('txnModalTitle').textContent = idx >= 0 ? 'Edit Transaction' : 'Add Transaction';
@@ -1848,7 +2257,6 @@ Output ONLY valid JSON (no markdown wrapping) matching this exact schema:
         if (idx >= 0) {
             const t = db.transactions[idx];
             
-            // Lock Source Account & Date
             accSelect.disabled = true;
             accSelect.classList.add('bg-slate-100', 'cursor-not-allowed', 'opacity-70');
             dateInput.disabled = true;
@@ -1865,13 +2273,12 @@ Output ONLY valid JSON (no markdown wrapping) matching this exact schema:
             accSelect.value = t.Account_ID || '';
             
             document.getElementById('newTxnGroup').value = t.Group_ID || '';
-            updateCategoryDropdown('newTxnCategory', t.Group_ID, t.Category_ID);
+            const selectedDest = t.Goal_ID ? `Goal|${t.Goal_ID}` : (t.Category_ID ? `Category|${t.Category_ID}` : '');
+            updateCategoryDropdown('newTxnCategory', t.Group_ID, selectedDest);
             
             document.getElementById('newTxnMerchant').value = t.Merchant || '';
             document.getElementById('newTxnAmount').value = t.Amount || '';
-            document.getElementById('newTxnGoal').value = t.Goal_ID || '';
         } else {
-            // Unlock Source Account & Date
             accSelect.disabled = false;
             accSelect.classList.remove('bg-slate-100', 'cursor-not-allowed', 'opacity-70');
             dateInput.disabled = false;
@@ -1882,10 +2289,9 @@ Output ONLY valid JSON (no markdown wrapping) matching this exact schema:
             document.getElementById('newTxnMonth').value = appState.selectedMonth;
             accSelect.value = '';
             document.getElementById('newTxnGroup').value = '';
-            document.getElementById('newTxnCategory').innerHTML = '<option value="" disabled selected>Select Category...</option>';
+            document.getElementById('newTxnCategory').innerHTML = '<option value="" disabled selected>Select Category / Goal...</option>';
             document.getElementById('newTxnMerchant').value = '';
             document.getElementById('newTxnAmount').value = '';
-            document.getElementById('newTxnGoal').value = '';
         }
         document.getElementById('txnModal').classList.remove('hidden'); document.getElementById('txnModal').classList.add('flex');
     }
@@ -1897,24 +2303,31 @@ Output ONLY valid JSON (no markdown wrapping) matching this exact schema:
         const txnMonth = document.getElementById('newTxnMonth').value;
         const acc = document.getElementById('newTxnAccount').value;
         const grp = document.getElementById('newTxnGroup').value;
-        const cat = document.getElementById('newTxnCategory').value;
+        const destVal = document.getElementById('newTxnCategory').value;
         const merchant = document.getElementById('newTxnMerchant').value.trim() || 'New Expense';
         const amount = parseFloat(document.getElementById('newTxnAmount').value) || 0;
-        const goalId = document.getElementById('newTxnGoal').value;
         
-        if (!txnDate || !txnMonth || !acc || !cat || amount <= 0) return alert('Please complete all required fields.');
+        if (!txnDate || !txnMonth || !acc || !grp || !destVal || amount === 0) return alert('Please complete all required fields.');
         
+        const [destScope, destId] = destVal.split('|');
+        const catId = destScope === 'Category' ? destId : '';
+        const goalId = destScope === 'Goal' ? destId : '';
+
         if (editingTxnIdx >= 0) {
             db.transactions[editingTxnIdx].Date = txnDate;
             db.transactions[editingTxnIdx].Month = txnMonth;
             db.transactions[editingTxnIdx].Account_ID = acc;
             db.transactions[editingTxnIdx].Group_ID = grp;
-            db.transactions[editingTxnIdx].Category_ID = cat;
+            db.transactions[editingTxnIdx].Category_ID = catId;
+            db.transactions[editingTxnIdx].Goal_ID = goalId;
             db.transactions[editingTxnIdx].Merchant = merchant;
             db.transactions[editingTxnIdx].Amount = amount;
-            db.transactions[editingTxnIdx].Goal_ID = goalId;
         } else {
-            db.transactions.push({ Txn_ID: 'T' + Math.floor(Math.random()*10000), Date: txnDate, Month: txnMonth, Account_ID: acc, Merchant: merchant, Amount: amount, Group_ID: grp, Category_ID: cat, Goal_ID: goalId, Include: '1' });
+            db.transactions.push({
+                Txn_ID: 'T' + Math.floor(Math.random()*10000),
+                Date: txnDate, Month: txnMonth, Account_ID: acc, Merchant: merchant, Amount: amount,
+                Group_ID: grp, Category_ID: catId, Goal_ID: goalId, Include: '1'
+            });
         }
         saveDataToLocal(); closeTransactionModal(); renderAll(); switchTab('ledger');
     }
@@ -1934,11 +2347,12 @@ Output ONLY valid JSON (no markdown wrapping) matching this exact schema:
         document.getElementById('splitOrigTotal').textContent = parseFloat(t.Amount).toFixed(2);
         
         document.getElementById('splitGrpA').value = t.Group_ID || '';
-        updateCategoryDropdown('splitCatA', t.Group_ID, t.Category_ID);
+        const origDest = t.Goal_ID ? `Goal|${t.Goal_ID}` : (t.Category_ID ? `Category|${t.Category_ID}` : '');
+        updateCategoryDropdown('splitCatA', t.Group_ID, origDest);
         document.getElementById('splitAmtA').value = '';
         
-        document.getElementById('splitGrpB').value = '';
-        document.getElementById('splitCatB').innerHTML = '<option value="" disabled selected>Category B...</option>';
+        document.getElementById('splitGrpB').value = t.Group_ID || '';
+        updateCategoryDropdown('splitCatB', t.Group_ID, '');
         document.getElementById('splitAmtB').value = '';
         
         document.getElementById('splitModal').classList.remove('hidden'); document.getElementById('splitModal').classList.add('flex');
@@ -1956,25 +2370,36 @@ Output ONLY valid JSON (no markdown wrapping) matching this exact schema:
     function processSplitTransaction() {
         const orig = db.transactions[splittingTxnIdx];
         const grpA = document.getElementById('splitGrpA').value;
-        const catA = document.getElementById('splitCatA').value;
+        const destA = document.getElementById('splitCatA').value;
         const amtA = parseFloat(document.getElementById('splitAmtA').value);
         
         const grpB = document.getElementById('splitGrpB').value;
-        const catB = document.getElementById('splitCatB').value;
+        const destB = document.getElementById('splitCatB').value;
         const amtB = parseFloat(document.getElementById('splitAmtB').value);
 
-        if (!catA || !catB || isNaN(amtA) || isNaN(amtB) || (amtA + amtB).toFixed(2) !== parseFloat(orig.Amount).toFixed(2)) {
-            return alert('Please select categories and ensure amounts equal the original total.');
+        if (!destA || !destB || isNaN(amtA) || isNaN(amtB) || (amtA + amtB).toFixed(2) !== parseFloat(orig.Amount).toFixed(2)) {
+            return alert('Please select a Category or Goal for both parts and ensure amounts equal the original total.');
         }
 
-        const txnA = { ...orig, Txn_ID: orig.Txn_ID + '-A', Amount: amtA, Group_ID: grpA, Category_ID: catA };
-        const txnB = { ...orig, Txn_ID: orig.Txn_ID + '-B', Amount: amtB, Group_ID: grpB, Category_ID: catB };
+        const [scopeA, idA] = destA.split('|');
+        const [scopeB, idB] = destB.split('|');
+
+        const txnA = {
+            ...orig, Txn_ID: orig.Txn_ID + '-A', Amount: amtA, Group_ID: grpA,
+            Category_ID: scopeA === 'Category' ? idA : '',
+            Goal_ID: scopeA === 'Goal' ? idA : ''
+        };
+        const txnB = {
+            ...orig, Txn_ID: orig.Txn_ID + '-B', Amount: amtB, Group_ID: grpB,
+            Category_ID: scopeB === 'Category' ? idB : '',
+            Goal_ID: scopeB === 'Goal' ? idB : ''
+        };
         
         db.transactions.splice(splittingTxnIdx, 1, txnA, txnB);
         saveDataToLocal(); closeSplitModal(); renderAll(); switchTab('ledger');
     }
 
-    // --- ACCOUNT & BUDGET & GOAL CRUD ---
+    // --- ACCOUNT, TODO, BUDGET & GOAL CRUD ---
     let editingAccIdx = -1;
     function openAccountModal(idx) {
         editingAccIdx = idx;
@@ -2004,7 +2429,61 @@ Output ONLY valid JSON (no markdown wrapping) matching this exact schema:
         }
         saveDataToLocal(); populateDropdowns(); renderAll(); closeAccountModal();
     }
+    function deleteAccount(idx) {
+        if(confirm('Delete this account?')) {
+            db.accounts.splice(idx, 1);
+            saveDataToLocal(); populateDropdowns(); renderAll();
+        }
+    }
 
+    // TODOS CRUD
+    let editingTodoIdx = -1;
+    function openTodoModal(idx) {
+        editingTodoIdx = idx;
+        document.getElementById('todoModalTitle').textContent = idx >= 0 ? 'Edit Todo Item' : 'Add Todo Item';
+        if(idx >= 0) {
+            const td = db.todos[idx];
+            document.getElementById('newTodoTask').value = td.Task || '';
+            document.getElementById('newTodoType').value = td.Type || '';
+            document.getElementById('newTodoPriority').value = td.Priority || 'Medium';
+            document.getElementById('newTodoDueDate').value = td.Due_Date || '';
+        } else {
+            document.getElementById('newTodoTask').value = '';
+            document.getElementById('newTodoType').value = 'Budgeting';
+            document.getElementById('newTodoPriority').value = 'Medium';
+            document.getElementById('newTodoDueDate').value = '';
+        }
+        document.getElementById('todoModal').classList.remove('hidden'); document.getElementById('todoModal').classList.add('flex');
+    }
+    function closeTodoModal() { document.getElementById('todoModal').classList.add('hidden'); document.getElementById('todoModal').classList.remove('flex'); }
+    function saveTodo() {
+        const task = document.getElementById('newTodoTask').value.trim();
+        const type = document.getElementById('newTodoType').value.trim() || 'General';
+        const prio = document.getElementById('newTodoPriority').value;
+        const due = document.getElementById('newTodoDueDate').value;
+        if(!task) return alert('Please enter a task description.');
+
+        if(editingTodoIdx >= 0) {
+            db.todos[editingTodoIdx] = { ...db.todos[editingTodoIdx], Task: task, Type: type, Priority: prio, Due_Date: due };
+        } else {
+            db.todos.push({ Todo_ID: 'TD_' + Math.floor(Math.random()*10000), Task: task, Type: type, Priority: prio, Due_Date: due, Completed: '0' });
+        }
+        saveDataToLocal(); renderAll(); closeTodoModal();
+    }
+    function toggleTodoComplete(idx, isChecked) {
+        if (db.todos[idx]) {
+            db.todos[idx].Completed = isChecked ? '1' : '0';
+            saveDataToLocal(); renderAll();
+        }
+    }
+    function deleteTodo(idx) {
+        if(confirm('Delete this Todo item?')) {
+            db.todos.splice(idx, 1);
+            saveDataToLocal(); renderAll();
+        }
+    }
+
+    // BUDGETS CRUD
     let editingBudgIdx = -1;
     function toggleBudgetTargetDate() {
         const type = document.getElementById('newBudgType').value;
@@ -2058,26 +2537,34 @@ Output ONLY valid JSON (no markdown wrapping) matching this exact schema:
         if(confirm('Delete this budget?')) { db.budgets.splice(idx, 1); saveDataToLocal(); renderAll(); }
     }
 
+    // GOALS CRUD (Peer to Budgets under a Parent Group)
     let editingGoalIdx = -1;
     function openGoalModal(idx) {
         editingGoalIdx = idx;
         document.getElementById('goalModalTitle').textContent = idx >= 0 ? 'Edit Goal' : 'Add Goal';
         if(idx >= 0) {
             const g = db.goals[idx];
-            // Backward compatibility: determine scope if it wasn't saved previously
-            let scope = g.Scope_Level || (db.groups.some(grp => grp.Group_ID === g.Linked_GC_ID) ? 'Group' : 'Category');
-            
-            document.getElementById('newGoalName').value = g.Name;
-            document.getElementById('newGoalDesc').value = g.Description;
-            document.getElementById('newGoalAccount').value = g.Linked_Account;
-            document.getElementById('newGoalCategory').value = `${scope}|${g.Linked_GC_ID}`;
-            document.getElementById('newGoalAmount').value = g.Target_Value;
+            document.getElementById('newGoalName').value = g.Name || '';
+            document.getElementById('newGoalGroup').value = g.Group_ID || '';
+            document.getElementById('newGoalDesc').value = g.Description || '';
+            document.getElementById('newGoalImpact').value = g.Impact || 'personal';
+            document.getElementById('newGoalPriority').value = g.Priority_Type || 'Want';
+            document.getElementById('newGoalRuleType').value = g.Rule_Type || 'Each Month';
+            document.getElementById('newGoalAmount').value = g.Amount !== undefined ? g.Amount : (g.Target_Value || '');
+            document.getElementById('newGoalStartMonth').value = g.Start_Month || appState.selectedMonth;
+            document.getElementById('newGoalTargetMonth').value = g.Target_Month || '';
+            document.getElementById('newGoalAccount').value = g.Linked_Account || '';
         } else {
             document.getElementById('newGoalName').value = '';
+            document.getElementById('newGoalGroup').value = '';
             document.getElementById('newGoalDesc').value = '';
-            document.getElementById('newGoalAccount').value = '';
-            document.getElementById('newGoalCategory').value = '';
+            document.getElementById('newGoalImpact').value = 'personal';
+            document.getElementById('newGoalPriority').value = 'Want';
+            document.getElementById('newGoalRuleType').value = 'Each Month';
             document.getElementById('newGoalAmount').value = '';
+            document.getElementById('newGoalStartMonth').value = appState.selectedMonth;
+            document.getElementById('newGoalTargetMonth').value = '';
+            document.getElementById('newGoalAccount').value = '';
         }
         document.getElementById('goalModal').classList.remove('hidden'); document.getElementById('goalModal').classList.add('flex');
     }
@@ -2085,20 +2572,44 @@ Output ONLY valid JSON (no markdown wrapping) matching this exact schema:
     
     function saveGoal() {
         const name = document.getElementById('newGoalName').value.trim();
+        const grpId = document.getElementById('newGoalGroup').value;
         const desc = document.getElementById('newGoalDesc').value.trim();
-        const acc = document.getElementById('newGoalAccount').value;
-        const scopeVal = document.getElementById('newGoalCategory').value;
+        const impact = document.getElementById('newGoalImpact').value;
+        const prio = document.getElementById('newGoalPriority').value;
+        const rType = document.getElementById('newGoalRuleType').value;
         const amt = parseFloat(document.getElementById('newGoalAmount').value);
-        if(!name || !acc || !scopeVal || isNaN(amt)) return alert('Fill required fields.');
-        
-        const [scopeLevel, targetRef] = scopeVal.split('|');
+        const sMo = document.getElementById('newGoalStartMonth').value || appState.selectedMonth;
+        const tMo = document.getElementById('newGoalTargetMonth').value || '';
+        const acc = document.getElementById('newGoalAccount').value || '';
+
+        if(!name || !grpId || isNaN(amt)) return alert('Please provide a Goal Name, Parent Group, and Target Value.');
+
+        const goalPayload = {
+            Name: name,
+            Group_ID: grpId,
+            Description: desc,
+            Impact: impact,
+            Priority_Type: prio,
+            Rule_Type: rType,
+            Amount: amt,
+            Target_Value: amt,
+            Start_Month: sMo,
+            Target_Month: tMo,
+            Linked_Account: acc
+        };
 
         if(editingGoalIdx >= 0) {
-            db.goals[editingGoalIdx] = { ...db.goals[editingGoalIdx], Name: name, Description: desc, Linked_Account: acc, Linked_GC_ID: targetRef, Scope_Level: scopeLevel, Target_Value: amt };
+            db.goals[editingGoalIdx] = { ...db.goals[editingGoalIdx], ...goalPayload };
         } else {
-            db.goals.push({ Goal_ID: 'GL_' + Math.floor(Math.random()*10000), Name: name, Description: desc, Linked_Account: acc, Linked_GC_ID: targetRef, Scope_Level: scopeLevel, Target_Value: amt });
+            db.goals.push({ Goal_ID: 'GL_' + Math.floor(Math.random()*10000), ...goalPayload });
         }
-        saveDataToLocal(); renderAll(); closeGoalModal();
+        saveDataToLocal(); populateDropdowns(); renderAll(); closeGoalModal();
+    }
+    function deleteGoal(idx) {
+        if(confirm('Delete this Goal?')) {
+            db.goals.splice(idx, 1);
+            saveDataToLocal(); populateDropdowns(); renderAll();
+        }
     }
 
     window.addEventListener('DOMContentLoaded', initApp);
