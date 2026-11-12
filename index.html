@@ -537,7 +537,10 @@
           </div>
       </div>
 
-      <input id="newTxnMerchant" type="text" placeholder="Merchant name..." class="w-full border rounded px-3 py-2" />
+      <div class="space-y-1 mb-2">
+          <label class="text-[10px] text-slate-500 font-bold uppercase">Link to Goal (Optional)</label>
+          <select id="newTxnGoal" class="w-full border rounded px-3 py-2 bg-emerald-50/50 text-emerald-800 border-emerald-200"><option value="">No Goal Linked</option></select>
+      </div>
       <input id="newTxnAmount" type="number" step="0.01" placeholder="Amount ($)..." class="w-full border rounded px-3 py-2 font-mono-num" />
       <div class="flex justify-end gap-2 pt-2">
         <button onclick="closeTransactionModal()" class="px-3 py-1.5 border rounded hover:bg-slate-50">Cancel</button>
@@ -1139,6 +1142,8 @@ Output ONLY valid JSON (no markdown wrapping) matching this exact schema:
         document.getElementById('filterAccount').innerHTML = '<option value="">All Accounts</option>' + accs;
         document.getElementById('filterGroup').innerHTML = '<option value="">All Groups</option>' + db.groups.map(g => `<option value="${g.Group_ID}">${g.Name}</option>`).join('');
         document.getElementById('filterCategory').innerHTML = '<option value="">All Categories</option>' + db.categories.map(c => `<option value="${c.Category_ID}">${c.Name}</option>`).join('');
+        const goalOpts = db.goals.map(g => `<option value="${g.Goal_ID}">${g.Name}</option>`).join('');
+        document.getElementById('newTxnGoal').innerHTML = '<option value="">No Goal Linked</option>' + goalOpts;
     }
 
     function updateCategoryDropdown(targetId, groupId, selectedCatId = '') {
@@ -1546,7 +1551,8 @@ Output ONLY valid JSON (no markdown wrapping) matching this exact schema:
               GroupName: grpObj ? grpObj.Name : (t.Group_ID || 'Uncategorized'),
               GroupID: t.Group_ID || '',
               CategoryName: catObj ? catObj.Name : (t.Category_ID || 'Uncategorized'),
-              CategoryID: t.Category_ID || ''
+              CategoryID: t.Category_ID || '',
+              GoalName: (db.goals.find(g => g.Goal_ID === t.Goal_ID) || {}).Name || ''
           };
       });
 
@@ -1610,7 +1616,10 @@ Output ONLY valid JSON (no markdown wrapping) matching this exact schema:
           <td class="py-3 font-semibold text-slate-700">${t.AccountName}</td>
           <td class="py-3 text-slate-800">${t.Merchant}</td>
           <td class="py-3 text-slate-600 font-medium">${t.GroupName}</td>
-          <td class="py-3 text-slate-600 font-medium">${t.CategoryName}</td>
+          <td class="py-3 text-slate-600 font-medium">
+            ${t.CategoryName}
+            ${t.GoalName ? `<br><span class="inline-block mt-0.5 px-1.5 py-0.5 bg-emerald-100 text-emerald-700 text-[9px] font-bold rounded-sm uppercase tracking-wide">Goal: ${t.GoalName}</span>` : ''}
+          </td>
           <td class="py-3 text-right font-mono-num font-bold ${amountColor}">${fmtCurrency(t.Amount)}</td>
           <td class="py-3 pl-2 pr-4 text-right whitespace-nowrap">
              <button onclick="openTransactionModal(${t.originalIndex})" class="text-indigo-600 hover:text-indigo-800 font-bold text-sm mr-2" title="Edit">✎</button>
@@ -1859,6 +1868,7 @@ Output ONLY valid JSON (no markdown wrapping) matching this exact schema:
             
             document.getElementById('newTxnMerchant').value = t.Merchant || '';
             document.getElementById('newTxnAmount').value = t.Amount || '';
+            document.getElementById('newTxnGoal').value = t.Goal_ID || '';
         } else {
             // Unlock Source Account
             accSelect.disabled = false;
@@ -1876,6 +1886,7 @@ Output ONLY valid JSON (no markdown wrapping) matching this exact schema:
             document.getElementById('newTxnCategory').innerHTML = '<option value="" disabled selected>Select Category...</option>';
             document.getElementById('newTxnMerchant').value = '';
             document.getElementById('newTxnAmount').value = '';
+          document.getElementById('newTxnGoal').value = '';
         }
         document.getElementById('txnModal').classList.remove('hidden'); document.getElementById('txnModal').classList.add('flex');
     }
@@ -1890,6 +1901,7 @@ Output ONLY valid JSON (no markdown wrapping) matching this exact schema:
         const cat = document.getElementById('newTxnCategory').value;
         const merchant = document.getElementById('newTxnMerchant').value.trim() || 'New Expense';
         const amount = parseFloat(document.getElementById('newTxnAmount').value) || 0;
+        const goalId = document.getElementById('newTxnGoal').value;
         
         if (!txnDate || !txnMonth || !acc || !cat || amount <= 0) return alert('Please complete all required fields.');
         
@@ -1901,8 +1913,9 @@ Output ONLY valid JSON (no markdown wrapping) matching this exact schema:
             db.transactions[editingTxnIdx].Category_ID = cat;
             db.transactions[editingTxnIdx].Merchant = merchant;
             db.transactions[editingTxnIdx].Amount = amount;
+            db.transactions[editingTxnIdx].Goal_ID = goalId;
         } else {
-            db.transactions.push({ Txn_ID: 'T' + Math.floor(Math.random()*10000), Date: txnDate, Month: txnMonth, Account_ID: acc, Merchant: merchant, Amount: amount, Group_ID: grp, Category_ID: cat, Include: '1' });
+            db.transactions.push({ Txn_ID: 'T' + Math.floor(Math.random()*10000), Date: txnDate, Month: txnMonth, Account_ID: acc, Merchant: merchant, Amount: amount, Group_ID: grp, Category_ID: cat, Goal_ID: goalId, Include: '1' });
         }
         saveDataToLocal(); closeTransactionModal(); renderAll(); switchTab('ledger');
     }
