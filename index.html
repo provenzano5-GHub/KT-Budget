@@ -695,10 +695,24 @@
     function exportData() {
         db.lastBackup = Date.now();
         localStorage.setItem(STORAGE_KEY, JSON.stringify(db)); 
+        
+        // 1. Get the true local date to prevent the UTC "next day" shift
+        const now = new Date();
+        const y = now.getFullYear();
+        const m = String(now.getMonth() + 1).padStart(2, '0');
+        const d = String(now.getDate()).padStart(2, '0');
+        const localDate = `${y}-${m}-${d}`;
+
+        // 2. Calculate the alphabetical increment (a, b, c...) for today
+        let backupCount = parseInt(localStorage.getItem('ktbackup_count_' + localDate) || '0');
+        let alpha = String.fromCharCode(97 + (backupCount % 26)); // 97 is ASCII for 'a'
+        localStorage.setItem('ktbackup_count_' + localDate, backupCount + 1);
+
         const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(db));
         const downloadAnchorNode = document.createElement('a');
         downloadAnchorNode.setAttribute("href", dataStr);
-        downloadAnchorNode.setAttribute("download", "ktbudget_backup_" + new Date().toISOString().slice(0,10) + ".json");
+        downloadAnchorNode.setAttribute("download", `ktbudget_backup_${localDate}${alpha}.json`);
+        
         document.body.appendChild(downloadAnchorNode);
         downloadAnchorNode.click();
         downloadAnchorNode.remove();
@@ -1115,13 +1129,7 @@ Output ONLY valid JSON (no markdown wrapping) matching this exact schema:
         document.getElementById('splitGrpA').innerHTML = grpOptions;
         document.getElementById('splitGrpB').innerHTML = grpOptions;
 
-        let catOptions = '';
-        db.categories.forEach(c => {
-            const gc = db.group_category.find(g => g.Category_ID === c.Category_ID);
-            const grp = gc ? db.groups.find(g => g.Group_ID === gc.Group_ID) : null;
-            const groupName = grp ? grp.Name : 'Uncategorized';
-            catOptions += `<option value="${c.Category_ID}">[${groupName}] ${c.Name}</option>`;
-        });
+        document.getElementById('newGoalCategory').innerHTML = '<option value="" disabled selected>Link to Scope (Group or Category)...</option>' + scopeOptions;
         document.getElementById('newGoalCategory').innerHTML = '<option value="" disabled selected>Link to Category...</option>' + catOptions;
 
         const accs = db.accounts.map(a => `<option value="${a.Account_ID}">${a.Name} (${a.Type})</option>`).join('');
@@ -1236,6 +1244,8 @@ Output ONLY valid JSON (no markdown wrapping) matching this exact schema:
           });
           const grpBg = db.budgets.find(b => b.Target_Ref_ID === g.Group_ID);
           const grpTarget = getMonthlyTargetCalculation(grpBg, appState.selectedMonth);
+          const grpLinkedGoals = db.goals.filter(goal => goal.Linked_GC_ID === g.Group_ID);
+          grpTarget += grpLinkedGoals.reduce((sum, goal) => sum + (Number(goal.Target_Value) || 0), 0);
           totT += Math.max(grpTarget, catTargetsTotal);
       });
 
@@ -1310,6 +1320,8 @@ Output ONLY valid JSON (no markdown wrapping) matching this exact schema:
 
         const grpBg = db.budgets.find(b => b.Target_Ref_ID === g.Group_ID);
         const explicitGroupTarget = getMonthlyTargetCalculation(grpBg, appState.selectedMonth);
+        const grpLinkedGoals = db.goals.filter(goal => goal.Linked_GC_ID === g.Group_ID);
+        explicitGroupTarget += grpLinkedGoals.reduce((sum, goal) => sum + (Number(goal.Target_Value) || 0), 0);
         const effectiveGroupTarget = Math.max(explicitGroupTarget, sumCatTargets);
         const unallocated = effectiveGroupTarget - sumCatTargets;
         const grpVariance = effectiveGroupTarget - sumCatActuals;
@@ -1382,6 +1394,8 @@ Output ONLY valid JSON (no markdown wrapping) matching this exact schema:
                 });
                 const grpBg = db.budgets.find(b => b.Target_Ref_ID === refId);
                 const grpTarget = getMonthlyTargetCalculation(grpBg, monthStr);
+                const grpLinkedGoals = db.goals.filter(goal => goal.Linked_GC_ID === refId);
+                grpTarget += grpLinkedGoals.reduce((sum, goal) => sum + (Number(goal.Target_Value) || 0), 0);
                 target = Math.max(grpTarget, catTargetsTotal);
 
                 const catIds = groupGc.map(x => x.Category_ID);
@@ -1624,18 +1638,28 @@ Output ONLY valid JSON (no markdown wrapping) matching this exact schema:
       document.getElementById('goalsGrid').innerHTML = db.goals.map((g, idx) => {
          const linkedAcc = db.accounts.find(a => a.Account_ID === g.Linked_Account);
          const accName = linkedAcc ? linkedAcc.Name : g.Linked_Account;
+         document.getElementById('goalsGrid').innerHTML = db.goals.map((g, idx) => {
+         const linkedAcc = db.accounts.find(a => a.Account_ID === g.Linked_Account);
+         const accName = linkedAcc ? linkedAcc.Name : g.Linked_Account;
+         
+         let scopeName = g.Linked_GC_ID;
          const linkedCat = db.categories.find(c => c.Category_ID === g.Linked_GC_ID);
-         const catName = linkedCat ? linkedCat.Name : g.Linked_GC_ID;
+         if (linkedCat) scopeName = 'Cat: ' + linkedCat.Name;
+         else {
+             const linkedGrp = db.groups.find(gr => gr.Group_ID === g.Linked_GC_ID);
+             if (linkedGrp) scopeName = 'Grp: ' + linkedGrp.Name;
+         }
+
          return `
         <div class="p-4 rounded-xl border border-emerald-100 bg-emerald-50 space-y-2 relative group">
           <button onclick="openGoalModal(${idx})" class="absolute top-3 right-3 text-emerald-600 hover:text-emerald-800 text-xs font-bold opacity-0 group-hover:opacity-100 transition">✎ Edit</button>
           <div class="flex justify-between items-center pr-10"><h3 class="font-bold text-emerald-900">${g.Name}</h3><span class="text-[10px] uppercase tracking-wide font-bold text-emerald-600">${g.Goal_ID}</span></div>
           <p class="text-xs text-emerald-700">${g.Description}</p>
           <div class="text-lg font-bold font-mono-num text-emerald-800">Target: ${fmtCurrency(g.Target_Value)}</div>
-          <p class="text-[11px] text-emerald-600 font-semibold leading-tight">Account: ${accName}<br/>Category: ${catName}</p>
+          <p class="text-[11px] text-emerald-600 font-semibold leading-tight">Account: ${accName}<br/>Scope: ${scopeName}</p>
         </div>
-      `}).join('');
-    }
+      `}).join('');         
+   }
 
     function renderBudgetSetup() {
       const tbody = document.getElementById('budgetSetupTableBody');
@@ -2031,11 +2055,15 @@ Output ONLY valid JSON (no markdown wrapping) matching this exact schema:
         editingGoalIdx = idx;
         document.getElementById('goalModalTitle').textContent = idx >= 0 ? 'Edit Goal' : 'Add Goal';
         if(idx >= 0) {
-            document.getElementById('newGoalName').value = db.goals[idx].Name;
-            document.getElementById('newGoalDesc').value = db.goals[idx].Description;
-            document.getElementById('newGoalAccount').value = db.goals[idx].Linked_Account;
-            document.getElementById('newGoalCategory').value = db.goals[idx].Linked_GC_ID;
-            document.getElementById('newGoalAmount').value = db.goals[idx].Target_Value;
+            const g = db.goals[idx];
+            // Backward compatibility: determine scope if it wasn't saved previously
+            let scope = g.Scope_Level || (db.groups.some(grp => grp.Group_ID === g.Linked_GC_ID) ? 'Group' : 'Category');
+            
+            document.getElementById('newGoalName').value = g.Name;
+            document.getElementById('newGoalDesc').value = g.Description;
+            document.getElementById('newGoalAccount').value = g.Linked_Account;
+            document.getElementById('newGoalCategory').value = `${scope}|${g.Linked_GC_ID}`;
+            document.getElementById('newGoalAmount').value = g.Target_Value;
         } else {
             document.getElementById('newGoalName').value = '';
             document.getElementById('newGoalDesc').value = '';
@@ -2046,18 +2074,21 @@ Output ONLY valid JSON (no markdown wrapping) matching this exact schema:
         document.getElementById('goalModal').classList.remove('hidden'); document.getElementById('goalModal').classList.add('flex');
     }
     function closeGoalModal() { document.getElementById('goalModal').classList.add('hidden'); document.getElementById('goalModal').classList.remove('flex'); }
+    
     function saveGoal() {
         const name = document.getElementById('newGoalName').value.trim();
         const desc = document.getElementById('newGoalDesc').value.trim();
         const acc = document.getElementById('newGoalAccount').value;
-        const cat = document.getElementById('newGoalCategory').value;
+        const scopeVal = document.getElementById('newGoalCategory').value;
         const amt = parseFloat(document.getElementById('newGoalAmount').value);
-        if(!name || !acc || !cat || isNaN(amt)) return alert('Fill required fields.');
+        if(!name || !acc || !scopeVal || isNaN(amt)) return alert('Fill required fields.');
         
+        const [scopeLevel, targetRef] = scopeVal.split('|');
+
         if(editingGoalIdx >= 0) {
-            db.goals[editingGoalIdx] = { ...db.goals[editingGoalIdx], Name: name, Description: desc, Linked_Account: acc, Linked_GC_ID: cat, Target_Value: amt };
+            db.goals[editingGoalIdx] = { ...db.goals[editingGoalIdx], Name: name, Description: desc, Linked_Account: acc, Linked_GC_ID: targetRef, Scope_Level: scopeLevel, Target_Value: amt };
         } else {
-            db.goals.push({ Goal_ID: 'GL_' + Math.floor(Math.random()*10000), Name: name, Description: desc, Linked_Account: acc, Linked_GC_ID: cat, Target_Value: amt });
+            db.goals.push({ Goal_ID: 'GL_' + Math.floor(Math.random()*10000), Name: name, Description: desc, Linked_Account: acc, Linked_GC_ID: targetRef, Scope_Level: scopeLevel, Target_Value: amt });
         }
         saveDataToLocal(); renderAll(); closeGoalModal();
     }
