@@ -1127,64 +1127,89 @@ Return ONLY a valid JSON array (no markdown commentary outside the JSON block) m
         const raw = document.getElementById('aiStageJsonInput').value.trim();
         if (!raw) return alert('Paste the JSON array output from Gemini into the box first.');
 
-        const cleaned = raw.replace(/^```json\s*/i, '').replace(/^```\s*/i, '').replace(/```\s*$/, '').trim();
+        // 1. Strip any markdown code fences (```json or ```) anywhere in the pasted text
+        let cleaned = raw.replace(/```json/gi, '').replace(/```/g, '').trim();
+
         const firstBracket = cleaned.indexOf('[');
         const lastBracket = cleaned.lastIndexOf(']');
         if (firstBracket === -1 || lastBracket === -1) {
             return alert('Could not find a valid JSON array [ ... ] in the pasted text.');
         }
 
+        // 2. Isolate from first '[' to last ']' and stitch multiple back-to-back arrays:
+        //    e.g., "[ {...} ]  [ {...} ]" or "[ {...} ], [ {...} ]"  -->  "[ {...}, {...} ]"
+        let sliced = cleaned.substring(firstBracket, lastBracket + 1);
+        sliced = sliced.replace(/\]\s*,?\s*\[/g, ',');
+        // Clean up any accidental double commas or empty array artifacts (e.g. "[, " or ", ]")
+        sliced = sliced.replace(/\[\s*,/g, '[').replace(/,\s*\]/g, ']').replace(/,\s*,/g, ',');
+
+        let arr = [];
         try {
-            const arr = JSON.parse(cleaned.substring(firstBracket, lastBracket + 1));
-            if (!Array.isArray(arr) || arr.length === 0) return alert('The JSON array is empty.');
-
-            let added = 0;
-            arr.forEach(item => {
-                const dateStr = (item.Date || `${appState.selectedMonth}-01`).trim();
-                const monthStr = (item.Month || dateStr.substring(0, 7) || appState.selectedMonth).trim();
-                const merch = (item.Merchant || 'New Item').trim();
-                const amt = parseFloat(item.Amount);
-                if (isNaN(amt)) return;
-
-                let accId = item.Account_ID || '';
-                let grpId = item.Group_ID || '';
-                let catId = item.Category_ID || '';
-
-                if (!grpId && catId) {
-                    const gc = db.group_category.find(x => x.Category_ID === catId);
-                    if (gc) grpId = gc.Group_ID;
+            arr = JSON.parse(sliced);
+        } catch (primaryErr) {
+            // Fallback: if there was stray conversational text between pasted blocks,
+            // extract every individual { ... } JSON object block directly
+            try {
+                const objMatches = cleaned.match(/\{[\s\S]*?\}/g);
+                if (objMatches && objMatches.length > 0) {
+                    arr = objMatches.map(m => JSON.parse(m));
+                } else {
+                    throw primaryErr;
                 }
-                if (!grpId && merch) {
-                    const hist = db.transactions.find(t => t.Merchant.toLowerCase() === merch.toLowerCase());
-                    if (hist) {
-                        if (!accId) accId = hist.Account_ID;
-                        grpId = hist.Group_ID || '';
-                        catId = hist.Category_ID || '';
-                    }
-                }
-
-                const destVal = grpId ? `${grpId}|${catId || ''}` : '';
-                pendingImports.push({
-                    id: 'P_' + Math.random().toString(36).substr(2, 9),
-                    Date: dateStr,
-                    Month: monthStr,
-                    Merchant: merch,
-                    Amount: amt,
-                    Account_ID: accId,
-                    Dest_Val: destVal
-                });
-                added++;
-            });
-
-            if (added > 0) {
-                document.getElementById('aiStageJsonInput').value = '';
-                document.getElementById('importRapidFireUI').classList.remove('hidden');
-                renderPendingImports();
-            } else {
-                alert('No valid transaction rows found in the JSON array.');
+            } catch (fallbackErr) {
+                return alert('Error parsing JSON output: ' + primaryErr.message);
             }
-        } catch (err) {
-            alert('Error parsing JSON output: ' + err.message);
+        }
+
+        if (!Array.isArray(arr) || arr.length === 0) return alert('The JSON array is empty.');
+
+        // Flatten in case of nested arrays
+        arr = arr.flat(Infinity).filter(Boolean);
+
+        let added = 0;
+        arr.forEach(item => {
+            const dateStr = (item.Date || `${appState.selectedMonth}-01`).trim();
+            const monthStr = (item.Month || dateStr.substring(0, 7) || appState.selectedMonth).trim();
+            const merch = (item.Merchant || 'New Item').trim();
+            const amt = parseFloat(item.Amount);
+            if (isNaN(amt)) return;
+
+            let accId = item.Account_ID || '';
+            let grpId = item.Group_ID || '';
+            let catId = item.Category_ID || '';
+
+            if (!grpId && catId) {
+                const gc = db.group_category.find(x => x.Category_ID === catId);
+                if (gc) grpId = gc.Group_ID;
+            }
+            if (!grpId && merch) {
+                const hist = db.transactions.find(t => t.Merchant.toLowerCase() === merch.toLowerCase());
+                if (hist) {
+                    if (!accId) accId = hist.Account_ID;
+                    grpId = hist.Group_ID || '';
+                    catId = hist.Category_ID || '';
+                }
+            }
+
+            const destVal = grpId ? `${grpId}|${catId || ''}` : '';
+            pendingImports.push({
+                id: 'P_' + Math.random().toString(36).substr(2, 9),
+                Date: dateStr,
+                Month: monthStr,
+                Merchant: merch,
+                Amount: amt,
+                Account_ID: accId,
+                Dest_Val: destVal
+            });
+            added++;
+        });
+
+        if (added > 0) {
+            document.getElementById('aiStageJsonInput').value = '';
+            document.getElementById('importRapidFireUI').classList.remove('hidden');
+            renderPendingImports();
+        } else {
+            alert('No valid transaction rows found in the JSON array.');
         }
     }
 
