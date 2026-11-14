@@ -337,40 +337,89 @@
       </div>
     </section>
 
-    <!-- TAB 6: DATA IMPORTER (NATIVE BULK WIZARD) -->
+    <!-- TAB 6: DATA IMPORTER (WEEKLY AI SYNC & NATIVE BULK WIZARD) -->
     <section id="tab-importer" class="hidden space-y-6">
       <div class="bg-white rounded-xl border border-slate-200 p-6 shadow-sm space-y-6">
-        <div class="border-b border-slate-100 pb-3">
-            <h2 class="text-lg font-bold text-slate-900">Native Bulk-Import Wizard</h2>
-            <p class="text-sm text-slate-500 mt-1">Drag and drop raw bank CSV files (Chase, PayPal, Venmo, etc.) here to auto-map and rapidly categorize transactions into Categories or Goals.</p>
-        </div>
-
-        <div id="dropZone" class="border-2 border-dashed border-slate-300 rounded-xl p-10 text-center transition hover:bg-slate-50 bg-slate-50/50">
-            <div class="text-4xl mb-3">📁</div>
-            <p class="text-sm text-slate-600 font-semibold mb-2">Drag &amp; Drop raw Bank CSV file here</p>
-            <p class="text-xs text-slate-400 mb-4">Or click to browse your computer</p>
-            <input type="file" id="bankCsvInput" accept=".csv" class="hidden" onchange="handleBankCsvUpload(event)" />
-            <button onclick="document.getElementById('bankCsvInput').click()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-6 rounded-lg text-xs transition">Select CSV File</button>
-        </div>
-
-        <div id="importRapidFireUI" class="hidden space-y-4">
-            <div class="flex justify-between items-end border-b border-slate-200 pb-2 mt-8">
-                <h3 class="font-bold text-slate-800 text-base">Rapid-Fire Review</h3>
-                <button onclick="saveAllPendingImports()" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2 px-6 rounded-lg text-xs shadow transition">✓ Save All to Ledger</button>
+        <div class="border-b border-slate-100 pb-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+            <div>
+              <h2 class="text-lg font-bold text-slate-900">Weekly AI Sync &amp; Bulk Data Importer</h2>
+              <p class="text-xs text-slate-500 mt-1">Stage recent activity via Ask Gemini (Desktop Tabs or Mobile Screenshots) or drop raw bank CSVs. Everything accumulates in the Review Table below before touching your ledger.</p>
             </div>
-            <p class="text-xs text-slate-500 italic">The engine has attempted to auto-guess categories/goals and accounts based on your ledger history. Adjust any rows and click Save All.</p>
+        </div>
+
+        <!-- Weekly AI Sync & Accumulator Grid -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
+          <!-- Step 1: Copy Sync Packet -->
+          <div class="border border-indigo-200 bg-indigo-50/40 rounded-xl p-5 flex flex-col justify-between space-y-4">
+            <div class="space-y-2">
+              <div class="flex items-center justify-between">
+                <span class="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider bg-indigo-600 text-white">Step 1 • Context Grab</span>
+                <span class="text-[11px] font-semibold text-indigo-700">Desktop Tabs or Phone Screenshots</span>
+              </div>
+              <h3 class="text-sm font-bold text-slate-900">Copy Compact AI Sync Packet</h3>
+              <p class="text-xs text-slate-600 leading-relaxed">
+                Generates a lightweight prompt containing your Accounts, Groups, Goal Groups, Categories, Merchant History, and the <strong>last 5 transactions per account</strong> so Gemini knows exactly where to stop and how to handle refunds (<code class="font-mono-num">-Amount</code>).
+              </p>
+            </div>
+            <button onclick="copyWeeklyAiSyncPacket()" class="bg-[#6c5ce7] hover:bg-[#5b4bc4] text-white font-bold py-2.5 px-4 rounded-lg text-xs shadow transition w-full flex items-center justify-center gap-2">
+              <span>📋 Copy Weekly AI Sync Packet to Clipboard</span>
+            </button>
+          </div>
+
+          <!-- Step 2: Paste & Accumulate JSON -->
+          <div class="border border-emerald-200 bg-emerald-50/30 rounded-xl p-5 flex flex-col justify-between space-y-3">
+            <div class="flex items-center justify-between">
+              <span class="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider bg-emerald-600 text-white">Step 2 • Stage &amp; Accumulate</span>
+              <button onclick="pasteClipboardIntoStageBox()" class="text-[11px] font-bold text-emerald-700 hover:text-emerald-900 underline">Paste from Clipboard</button>
+            </div>
+            <h3 class="text-sm font-bold text-slate-900">Stage AI JSON Output (1 or Multiple Accounts)</h3>
+            <textarea id="aiStageJsonInput" rows="3" placeholder='Paste the JSON array [ { "Date": "2026-11-14", ... } ] from Gemini here. You can stage 1 account at a time or 5 at once!' class="w-full border border-slate-300 rounded-lg p-2.5 text-xs font-mono-num bg-white focus:outline-none focus:border-emerald-500"></textarea>
+            <button onclick="stageAiJsonOutput()" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2.5 px-4 rounded-lg text-xs shadow transition w-full">
+              ➕ Add to Rapid-Fire Review Table Below
+            </button>
+          </div>
+        </div>
+
+        <!-- Optional CSV Drag & Drop -->
+        <details class="group border border-slate-200 rounded-xl bg-slate-50/50">
+          <summary class="cursor-pointer px-5 py-3 text-xs font-bold text-slate-700 flex items-center justify-between select-none">
+            <span>📁 Or Upload a Raw Bank CSV File (Optional Fallback)</span>
+            <span class="text-slate-400 group-open:rotate-180 transition-transform">▼</span>
+          </summary>
+          <div id="dropZone" class="border-2 border-dashed border-slate-300 rounded-xl m-4 p-8 text-center transition hover:bg-slate-50 bg-white">
+              <p class="text-xs text-slate-600 font-semibold mb-2">Drag &amp; Drop raw Bank CSV file here, or browse</p>
+              <input type="file" id="bankCsvInput" accept=".csv" class="hidden" onchange="handleBankCsvUpload(event)" />
+              <button onclick="document.getElementById('bankCsvInput').click()" class="bg-slate-800 hover:bg-slate-700 text-white font-bold py-2 px-5 rounded-lg text-xs transition">Select CSV File</button>
+          </div>
+        </details>
+
+        <!-- Rapid-Fire Review Staging Table -->
+        <div id="importRapidFireUI" class="hidden space-y-4 pt-2">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-200 pb-3">
+                <div>
+                  <h3 class="font-bold text-slate-900 text-base flex items-center gap-2">
+                    <span>Staging Ledger: Rapid-Fire Review</span>
+                    <span id="stagingCountBadge" class="px-2 py-0.5 text-xs rounded-full bg-indigo-100 text-indigo-800 font-mono-num">0 items</span>
+                  </h3>
+                  <p class="text-xs text-slate-500 mt-0.5">Review and tweak Accounts, Goal/Group assignments, or use <strong>±</strong> to flip refunds/reimbursements to negative (<span class="text-emerald-600 font-bold">-$</span>) so they offset expenses instead of counting as income.</p>
+                </div>
+                <div class="flex items-center gap-2 shrink-0">
+                  <button onclick="clearPendingImports()" class="px-3 py-2 border border-slate-300 hover:bg-slate-100 text-slate-600 font-semibold rounded-lg text-xs transition">Clear Staging</button>
+                  <button onclick="saveAllPendingImports()" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2 px-5 rounded-lg text-xs shadow transition">✓ Save All to Ledger</button>
+                </div>
+            </div>
             
             <div class="overflow-x-auto border border-slate-200 rounded-lg">
-                <table class="w-full text-left border-collapse">
+                <table class="w-full text-left border-collapse min-w-[850px]">
                     <thead class="bg-slate-100">
                         <tr class="text-[10px] font-bold uppercase tracking-wider text-slate-500 border-b border-slate-200">
-                            <th class="py-3 px-4">Date</th>
-                            <th class="py-3 px-4">Budget Month</th>
-                            <th class="py-3 px-4">Parsed Merchant</th>
-                            <th class="py-3 px-4 text-right">Amount</th>
-                            <th class="py-3 px-4">Source Account</th>
-                            <th class="py-3 px-4">Destination (Group :: Category or Goal)</th>
-                            <th class="py-3 px-4 text-center">Action</th>
+                            <th class="py-3 px-3 w-28">Date</th>
+                            <th class="py-3 px-2 w-20">Month</th>
+                            <th class="py-3 px-3">Merchant / Description</th>
+                            <th class="py-3 px-3 text-right w-36">Amount (+Exp / -Refund)</th>
+                            <th class="py-3 px-3 w-44">Source Account</th>
+                            <th class="py-3 px-3 w-64">Destination (Group or 🎯 Goal :: Category)</th>
+                            <th class="py-3 px-2 text-center w-12">Del</th>
                         </tr>
                     </thead>
                     <tbody id="pendingImportsTableBody" class="divide-y divide-slate-100 text-xs"></tbody>
@@ -978,6 +1027,175 @@
         return result;
     }
 
+function copyWeeklyAiSyncPacket() {
+        const acctLines = db.accounts.map(a => `- Account_ID: "${a.Account_ID}" | Name: "${a.Name}" | Type: "${a.Type}"`).join('\n');
+
+        const cutoffLines = db.accounts.map(a => {
+            const acctTxns = db.transactions
+                .filter(t => t.Account_ID === a.Account_ID)
+                .sort((x, y) => (y.Date || '').localeCompare(x.Date || ''))
+                .slice(0, 5);
+            if (acctTxns.length === 0) return `- Account "${a.Account_ID}" (${a.Name}): (No prior transactions recorded)`;
+            const rows = acctTxns.map(t => `  * ${t.Date} | $${Number(t.Amount).toFixed(2)} | ${t.Merchant} (ID: ${t.Txn_ID})`).join('\n');
+            return `- Account "${a.Account_ID}" (${a.Name}):\n${rows}`;
+        }).join('\n');
+
+        const schemaLines = db.groups.map(g => {
+            const isGoal = g.Goal === 'Yes';
+            const gHeader = `- Group_ID: "${g.Group_ID}" ("${isGoal ? '🎯 GOAL: ' : ''}${g.Name}", Impact: ${g.Impact || 'personal'}, Goal: ${g.Goal || 'No'})`;
+            const gcs = db.group_category.filter(gc => gc.Group_ID === g.Group_ID);
+            if (gcs.length === 0) {
+                return `${gHeader}\n  * Category_ID: "" (Direct to ${isGoal ? 'Goal' : 'Group'} - 0 sub-categories)`;
+            }
+            const cRows = gcs.map(gc => {
+                const c = db.categories.find(cat => cat.Category_ID === gc.Category_ID);
+                return c ? `  * Category_ID: "${c.Category_ID}" ("${c.Name}")` : '';
+            }).filter(Boolean).join('\n');
+            return `${gHeader}\n${cRows}`;
+        }).join('\n');
+
+        const seenMerchants = new Set();
+        const merchLines = [];
+        for (let i = db.transactions.length - 1; i >= 0 && merchLines.length < 40; i--) {
+            const t = db.transactions[i];
+            if (!t.Merchant) continue;
+            const key = t.Merchant.toLowerCase().trim();
+            if (!seenMerchants.has(key)) {
+                seenMerchants.add(key);
+                merchLines.push(`- "${t.Merchant}" -> Group_ID: "${t.Group_ID || ''}", Category_ID: "${t.Category_ID || ''}", Account_ID: "${t.Account_ID || ''}"`);
+            }
+        }
+
+        const packet = `=== KTBUDGET WEEKLY SYNC PACKET ===
+You are extracting recent financial activity from the open browser tab(s), pasted text, or mobile screenshots for KTBudget 4.0.
+
+STRICT EXTRACTION & DEDUPLICATION RULES:
+1. IGNORE PENDING ITEMS: Strictly skip any transaction labeled "Pending", "Processing", or "Authorized" that lacks a finalized posted date.
+2. IDENTIFY THE ACCOUNT: Match each shared tab/screenshot to the closest Account_ID in section [A].
+3. STOP AT CUTOFF ANCHORS: For each account, compare the transactions against the "Last 5 Recorded Transactions" in section [B]. Extract ONLY transactions that occurred AFTER (or are missing from) those cutoff anchors.
+4. SIGN & REFUND RULES (DO NOT TREAT REFUNDS AS INCOME):
+   - Standard Expenses (Outflows): Output as POSITIVE numbers (e.g., 45.20).
+   - Refunds, Returns & Friends/Family Reimbursements: Do NOT categorize retail returns (Amazon, Walmart, Menards, etc.) or peer reimbursements as Income. Output them as NEGATIVE numbers (e.g., -34.99) assigned to the SAME expense Group_ID and Category_ID as the original purchase so they offset category spending.
+   - True Income: Only assign genuine income (W2 paycheck, salon business revenue, Social Security, pension) to an Income Group_ID.
+   - Transfers: Credit card payments and transfers between tracked accounts must use a Transfer Group_ID/Category_ID.
+5. GOAL VS. STANDARD GROUP AMBIGUITY: Goals are special Groups (Goal: Yes). Because general retailers (e.g., Menards, Target, Amazon) could be either a normal household expense or a Goal project, default ambiguous merchants to their standard Group_ID and Category_ID from section [D]. Only assign directly to a Goal Group when the merchant or memo is unmistakably for that Goal.
+
+[A] TRACKED ACCOUNTS:
+${acctLines}
+
+[B] CUTOFF ANCHORS (LAST 5 RECORDED TRANSACTIONS PER ACCOUNT):
+${cutoffLines}
+
+[C] VALID GROUPS, GOAL GROUPS & CATEGORIES (Group_ID :: Category_ID):
+${schemaLines}
+
+[D] KNOWN MERCHANT MAPPINGS (RECENT HISTORY):
+${merchLines.join('\n') || '(No merchant history yet)'}
+
+OUTPUT FORMAT:
+Return ONLY a valid JSON array (no markdown commentary outside the JSON block) matching this exact structure:
+[
+  {
+    "Date": "YYYY-MM-DD",
+    "Month": "YYYY-MM",
+    "Account_ID": "Chase",
+    "Merchant": "Cleaned Merchant Name",
+    "Amount": 42.50,
+    "Group_ID": "G_NEC",
+    "Category_ID": "C_GROC"
+  }
+]`;
+
+        navigator.clipboard.writeText(packet).then(() => {
+            alert('✓ Weekly AI Sync Packet copied to clipboard!\n\nNext:\n• On Desktop: Open "Ask Gemini" on your bank tab(s) and paste.\n• On Phone: Open the Gemini app, attach your bank activity screenshot(s), and paste.');
+        }).catch(() => {
+            document.getElementById('aiStageJsonInput').value = packet;
+            alert('Clipboard permission blocked by browser. The Sync Packet has been placed in the text box so you can copy it manually.');
+        });
+    }
+
+    async function pasteClipboardIntoStageBox() {
+        try {
+            const text = await navigator.clipboard.readText();
+            if (text) document.getElementById('aiStageJsonInput').value = text;
+        } catch (e) {
+            alert('Please tap inside the text box and use Paste (Ctrl+V or long-press Paste on mobile).');
+        }
+    }
+
+    function stageAiJsonOutput() {
+        const raw = document.getElementById('aiStageJsonInput').value.trim();
+        if (!raw) return alert('Paste the JSON array output from Gemini into the box first.');
+
+        const cleaned = raw.replace(/^```json\s*/i, '').replace(/^```\s*/i, '').replace(/```\s*$/, '').trim();
+        const firstBracket = cleaned.indexOf('[');
+        const lastBracket = cleaned.lastIndexOf(']');
+        if (firstBracket === -1 || lastBracket === -1) {
+            return alert('Could not find a valid JSON array [ ... ] in the pasted text.');
+        }
+
+        try {
+            const arr = JSON.parse(cleaned.substring(firstBracket, lastBracket + 1));
+            if (!Array.isArray(arr) || arr.length === 0) return alert('The JSON array is empty.');
+
+            let added = 0;
+            arr.forEach(item => {
+                const dateStr = (item.Date || `${appState.selectedMonth}-01`).trim();
+                const monthStr = (item.Month || dateStr.substring(0, 7) || appState.selectedMonth).trim();
+                const merch = (item.Merchant || 'New Item').trim();
+                const amt = parseFloat(item.Amount);
+                if (isNaN(amt)) return;
+
+                let accId = item.Account_ID || '';
+                let grpId = item.Group_ID || '';
+                let catId = item.Category_ID || '';
+
+                if (!grpId && catId) {
+                    const gc = db.group_category.find(x => x.Category_ID === catId);
+                    if (gc) grpId = gc.Group_ID;
+                }
+                if (!grpId && merch) {
+                    const hist = db.transactions.find(t => t.Merchant.toLowerCase() === merch.toLowerCase());
+                    if (hist) {
+                        if (!accId) accId = hist.Account_ID;
+                        grpId = hist.Group_ID || '';
+                        catId = hist.Category_ID || '';
+                    }
+                }
+
+                const destVal = grpId ? `${grpId}|${catId || ''}` : '';
+                pendingImports.push({
+                    id: 'P_' + Math.random().toString(36).substr(2, 9),
+                    Date: dateStr,
+                    Month: monthStr,
+                    Merchant: merch,
+                    Amount: amt,
+                    Account_ID: accId,
+                    Dest_Val: destVal
+                });
+                added++;
+            });
+
+            if (added > 0) {
+                document.getElementById('aiStageJsonInput').value = '';
+                document.getElementById('importRapidFireUI').classList.remove('hidden');
+                renderPendingImports();
+            } else {
+                alert('No valid transaction rows found in the JSON array.');
+            }
+        } catch (err) {
+            alert('Error parsing JSON output: ' + err.message);
+        }
+    }
+
+    function clearPendingImports() {
+        if (confirm('Clear all staged items from the review table?')) {
+            pendingImports = [];
+            renderPendingImports();
+            document.getElementById('importRapidFireUI').classList.add('hidden');
+        }
+    }
+
     function processBankCsv(file) {
         const reader = new FileReader();
         reader.onload = function(e) {
@@ -1002,7 +1220,7 @@
 
             if(dateIdx===-1 || descIdx===-1 || amtIdx===-1) return alert("Missing required columns. The CSV must contain a Date, a Description/Merchant, and an Amount.");
 
-            pendingImports = [];
+            let addedCount = 0;
             for(let i = headerIdx + 1; i < lines.length; i++) {
                 if(!lines[i].trim()) continue;
                 const cols = parseCsvLine(lines[i]);
@@ -1042,9 +1260,10 @@
                     id: 'P_' + Math.random().toString(36).substr(2,9),
                     Date: fullDateStr, Month: monthStr, Merchant: merchant, Amount: amt, Account_ID: predAcc, Dest_Val: predDest
                 });
+                addedCount++;
             }
             
-            if(pendingImports.length > 0) {
+            if(pendingImports.length > 0 && addedCount > 0) {
                 document.getElementById('importRapidFireUI').classList.remove('hidden');
                 renderPendingImports();
             } else {
@@ -1054,8 +1273,37 @@
         reader.readAsText(file);
     }
 
+    function syncStagingRowState(id) {
+        const item = pendingImports.find(p => p.id === id);
+        if (!item) return;
+        const dEl = document.getElementById(`impDate_${id}`);
+        const mEl = document.getElementById(`impMonth_${id}`);
+        const merchEl = document.getElementById(`impMerch_${id}`);
+        const amtEl = document.getElementById(`impAmt_${id}`);
+        const accEl = document.getElementById(`impAcc_${id}`);
+        const destEl = document.getElementById(`impDest_${id}`);
+
+        if (dEl) item.Date = dEl.value;
+        if (mEl) item.Month = mEl.value;
+        if (merchEl) item.Merchant = merchEl.value;
+        if (amtEl) item.Amount = parseFloat(amtEl.value) || 0;
+        if (accEl) item.Account_ID = accEl.value;
+        if (destEl) item.Dest_Val = destEl.value;
+    }
+
+    function flipStagingAmountSign(id) {
+        syncStagingRowState(id);
+        const item = pendingImports.find(p => p.id === id);
+        if (item) {
+            item.Amount = -(Number(item.Amount) || 0);
+            renderPendingImports();
+        }
+    }
+
     function renderPendingImports() {
         const tbody = document.getElementById('pendingImportsTableBody');
+        const badge = document.getElementById('stagingCountBadge');
+        if (badge) badge.textContent = `${pendingImports.length} item${pendingImports.length === 1 ? '' : 's'}`;
         
         let destOptions = '<option value="" disabled>Select Group :: Category...</option>';
         db.groups.forEach(g => {
@@ -1080,18 +1328,29 @@
         });
 
         tbody.innerHTML = pendingImports.map((p) => {
-            const rowAccOptions = accOptions.replace(`value="${p.Account_ID}"`, `value="${p.Account_ID}" selected`);
-            const rowDestOptions = destOptions.replace(`value="${p.Dest_Val}"`, `value="${p.Dest_Val}" selected`);
+            const rowAccOptions = p.Account_ID
+                ? accOptions.replace(`value="${p.Account_ID}"`, `value="${p.Account_ID}" selected`)
+                : accOptions.replace('<option value="" disabled>', '<option value="" disabled selected>');
+            const rowDestOptions = p.Dest_Val
+                ? destOptions.replace(`value="${p.Dest_Val}"`, `value="${p.Dest_Val}" selected`)
+                : destOptions.replace('<option value="" disabled>', '<option value="" disabled selected>');
+            const isNegative = Number(p.Amount) < 0;
+            const amtColor = isNegative ? 'text-emerald-700 bg-emerald-50 border-emerald-300' : 'text-slate-900 bg-white border-slate-300';
             
             return `
             <tr id="pendingRow_${p.id}" class="hover:bg-slate-50">
-              <td class="py-2 px-4 font-mono-num text-[11px]">${p.Date}</td>
-              <td class="py-2 px-4 font-mono-num text-[11px] text-indigo-700">${p.Month}</td>
-              <td class="py-2 px-4 font-semibold text-slate-800"><input type="text" id="impMerch_${p.id}" value="${p.Merchant.replace(/"/g, '&quot;')}" class="w-full bg-transparent border-b border-dashed border-slate-300 focus:border-indigo-500 focus:outline-none" /></td>
-              <td class="py-2 px-4 text-right font-mono-num font-bold text-slate-900">$${p.Amount.toFixed(2)}</td>
-              <td class="py-2 px-4"><select id="impAcc_${p.id}" class="w-full border rounded px-2 py-1 text-[11px] ${p.Account_ID ? 'bg-emerald-50 border-emerald-200' : 'bg-rose-50 border-rose-200'}">${rowAccOptions}</select></td>
-              <td class="py-2 px-4"><select id="impDest_${p.id}" class="w-full border rounded px-2 py-1 text-[11px] ${p.Dest_Val ? 'bg-emerald-50 border-emerald-200' : 'bg-rose-50 border-rose-200'}">${rowDestOptions}</select></td>
-              <td class="py-2 px-4 text-center"><button onclick="removePendingImport('${p.id}')" class="text-slate-400 hover:text-rose-600 font-bold text-lg leading-none" title="Ignore/Remove">&times;</button></td>
+              <td class="py-2 px-3"><input type="date" id="impDate_${p.id}" value="${p.Date}" onchange="syncStagingRowState('${p.id}')" class="w-full border border-slate-200 rounded px-1.5 py-1 font-mono-num text-[11px]" /></td>
+              <td class="py-2 px-2"><input type="text" id="impMonth_${p.id}" value="${p.Month}" onchange="syncStagingRowState('${p.id}')" class="w-full border border-slate-200 rounded px-1.5 py-1 font-mono-num text-[11px] text-indigo-700" /></td>
+              <td class="py-2 px-3 font-semibold text-slate-800"><input type="text" id="impMerch_${p.id}" value="${(p.Merchant || '').replace(/"/g, '&quot;')}" onchange="syncStagingRowState('${p.id}')" class="w-full bg-transparent border-b border-dashed border-slate-300 focus:border-indigo-500 focus:outline-none py-1" /></td>
+              <td class="py-2 px-3 text-right">
+                <div class="flex items-center justify-end gap-1">
+                  <button onclick="flipStagingAmountSign('${p.id}')" class="px-1.5 py-1 rounded bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold text-[10px]" title="Toggle +Expense vs -Refund/Offset">±</button>
+                  <input type="number" step="0.01" id="impAmt_${p.id}" value="${Number(p.Amount).toFixed(2)}" onchange="syncStagingRowState('${p.id}')" class="w-24 text-right font-mono-num font-bold border rounded px-2 py-1 text-[11px] ${amtColor}" />
+                </div>
+              </td>
+              <td class="py-2 px-3"><select id="impAcc_${p.id}" onchange="syncStagingRowState('${p.id}')" class="w-full border rounded px-2 py-1 text-[11px] ${p.Account_ID ? 'bg-emerald-50 border-emerald-200' : 'bg-rose-50 border-rose-200'}">${rowAccOptions}</select></td>
+              <td class="py-2 px-3"><select id="impDest_${p.id}" onchange="syncStagingRowState('${p.id}')" class="w-full border rounded px-2 py-1 text-[11px] ${p.Dest_Val ? 'bg-emerald-50 border-emerald-200' : 'bg-rose-50 border-rose-200'}">${rowDestOptions}</select></td>
+              <td class="py-2 px-2 text-center"><button onclick="removePendingImport('${p.id}')" class="text-slate-400 hover:text-rose-600 font-bold text-lg leading-none" title="Ignore/Remove">&times;</button></td>
             </tr>
             `;
         }).join('');
@@ -1106,21 +1365,22 @@
     function saveAllPendingImports() {
         let savedCount = 0;
         let errorCount = 0;
+        const remaining = [];
         
         pendingImports.forEach(p => {
-            const accSelect = document.getElementById(`impAcc_${p.id}`);
-            const destSelect = document.getElementById(`impDest_${p.id}`);
-            const merchInput = document.getElementById(`impMerch_${p.id}`);
-            
-            if(accSelect.value && destSelect.value) {
-                const [groupId, catId] = destSelect.value.split('|');
-                
+            syncStagingRowState(p.id);
+            if(p.Account_ID && p.Dest_Val && !isNaN(p.Amount) && p.Amount !== 0) {
+                const [groupId, catId] = p.Dest_Val.split('|');
+                if (p.Month && !appState.customMonths.includes(p.Month)) {
+                    appState.customMonths.push(p.Month);
+                    appState.customMonths.sort().reverse();
+                }
                 db.transactions.push({
                     Txn_ID: 'T' + Math.floor(Math.random()*100000),
                     Date: p.Date || `${p.Month}-01`,
                     Month: p.Month,
-                    Account_ID: accSelect.value,
-                    Merchant: merchInput.value || p.Merchant,
+                    Account_ID: p.Account_ID,
+                    Merchant: p.Merchant || 'Imported Item',
                     Amount: p.Amount,
                     Group_ID: groupId || '',
                     Category_ID: catId || '',
@@ -1129,18 +1389,25 @@
                 savedCount++;
             } else {
                 errorCount++;
+                remaining.push(p);
             }
         });
 
         if(savedCount > 0) {
             saveDataToLocal();
-            pendingImports = [];
-            document.getElementById('importRapidFireUI').classList.add('hidden');
-            document.getElementById('bankCsvInput').value = '';
+            pendingImports = remaining;
+            if (pendingImports.length === 0) {
+                document.getElementById('importRapidFireUI').classList.add('hidden');
+            } else {
+                renderPendingImports();
+            }
+            const csvIn = document.getElementById('bankCsvInput');
+            if (csvIn) csvIn.value = '';
             
-            alert(`Successfully imported ${savedCount} transactions!${errorCount > 0 ? `\n\nSkipped ${errorCount} rows missing account/category assignments.` : ''}`);
+            populateDropdowns();
             renderAll();
-            switchTab('ledger'); 
+            if (pendingImports.length === 0) switchTab('ledger');
+            alert(`Successfully imported ${savedCount} transactions!${errorCount > 0 ? `\n\nKept ${errorCount} incomplete row(s) in the staging table so you can finish assigning them.` : ''}`);
         } else {
             alert("No rows saved. Please ensure Account and Group::Category are selected for rows you want to import.");
         }
