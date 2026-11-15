@@ -1073,19 +1073,9 @@ function copyWeeklyAiSyncPacket() {
         }).join('\n');
 
         const merchLines = getEffectiveMerchantRules().slice(-50).reverse().map(r =>
-       `- "${r.Merchant}" -> Group_ID: "${r.Group_ID || ''}", Category_ID: "${r.Category_ID || ''}", Account_ID: "${r.Account_ID || ''}"`
-   );
-        const merchLines = [];
-        for (let i = db.transactions.length - 1; i >= 0 && merchLines.length < 40; i--) {
-            const t = db.transactions[i];
-            if (!t.Merchant) continue;
-            const key = t.Merchant.toLowerCase().trim();
-            if (!seenMerchants.has(key)) {
-                seenMerchants.add(key);
-                merchLines.push(`- "${t.Merchant}" -> Group_ID: "${t.Group_ID || ''}", Category_ID: "${t.Category_ID || ''}", Account_ID: "${t.Account_ID || ''}"`);
-            }
-        }
-
+            `- "${r.Merchant}" -> Group_ID: "${r.Group_ID || ''}", Category_ID: "${r.Category_ID || ''}", Account_ID: "${r.Account_ID || ''}"`
+        );
+      
         const packet = `=== KTBUDGET WEEKLY SYNC PACKET ===
 You are extracting recent financial activity from the open browser tab(s), pasted text, or mobile screenshots for KTBudget 4.0.
 
@@ -3071,28 +3061,6 @@ Output ONLY valid JSON (no markdown wrapping) matching this exact schema:
                 <td class="py-2.5 pr-3 text-right">
                     <button onclick="openCategoryModal(${c.origIdx})" class="text-indigo-600 hover:text-indigo-800 font-bold mr-3" title="Edit">✎</button>
                     <button onclick="deleteCategory(${c.origIdx})" class="text-slate-400 hover:text-rose-500 font-bold text-lg leading-none align-middle" title="Delete">&times;</button>
-                </td>
-            </tr>`;
-        }).join('');
-    }
-
-        document.getElementById('categoriesTableBody').innerHTML = db.categories.map((c, i) => {
-            const gc = db.group_category.find(x => x.Category_ID === c.Category_ID);
-            const grp = gc ? db.groups.find(x => x.Group_ID === gc.Group_ID) : null;
-            const gName = grp ? `${grp.Goal === 'Yes' ? '🎯 ' : ''}${grp.Name}` : '<span class="text-rose-500 text-[10px] font-bold">⚠ UNLINKED</span>';
-            const imp = c.Impact || 'personal';
-            const impBadge = imp === 'business' ? 'bg-amber-100 text-amber-800' : 'bg-slate-100 text-slate-600';
-            return `
-            <tr class="hover:bg-slate-50">
-                <td class="py-2.5 pl-3 font-semibold text-slate-800">${c.Name}</td>
-                <td class="py-2.5 text-slate-600 font-medium">${gName}</td>
-                <td class="py-2.5">
-                  <span class="text-slate-500 text-[11px] mr-1">${c.Type || 'Flexible'}</span>
-                  <span class="px-1.5 py-0.5 rounded text-[10px] font-bold ${impBadge}">${imp}</span>
-                </td>
-                <td class="py-2.5 pr-3 text-right">
-                    <button onclick="openCategoryModal(${i})" class="text-indigo-600 hover:text-indigo-800 font-bold mr-3" title="Edit">✎</button>
-                    <button onclick="deleteCategory(${i})" class="text-slate-400 hover:text-rose-500 font-bold text-lg leading-none align-middle" title="Delete">&times;</button>
                 </td>
             </tr>`;
         }).join('');
