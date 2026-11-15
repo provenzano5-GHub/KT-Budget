@@ -529,15 +529,40 @@
             </div>
         </div>
 
-        <div class="border border-rose-200 bg-rose-50 rounded-lg p-5 space-y-4 mt-4">
-            <div>
-                <h3 class="font-bold text-rose-900 text-sm">Factory Reset / Wipe Data</h3>
-                <p class="text-xs text-rose-700 mt-1">Delete all local data and return to the initial demo state. Ensure you have a backup downloaded first!</p>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+            <!-- Smart Transaction Wipe (Keeps Architecture & Merchant Hints) -->
+            <div class="border border-amber-300 bg-amber-50/70 rounded-lg p-5 space-y-4 flex flex-col justify-between">
+                <div class="space-y-2">
+                    <div class="flex items-center justify-between">
+                        <h3 class="font-bold text-amber-950 text-sm">🧹 Wipe Transactions Only (Keep Setup &amp; AI Hints)</h3>
+                        <span id="savedRulesCountBadge" class="px-2 py-0.5 rounded-full text-[10px] font-mono-num font-bold bg-amber-200 text-amber-900">0 rules</span>
+                    </div>
+                    <p class="text-xs text-amber-900 leading-relaxed">
+                        Clears your Transactions Ledger so you can start fresh, while <strong>preserving all Accounts, Groups, Goal Groups, Categories, Budgets, and Todos</strong>. Also snapshots your unique <code class="font-mono-num">Merchant &rarr; (Account, Group, Category)</code> patterns so the AI Sync Packet and CSV Importer still know how to categorize your merchants!
+                    </p>
+                    <label class="flex items-center gap-2 pt-2 text-xs font-semibold text-amber-950 cursor-pointer select-none">
+                        <input type="checkbox" id="useAiHintsCheckbox" onchange="toggleUseAiHints(this.checked)" checked class="rounded border-amber-400 text-indigo-600 focus:ring-indigo-500 cursor-pointer" />
+                        <span>Use saved Merchant Rules / Demo Hints to assist transaction loading</span>
+                    </label>
+                </div>
+                <button onclick="wipeTransactionsOnly()" class="bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold px-4 py-2.5 rounded transition w-full shadow-sm">
+                    🧹 Wipe Transactions Only (Preserve Structure &amp; Hints)
+                </button>
             </div>
-            <button onclick="wipeAllData()" class="bg-rose-700 hover:bg-rose-800 text-white text-xs font-semibold px-4 py-2.5 rounded transition md:w-auto w-full">
-                ⚠️ Wipe All Data &amp; Reset
-            </button>
-        </div>
+
+            <!-- Full Factory Reset -->
+            <div class="border border-rose-200 bg-rose-50 rounded-lg p-5 space-y-4 flex flex-col justify-between">
+                <div>
+                    <h3 class="font-bold text-rose-900 text-sm">⚠️ Full Factory Reset (Wipe All Tables)</h3>
+                    <p class="text-xs text-rose-700 mt-1 leading-relaxed">
+                        Deletes <strong>all</strong> local data across every table (Accounts, Groups, Categories, Budgets, Todos, and Transactions) and returns the app to the initial seed state. Ensure you have downloaded a JSON backup first!
+                    </p>
+                </div>
+                <button onclick="wipeAllData()" class="bg-rose-700 hover:bg-rose-800 text-white text-xs font-semibold px-4 py-2.5 rounded transition w-full">
+                    ⚠️ Wipe All Data &amp; Factory Reset
+                </button>
+            </div>
+        </div> 
       </div>
     </section>
 
@@ -1047,7 +1072,9 @@ function copyWeeklyAiSyncPacket() {
             return `${gHeader}\n${cRows}`;
         }).join('\n');
 
-        const seenMerchants = new Set();
+        const merchLines = getEffectiveMerchantRules().slice(-50).reverse().map(r =>
+       `- "${r.Merchant}" -> Group_ID: "${r.Group_ID || ''}", Category_ID: "${r.Category_ID || ''}", Account_ID: "${r.Account_ID || ''}"`
+   );
         const merchLines = [];
         for (let i = db.transactions.length - 1; i >= 0 && merchLines.length < 40; i--) {
             const t = db.transactions[i];
@@ -1176,7 +1203,7 @@ Return ONLY a valid JSON array (no markdown commentary outside the JSON block) m
                 if (gc) grpId = gc.Group_ID;
             }
             if (!grpId && merch) {
-                const hist = db.transactions.find(t => t.Merchant.toLowerCase() === merch.toLowerCase());
+                const hist = getEffectiveMerchantRules().find(t => t.Merchant.toLowerCase() === merch.toLowerCase());
                 if (hist) {
                     if (!accId) accId = hist.Account_ID;
                     grpId = hist.Group_ID || '';
@@ -1263,7 +1290,7 @@ Return ONLY a valid JSON array (no markdown commentary outside the JSON block) m
 
                 let predAcc = '';
                 let predDest = '';
-                const historyMatch = db.transactions.find(t => t.Merchant.toLowerCase() === merchant.toLowerCase());
+                const historyMatch = getEffectiveMerchantRules().find(t => t.Merchant.toLowerCase() === merchant.toLowerCase());
                 if(historyMatch) { 
                     predAcc = historyMatch.Account_ID; 
                     if (historyMatch.Group_ID) {
@@ -1477,8 +1504,84 @@ Output ONLY valid JSON (no markdown wrapping) matching this exact schema:
         navigator.clipboard.writeText(prompt).then(() => alert('Architecture Prompt copied to clipboard!')).catch(err => alert('Failed to copy.'));
     }
 
+    function harvestMerchantRulesFromTransactions() {
+        if (!Array.isArray(db.merchant_rules)) db.merchant_rules = [];
+        const ruleMap = new Map();
+        // Keep existing rules first
+        db.merchant_rules.forEach(r => {
+            if (r && r.Merchant) ruleMap.set(r.Merchant.toLowerCase().trim(), r);
+        });
+        // Harvest from current transactions (newest wins)
+        db.transactions.forEach(t => {
+            if (!t.Merchant || (!t.Group_ID && !t.Category_ID)) return;
+            const key = t.Merchant.toLowerCase().trim();
+            ruleMap.set(key, {
+                Merchant: t.Merchant.trim(),
+                Account_ID: t.Account_ID || '',
+                Group_ID: t.Group_ID || '',
+                Category_ID: t.Category_ID || ''
+            });
+        });
+        // Also ensure every Group::Category pair has at least a structural hint if no transactions existed
+        db.merchant_rules = Array.from(ruleMap.values());
+    }
+
+    function getEffectiveMerchantRules() {
+        const useHints = db.useCategorizationHints !== false;
+        const map = new Map();
+        if (useHints && Array.isArray(db.merchant_rules)) {
+            db.merchant_rules.forEach(r => {
+                if (r && r.Merchant) map.set(r.Merchant.toLowerCase().trim(), r);
+            });
+        }
+        // Live transactions always override or supplement saved rules
+        for (let i = 0; i < db.transactions.length; i++) {
+            const t = db.transactions[i];
+            if (!t.Merchant) continue;
+            map.set(t.Merchant.toLowerCase().trim(), {
+                Merchant: t.Merchant.trim(),
+                Account_ID: t.Account_ID || '',
+                Group_ID: t.Group_ID || '',
+                Category_ID: t.Category_ID || ''
+            });
+        }
+        return Array.from(map.values());
+    }
+
+    function toggleUseAiHints(isChecked) {
+        db.useCategorizationHints = Boolean(isChecked);
+        saveDataToLocal();
+        updateSavedRulesBadge();
+    }
+
+    function updateSavedRulesBadge() {
+        const badge = document.getElementById('savedRulesCountBadge');
+        const chk = document.getElementById('useAiHintsCheckbox');
+        if (chk) chk.checked = db.useCategorizationHints !== false;
+        if (badge) {
+            const count = getEffectiveMerchantRules().length;
+            badge.textContent = `${count} merchant hint${count === 1 ? '' : 's'}`;
+        }
+    }
+
+    function wipeTransactionsOnly() {
+        harvestMerchantRulesFromTransactions();
+        const ruleCount = db.merchant_rules ? db.merchant_rules.length : 0;
+        const txnCount = db.transactions.length;
+
+        if (confirm(`🧹 SMART TRANSACTION WIPE:\n\nThis will remove all ${txnCount} transaction(s) from your ledger so you can load a fresh transaction set.\n\n✓ Preserves all Accounts, Groups, Goal Groups, Categories, Budgets, and Todos.\n✓ Preserves ${ruleCount} unique Merchant -> (Account, Group, Category) mapping hint(s) to assist AI Sync and CSV imports.\n\nProceed with wiping transactions only?`)) {
+            db.transactions = [];
+            pendingImports = [];
+            saveDataToLocal();
+            populateDropdowns();
+            renderAll();
+            updateSavedRulesBadge();
+            alert(`Transactions wiped! Your structure and ${ruleCount} merchant categorization hints remain intact.`);
+        }
+    }
+
     function wipeAllData() {
-        if (confirm("⚠️ WARNING: This will permanently delete all local data and restore the initial demo state.\n\nPlease ensure you have downloaded a backup if you wish to keep your current data.\n\nProceed with Factory Reset?")) {
+        if (confirm("⚠️ WARNING: This will permanently delete ALL local data (including Accounts, Groups, Categories, Budgets, and Transactions) and restore the initial demo state.\n\nPlease ensure you have downloaded a backup if you wish to keep your current data.\n\nProceed with Full Factory Reset?")) {
             localStorage.removeItem(STORAGE_KEY);
             alert("Data wiped successfully. The app will now reload into Demo mode.");
             location.reload();
@@ -1847,6 +1950,7 @@ Output ONLY valid JSON (no markdown wrapping) matching this exact schema:
       renderAccountsAndTodos();
       renderBudgetAndGoalSetup();
       renderStructure();
+      updateSavedRulesBadge();
     }
 
    function renderKpis() {
@@ -2921,7 +3025,11 @@ Output ONLY valid JSON (no markdown wrapping) matching this exact schema:
     }
 
     function renderStructure() {
-        document.getElementById('groupsTableBody').innerHTML = db.groups.map((g, i) => {
+        const sortedGroups = db.groups
+            .map((g, origIdx) => ({ ...g, origIdx }))
+            .sort((a, b) => (a.Name || '').toLowerCase().localeCompare((b.Name || '').toLowerCase()));
+
+        document.getElementById('groupsTableBody').innerHTML = sortedGroups.map((g) => {
             const imp = g.Impact || 'personal';
             const impBadge = imp === 'business' ? 'bg-amber-100 text-amber-800' : 'bg-slate-100 text-slate-600';
             const isGoal = g.Goal === 'Yes';
@@ -2936,11 +3044,37 @@ Output ONLY valid JSON (no markdown wrapping) matching this exact schema:
                 <td class="py-2.5"><span class="px-2 py-0.5 rounded text-[10px] font-bold ${impBadge}">${imp}</span></td>
                 <td class="py-2.5 text-slate-500">${g.Budget || 'Yes'}</td>
                 <td class="py-2.5 pr-3 text-right">
-                    <button onclick="openGroupModal(${i})" class="text-indigo-600 hover:text-indigo-800 font-bold mr-3" title="Edit">✎</button>
-                    <button onclick="deleteGroup(${i})" class="text-slate-400 hover:text-rose-500 font-bold text-lg leading-none align-middle" title="Delete">&times;</button>
+                    <button onclick="openGroupModal(${g.origIdx})" class="text-indigo-600 hover:text-indigo-800 font-bold mr-3" title="Edit">✎</button>
+                    <button onclick="deleteGroup(${g.origIdx})" class="text-slate-400 hover:text-rose-500 font-bold text-lg leading-none align-middle" title="Delete">&times;</button>
                 </td>
             </tr>`;
         }).join('');
+
+        const sortedCategories = db.categories
+            .map((c, origIdx) => ({ ...c, origIdx }))
+            .sort((a, b) => (a.Name || '').toLowerCase().localeCompare((b.Name || '').toLowerCase()));
+
+        document.getElementById('categoriesTableBody').innerHTML = sortedCategories.map((c) => {
+            const gc = db.group_category.find(x => x.Category_ID === c.Category_ID);
+            const grp = gc ? db.groups.find(x => x.Group_ID === gc.Group_ID) : null;
+            const gName = grp ? `${grp.Goal === 'Yes' ? '🎯 ' : ''}${grp.Name}` : '<span class="text-rose-500 text-[10px] font-bold">⚠ UNLINKED</span>';
+            const imp = c.Impact || 'personal';
+            const impBadge = imp === 'business' ? 'bg-amber-100 text-amber-800' : 'bg-slate-100 text-slate-600';
+            return `
+            <tr class="hover:bg-slate-50">
+                <td class="py-2.5 pl-3 font-semibold text-slate-800">${c.Name}</td>
+                <td class="py-2.5 text-slate-600 font-medium">${gName}</td>
+                <td class="py-2.5">
+                  <span class="text-slate-500 text-[11px] mr-1">${c.Type || 'Flexible'}</span>
+                  <span class="px-1.5 py-0.5 rounded text-[10px] font-bold ${impBadge}">${imp}</span>
+                </td>
+                <td class="py-2.5 pr-3 text-right">
+                    <button onclick="openCategoryModal(${c.origIdx})" class="text-indigo-600 hover:text-indigo-800 font-bold mr-3" title="Edit">✎</button>
+                    <button onclick="deleteCategory(${c.origIdx})" class="text-slate-400 hover:text-rose-500 font-bold text-lg leading-none align-middle" title="Delete">&times;</button>
+                </td>
+            </tr>`;
+        }).join('');
+    }
 
         document.getElementById('categoriesTableBody').innerHTML = db.categories.map((c, i) => {
             const gc = db.group_category.find(x => x.Category_ID === c.Category_ID);
