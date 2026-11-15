@@ -1990,6 +1990,197 @@ Output ONLY valid JSON (no markdown wrapping) matching this exact schema:
       renderBvaYtdTable();
     }
 
+    function renderBudgetTable() {
+      syncBvaFilterDropdowns();
+      if (bvaState.viewMode === 'ytd') {
+        renderBvaYtdTable();
+        return;
+      }
+
+      const priorMo = getPriorMonth(appState.selectedMonth);
+      const currYear = appState.selectedMonth.split('-')[0];
+      const acctFilter = bvaState.account;
+      const grpFilter = bvaState.group;
+      const catFilter = bvaState.category;
+      const searchFilter = bvaState.search;
+
+      let shownGroups = 0;
+      const tbody = document.getElementById('relationalBudgetTableBody');
+      tbody.innerHTML = db.groups.map(g => {
+        if (grpFilter && g.Group_ID !== grpFilter) return '';
+
+        const isGoalGrp = g.Goal === 'Yes';
+        const groupGc = db.group_category.filter(gc => gc.Group_ID === g.Group_ID);
+        const grpMatchesSearch = !searchFilter || g.Name.toLowerCase().includes(searchFilter);
+
+        let childItems = [];
+        let sumChildTargets = 0, sumChildActuals = 0, sumChildPrior = 0, sumChildYtd = 0;
+
+        groupGc.forEach(gc => {
+          if (catFilter && gc.Category_ID !== catFilter) return;
+
+          const catObj = db.categories.find(c => c.Category_ID === gc.Category_ID);
+          const catDisplayName = catObj ? catObj.Name : (gc.Display_Label.split('::')[1] || gc.Display_Label);
+          const groupCatLabel = `${g.Goal === 'Yes' ? '🎯 ' : ''}${g.Name}::${catDisplayName}`;
+
+          if (searchFilter && !grpMatchesSearch && !catDisplayName.toLowerCase().includes(searchFilter) && !groupCatLabel.toLowerCase().includes(searchFilter)) {
+            return;
+          }
+
+          const bg = db.budgets.find(b => b.Target_Ref_ID === gc.Category_ID);
+          const target = getMonthlyTargetCalculation(bg, appState.selectedMonth);
+          const rType = bg ? (bg.Rule_Type || bg.Type || 'Each Month') : '-';
+          const priorityBadge = (bg && bg.Priority_Type) ? `<span class="mr-1.5 px-1.5 py-0.5 rounded bg-slate-100 text-[9px] uppercase tracking-wider text-slate-500 font-bold">${bg.Priority_Type.substring(0,1)}</span>` : '';
+          const impactBadge = (catObj && catObj.Impact === 'business') ? `<span class="ml-1.5 text-[9px] font-semibold text-amber-700 bg-amber-50 border border-amber-200 px-1 py-0.2 rounded">biz</span>` : '';
+
+          const matchTxn = (t) => t.Include === '1' && t.Category_ID === gc.Category_ID && (!acctFilter || t.Account_ID === acctFilter);
+          const actual = db.transactions.filter(t => matchTxn(t) && t.Month === appState.selectedMonth).reduce((s, t) => s + (Number(t.Amount) || 0), 0);
+          const priorActual = db.transactions.filter(t => matchTxn(t) && t.Month === priorMo).reduce((s, t) => s + (Number(t.Amount) || 0), 0);
+          const ytdActual = db.transactions.filter(t => matchTxn(t) && t.Month.startsWith(currYear) && t.Month <= appState.selectedMonth).reduce((s, t) => s + (Number(t.Amount) || 0), 0);
+
+          if (acctFilter && actual === 0 && priorActual === 0 && ytdActual === 0) return;
+
+          const variance = target - actual;
+          const meter = target > 0 ? Math.round((actual / target) * 100) : 0;
+
+          sumChildTargets += target; sumChildActuals += actual; sumChildPrior += priorActual; sumChildYtd += ytdActual;
+
+          const escapedCatName = catDisplayName.replace(/'/g, "\\'");
+          const escapedTooltip = groupCatLabel.replace(/"/g, '&quot;');
+          const rowBgClass = isGoalGrp ? 'bg-emerald-50/20 hover:bg-emerald-50/60' : 'hover:bg-slate-50';
+          const rowHtml = `
+            <tr class="${rowBgClass}">
+              <td class="py-2 pl-8 pr-3 text-slate-700 font-medium text-[11px]">
+                ${priorityBadge}<span title="${escapedTooltip}" class="cursor-help border-b border-dotted border-slate-400">${catDisplayName}</span>${impactBadge}
+              </td>
+              <td class="py-2 px-3"><span class="px-2 py-0.5 rounded text-[10px] bg-slate-100 text-slate-600">${rType}</span></td>
+              <td class="py-2 px-3 text-right font-mono-num">${fmtCurrency(target)}</td>
+              <td class="py-2 px-3 text-right font-mono-num font-bold text-slate-900">${fmtCurrency(actual)}</td>
+              <td class="py-2 px-3 text-right font-mono-num ${variance < 0 ? 'text-rose-600' : 'text-emerald-600'}">${fmtCurrency(variance, true)}</td>
+              <td class="py-2 px-3 text-right font-mono-num text-slate-500">${fmtCurrency(priorActual)}</td>
+              <td class="py-2 px-3 text-right font-mono-num text-indigo-700">${fmtCurrency(ytdActual)}</td>
+              <td class="py-2 px-3 text-center font-mono-num text-slate-500">${meter}%</td>
+              <td class="py-2 pl-3 pr-5 text-right">
+                <button onclick="openDrillDown('Category', '${gc.Category_ID}', '${escapedCatName}')" class="px-2 py-1 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded text-[10px] font-semibold transition">[12-Mo]</button>
+              </td>
+            </tr>
+          `;
+
+          childItems.push({
+            Name: catDisplayName.toLowerCase(),
+            Rule: rType.toLowerCase(),
+            Target: target,
+            Actual: actual,
+            Variance: variance,
+            Prior: priorActual,
+            Ytd: ytdActual,
+            Meter: meter,
+            html: rowHtml
+          });
+        });
+
+        if (bvaState.catSortCol) {
+          const col = bvaState.catSortCol;
+          const dir = bvaState.catSortDir === 'asc' ? 1 : -1;
+          childItems.sort((a, b) => {
+            if (a[col] < b[col]) return -1 * dir;
+            if (a[col] > b[col]) return 1 * dir;
+            return 0;
+          });
+        }
+
+        let childRowsHtml = childItems.map(c => c.html).join('');
+        let visibleChildrenCount = childItems.length;
+
+        const matchDirectTxn = (t) => t.Include === '1' && t.Group_ID === g.Group_ID && !t.Category_ID && (!acctFilter || t.Account_ID === acctFilter);
+        const directActual = !catFilter ? db.transactions.filter(t => matchDirectTxn(t) && t.Month === appState.selectedMonth).reduce((s, t) => s + (Number(t.Amount) || 0), 0) : 0;
+        const directPrior = !catFilter ? db.transactions.filter(t => matchDirectTxn(t) && t.Month === priorMo).reduce((s, t) => s + (Number(t.Amount) || 0), 0) : 0;
+        const directYtd = !catFilter ? db.transactions.filter(t => matchDirectTxn(t) && t.Month.startsWith(currYear) && t.Month <= appState.selectedMonth).reduce((s, t) => s + (Number(t.Amount) || 0), 0) : 0;
+
+        sumChildActuals += directActual;
+        sumChildPrior += directPrior;
+        sumChildYtd += directYtd;
+
+        if ((directActual !== 0 || directPrior !== 0 || directYtd !== 0) && groupGc.length > 0) {
+          visibleChildrenCount++;
+          childRowsHtml += `
+            <tr class="${isGoalGrp ? 'bg-emerald-50/30' : 'bg-slate-50/60'}">
+              <td class="py-2 pl-8 pr-3 text-slate-600 italic text-[11px]" title="${g.Name}::Direct">↳ Direct to ${isGoalGrp ? 'Goal' : 'Group'} (No Sub-Category)</td>
+              <td class="py-2 px-3"><span class="px-2 py-0.5 rounded text-[10px] bg-slate-100 text-slate-500">Direct</span></td>
+              <td class="py-2 px-3 text-right font-mono-num text-slate-400">$0.00</td>
+              <td class="py-2 px-3 text-right font-mono-num font-bold text-slate-800">${fmtCurrency(directActual)}</td>
+              <td class="py-2 px-3 text-right font-mono-num text-slate-500">${fmtCurrency(-directActual, true)}</td>
+              <td class="py-2 px-3 text-right font-mono-num text-slate-500">${fmtCurrency(directPrior)}</td>
+              <td class="py-2 px-3 text-right font-mono-num text-indigo-700">${fmtCurrency(directYtd)}</td>
+              <td class="py-2 px-3 text-center font-mono-num text-slate-400">-</td>
+              <td class="py-2 pl-3 pr-5 text-right"></td>
+            </tr>
+          `;
+        }
+
+        if ((searchFilter || catFilter || acctFilter) && visibleChildrenCount === 0 && !(grpMatchesSearch && !catFilter && !acctFilter)) {
+          return '';
+        }
+
+        shownGroups++;
+        const grpBg = db.budgets.find(b => b.Target_Ref_ID === g.Group_ID);
+        const explicitGroupTarget = getMonthlyTargetCalculation(grpBg, appState.selectedMonth);
+        const effectiveGroupTarget = (catFilter || acctFilter) ? sumChildTargets : Math.max(explicitGroupTarget, sumChildTargets);
+        const unallocated = effectiveGroupTarget - sumChildTargets;
+        const grpVariance = effectiveGroupTarget - sumChildActuals;
+        const grpMeter = effectiveGroupTarget > 0 ? Math.round((sumChildActuals / effectiveGroupTarget) * 100) : 0;
+        const grpRuleLabel = grpBg ? (grpBg.Rule_Type || grpBg.Type || g.Type || '') : (g.Type || '');
+
+        let unallocatedRow = '';
+        if (!catFilter && !acctFilter && unallocated > 0.001 && groupGc.length > 0) {
+            unallocatedRow = `
+                <tr class="bg-amber-50/40">
+                  <td class="py-2 pl-8 pr-3 text-amber-700 font-semibold text-[11px] italic">⚠ Unallocated ${isGoalGrp ? 'Goal' : 'Group'} Buffer</td>
+                  <td class="py-2 px-3">-</td>
+                  <td class="py-2 px-3 text-right font-mono-num text-amber-700 font-bold">${fmtCurrency(unallocated)}</td>
+                  <td class="py-2 px-3 text-right font-mono-num font-bold text-slate-400">$0.00</td>
+                  <td class="py-2 px-3 text-right font-mono-num text-amber-600">${fmtCurrency(unallocated, true)}</td>
+                  <td class="py-2 px-3 text-right font-mono-num text-slate-400">$0.00</td>
+                  <td class="py-2 px-3 text-right font-mono-num text-slate-400">$0.00</td>
+                  <td class="py-2 px-3 text-center font-mono-num text-slate-400">0%</td>
+                  <td class="py-2 pl-3 pr-5 text-right"></td>
+                </tr>
+            `;
+        }
+
+        const escapedGrpName = g.Name.replace(/'/g, "\\'");
+        const grpImpactClass = g.Impact === 'business' ? 'bg-amber-100 text-amber-800 border border-amber-300' : 'bg-slate-200 text-slate-600';
+        const goalHeaderClass = isGoalGrp
+            ? 'bg-emerald-100/80 font-bold text-emerald-950 border-t-2 border-emerald-400 border-l-4 border-l-emerald-600'
+            : 'bg-slate-100 font-bold text-slate-900 border-t-2 border-slate-300';
+        const goalBadge = isGoalGrp
+            ? `<span class="inline-flex items-center mr-1.5 px-2 py-0.5 rounded bg-emerald-600 text-white text-[9px] font-extrabold uppercase tracking-wider shadow-sm">🎯 Goal</span>`
+            : '';
+
+        const groupHeader = `
+          <tr class="${goalHeaderClass}">
+            <td class="py-3 pl-4 uppercase tracking-wide text-xs">
+                ${goalBadge}${g.Name} <span class="ml-2 text-[9px] font-semibold px-1.5 py-0.5 rounded ${grpImpactClass}">${g.Impact || 'personal'}</span>
+            </td>
+            <td class="py-3 px-3"><span class="text-[10px] font-medium ${isGoalGrp ? 'text-emerald-800' : 'text-slate-500'}">${grpRuleLabel}</span></td>
+            <td class="py-3 px-3 text-right font-mono-num">${fmtCurrency(effectiveGroupTarget)}</td>
+            <td class="py-3 px-3 text-right font-mono-num">${fmtCurrency(sumChildActuals)}</td>
+            <td class="py-3 px-3 text-right font-mono-num ${grpVariance < 0 ? 'text-rose-600' : 'text-emerald-700'}">${fmtCurrency(grpVariance, true)}</td>
+            <td class="py-3 px-3 text-right font-mono-num text-slate-600">${fmtCurrency(sumChildPrior)}</td>
+            <td class="py-3 px-3 text-right font-mono-num text-indigo-800">${fmtCurrency(sumChildYtd)}</td>
+            <td class="py-3 px-3 text-center font-mono-num ${isGoalGrp ? 'text-emerald-900' : 'text-slate-700'}">${grpMeter}%</td>
+            <td class="py-3 pl-3 pr-5 text-right">
+              <button onclick="openDrillDown('Group', '${g.Group_ID}', '${isGoalGrp ? '🎯 GOAL: ' : 'GROUP: '}${escapedGrpName}')" class="px-2 py-1 ${isGoalGrp ? 'bg-emerald-200 hover:bg-emerald-300 text-emerald-950' : 'bg-slate-200 hover:bg-slate-300 text-slate-700'} rounded text-[10px] font-semibold transition">[12-Mo]</button>
+            </td>
+          </tr>
+        `;
+
+        return groupHeader + childRowsHtml + unallocatedRow;
+      }).join('');
+
+      document.getElementById('bvaStatusText').textContent = `(Category View • ${shownGroups} Group${shownGroups === 1 ? '' : 's'})`;
+    }
+
     function renderBvaYtdTable() {
       const currYear = appState.selectedMonth.split('-')[0];
       const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
@@ -2292,266 +2483,6 @@ Output ONLY valid JSON (no markdown wrapping) matching this exact schema:
       tfoot.innerHTML = `
         <tr>
           <td class="py-3 pl-4 pr-3 uppercase text-[10px] tracking-wider text-slate-500">Grand Totals (Unique Category Targets)</td>
-          <td class="py-3 px-3 text-right font-mono-num text-slate-900">${fmtCurrency(totTarget)}</td>
-          <td class="py-3 px-3 text-right font-mono-num text-indigo-900 bg-slate-200/60">${fmtCurrency(totYtd)}</td>
-          ${footMonthCells}
-        </tr>
-      `;
-    }
-    function renderBvaYtdTable() {
-      const currYear = appState.selectedMonth.split('-')[0];
-      const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-
-      // 1. Render Sortable Header Row
-      const sortIconHtml = (col) => {
-        if (bvaState.sortCol === col) {
-          return `<span class="sort-icon sort-active">${bvaState.sortDir === 'asc' ? '▲' : '▼'}</span>`;
-        }
-        if (bvaState.sortCol === 'Default' && (col === 'AccountName' || col === 'CategoryName')) {
-          return `<span class="sort-icon sort-active">▲</span>`;
-        }
-        return `<span class="sort-icon">⇕</span>`;
-      };
-
-      const monthHeaders = monthNames.map((mName, idx) => {
-        const colKey = `M_${idx + 1}`;
-        const monthStr = `${currYear}-${String(idx + 1).padStart(2, '0')}`;
-        const isSel = monthStr === appState.selectedMonth;
-        return `<th class="py-3.5 px-2.5 text-right hover:text-slate-700 transition cursor-pointer ${isSel ? 'bg-indigo-50/80 text-indigo-800' : ''}" onclick="sortBvaYtd('${colKey}')">${mName} ${sortIconHtml(colKey)}</th>`;
-      }).join('');
-
-      document.getElementById('bvaYtdTableHeadRow').innerHTML = `
-        <th class="py-3.5 pl-5 pr-3 hover:text-slate-700 transition cursor-pointer" onclick="sortBvaYtd('AccountName')">Account ${sortIconHtml('AccountName')}</th>
-        <th class="py-3.5 px-3 hover:text-slate-700 transition cursor-pointer" onclick="sortBvaYtd('CategoryName')">Category <span class="text-[9px] font-normal lowercase text-slate-400">(hover for Group::Category)</span> ${sortIconHtml('CategoryName')}</th>
-        <th class="py-3.5 px-3 text-right hover:text-slate-700 transition cursor-pointer" onclick="sortBvaYtd('MonthlyTarget')">Monthly Target ${sortIconHtml('MonthlyTarget')}</th>
-        <th class="py-3.5 px-3 text-right hover:text-slate-700 transition cursor-pointer bg-slate-100/70" onclick="sortBvaYtd('YtdActual')">YTD Actual ${sortIconHtml('YtdActual')}</th>
-        ${monthHeaders}
-      `;
-
-      // 2. Aggregate rows by Account_ID + Category_ID (plus include budgeted Categories/Goal Groups that have $0 activity yet)
-      const rowMap = new Map();
-      const catHasActivity = new Set();
-      const grpHasActivity = new Set();
-
-      db.transactions.forEach(t => {
-        if (t.Include !== '1' || !t.Month || !t.Month.startsWith(currYear)) return;
-        const accId = t.Account_ID || 'Unassigned';
-        const catId = t.Category_ID || '';
-        const grpId = t.Group_ID || '';
-        if (catId) catHasActivity.add(catId);
-        if (grpId) grpHasActivity.add(grpId);
-
-        const key = `${accId}||${catId}||${catId ? '' : grpId}`;
-
-        if (!rowMap.has(key)) {
-          const accObj = db.accounts.find(a => a.Account_ID === accId);
-          const catObj = catId ? db.categories.find(c => c.Category_ID === catId) : null;
-          const gcObj = catId ? db.group_category.find(gc => gc.Category_ID === catId) : null;
-          const resolvedGrpId = grpId || (gcObj ? gcObj.Group_ID : '');
-          const grpObj = db.groups.find(g => g.Group_ID === resolvedGrpId);
-
-          const isGoalGrp = Boolean(grpObj && grpObj.Goal === 'Yes');
-          const grpName = grpObj ? grpObj.Name : 'Uncategorized';
-          const catName = catObj
-            ? catObj.Name
-            : (isGoalGrp ? `🎯 ${grpName} (Direct)` : (catId || `${grpName} (Direct)`));
-          const hoverLabel = `${isGoalGrp ? '🎯 GOAL: ' : ''}${grpName}::${catObj ? catObj.Name : 'Direct'}`;
-
-          const bg = catId
-            ? db.budgets.find(b => b.Target_Ref_ID === catId)
-            : db.budgets.find(b => b.Target_Ref_ID === resolvedGrpId);
-          const monthlyTarget = getMonthlyTargetCalculation(bg, appState.selectedMonth);
-
-          const entry = {
-            Account_ID: accId,
-            AccountName: accObj ? accObj.Name : accId,
-            AccountType: accObj ? accObj.Type : '',
-            Group_ID: resolvedGrpId,
-            GroupName: grpName,
-            IsGoalGroup: isGoalGrp,
-            Category_ID: catId,
-            CategoryName: catName,
-            HoverLabel: hoverLabel,
-            MonthlyTarget: monthlyTarget,
-            YtdActual: 0
-          };
-          for (let m = 1; m <= 12; m++) entry[`M_${m}`] = 0;
-          rowMap.set(key, entry);
-        }
-
-        const entry = rowMap.get(key);
-        const amt = Number(t.Amount) || 0;
-        const mNum = parseInt(t.Month.split('-')[1], 10);
-        if (mNum >= 1 && mNum <= 12) {
-          entry[`M_${mNum}`] += amt;
-        }
-        if (t.Month <= appState.selectedMonth) {
-          entry.YtdActual += amt;
-        }
-      });
-
-      // Include budgeted Categories and Goal Groups that have $0 transactions so far this year
-      db.group_category.forEach(gc => {
-        if (catHasActivity.has(gc.Category_ID)) return;
-        const catObj = db.categories.find(c => c.Category_ID === gc.Category_ID);
-        const grpObj = db.groups.find(g => g.Group_ID === gc.Group_ID);
-        if (!catObj || !grpObj) return;
-        const bg = db.budgets.find(b => b.Target_Ref_ID === gc.Category_ID);
-        const monthlyTarget = getMonthlyTargetCalculation(bg, appState.selectedMonth);
-        const isGoalGrp = grpObj.Goal === 'Yes';
-        const entry = {
-          Account_ID: '',
-          AccountName: grpObj.Linked_Account ? ((db.accounts.find(a => a.Account_ID === grpObj.Linked_Account) || {}).Name || grpObj.Linked_Account) : 'No Activity Yet',
-          AccountType: '',
-          Group_ID: grpObj.Group_ID,
-          GroupName: grpObj.Name,
-          IsGoalGroup: isGoalGrp,
-          Category_ID: catObj.Category_ID,
-          CategoryName: catObj.Name,
-          HoverLabel: `${isGoalGrp ? '🎯 GOAL: ' : ''}${grpObj.Name}::${catObj.Name}`,
-          MonthlyTarget: monthlyTarget,
-          YtdActual: 0
-        };
-        for (let m = 1; m <= 12; m++) entry[`M_${m}`] = 0;
-        rowMap.set(`NONE||${catObj.Category_ID}||`, entry);
-      });
-
-      db.groups.filter(g => g.Goal === 'Yes').forEach(g => {
-        const hasChildCats = db.group_category.some(gc => gc.Group_ID === g.Group_ID);
-        if (hasChildCats || grpHasActivity.has(g.Group_ID)) return;
-        const bg = db.budgets.find(b => b.Target_Ref_ID === g.Group_ID);
-        const monthlyTarget = getMonthlyTargetCalculation(bg, appState.selectedMonth);
-        const accObj = g.Linked_Account ? db.accounts.find(a => a.Account_ID === g.Linked_Account) : null;
-        const entry = {
-          Account_ID: g.Linked_Account || '',
-          AccountName: accObj ? accObj.Name : (g.Linked_Account || 'No Activity Yet'),
-          AccountType: accObj ? accObj.Type : '',
-          Group_ID: g.Group_ID,
-          GroupName: g.Name,
-          IsGoalGroup: true,
-          Category_ID: '',
-          CategoryName: `🎯 ${g.Name} (Direct)`,
-          HoverLabel: `🎯 GOAL: ${g.Name}::Direct`,
-          MonthlyTarget: monthlyTarget,
-          YtdActual: 0
-        };
-        for (let m = 1; m <= 12; m++) entry[`M_${m}`] = 0;
-        rowMap.set(`NONE||||${g.Group_ID}`, entry);
-      });
-
-      let rows = Array.from(rowMap.values());
-
-      // 3. Apply Filters & Search
-      if (bvaState.account) {
-        rows = rows.filter(r => r.Account_ID === bvaState.account);
-      }
-      if (bvaState.group) {
-        rows = rows.filter(r => r.Group_ID === bvaState.group);
-      }
-      if (bvaState.category) {
-        rows = rows.filter(r => r.Category_ID === bvaState.category);
-      }
-      if (bvaState.search) {
-        rows = rows.filter(r =>
-          r.AccountName.toLowerCase().includes(bvaState.search) ||
-          r.CategoryName.toLowerCase().includes(bvaState.search) ||
-          r.GroupName.toLowerCase().includes(bvaState.search) ||
-          r.HoverLabel.toLowerCase().includes(bvaState.search)
-        );
-      }
-
-      // 4. Sort Rows (Default: Account ASC, then Category ASC)
-      rows.sort((a, b) => {
-        if (bvaState.sortCol === 'Default') {
-          const accCmp = a.AccountName.toLowerCase().localeCompare(b.AccountName.toLowerCase());
-          if (accCmp !== 0) return accCmp;
-          return a.CategoryName.toLowerCase().localeCompare(b.CategoryName.toLowerCase());
-        }
-
-        let valA = a[bvaState.sortCol];
-        let valB = b[bvaState.sortCol];
-
-        if (bvaState.sortCol === 'AccountName' || bvaState.sortCol === 'CategoryName') {
-          valA = (valA || '').toString().toLowerCase();
-          valB = (valB || '').toString().toLowerCase();
-          if (valA === valB) {
-            const tieA = (bvaState.sortCol === 'AccountName' ? a.CategoryName : a.AccountName).toLowerCase();
-            const tieB = (bvaState.sortCol === 'AccountName' ? b.CategoryName : b.AccountName).toLowerCase();
-            return tieA.localeCompare(tieB);
-          }
-        } else {
-          valA = Number(valA) || 0;
-          valB = Number(valB) || 0;
-        }
-
-        if (valA < valB) return bvaState.sortDir === 'asc' ? -1 : 1;
-        if (valA > valB) return bvaState.sortDir === 'asc' ? 1 : -1;
-        return 0;
-      });
-
-      // 5. Render Body & Totals Footer
-      const tbody = document.getElementById('bvaYtdTableBody');
-      const tfoot = document.getElementById('bvaYtdTableFoot');
-      document.getElementById('bvaStatusText').textContent = `(YTD View • ${currYear} • ${rows.length} row${rows.length === 1 ? '' : 's'})`;
-
-      if (rows.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="16" class="py-8 text-center text-slate-400 italic">No activity found for ${currYear} matching your current filters.</td></tr>`;
-        tfoot.innerHTML = '';
-        return;
-      }
-
-      let totTarget = 0;
-      let totYtd = 0;
-      const totMonths = Array(13).fill(0);
-      const seenTargetKeys = new Set();
-
-      tbody.innerHTML = rows.map(r => {
-        const targetKey = r.Category_ID || `GRP_${r.Group_ID}`;
-        if (!seenTargetKeys.has(targetKey)) {
-          seenTargetKeys.add(targetKey);
-          totTarget += r.MonthlyTarget;
-        }
-        totYtd += r.YtdActual;
-
-        const escapedHover = r.HoverLabel.replace(/"/g, '&quot;');
-        const catCellHtml = r.IsGoalGroup
-          ? `<span title="${escapedHover}" class="cursor-help inline-flex items-center gap-1 px-2 py-0.5 rounded bg-emerald-100 text-emerald-900 font-bold border border-emerald-300">${r.CategoryName}</span>`
-          : `<span title="${escapedHover}" class="cursor-help font-semibold text-slate-800 border-b border-dotted border-slate-400 hover:text-indigo-700">${r.CategoryName}</span>`;
-
-        let monthCells = '';
-        for (let m = 1; m <= 12; m++) {
-          const mVal = r[`M_${m}`];
-          totMonths[m] += mVal;
-          const monthStr = `${currYear}-${String(m).padStart(2, '0')}`;
-          const isSel = monthStr === appState.selectedMonth;
-          const cellColor = mVal === 0 ? 'text-slate-300' : (mVal < 0 ? 'text-emerald-600 font-semibold' : 'text-slate-800');
-          monthCells += `<td class="py-2.5 px-2.5 text-right font-mono-num ${cellColor} ${isSel ? 'bg-indigo-50/40 font-bold' : ''}">${mVal === 0 ? '-' : fmtCurrency(mVal)}</td>`;
-        }
-
-        return `
-          <tr class="hover:bg-slate-50">
-            <td class="py-2.5 pl-5 pr-3 font-semibold text-slate-700 whitespace-nowrap">
-              ${r.AccountName}
-              ${r.AccountType ? `<span class="ml-1 text-[9px] px-1.5 py-0.5 rounded bg-slate-100 text-slate-500 font-semibold">${r.AccountType}</span>` : ''}
-            </td>
-            <td class="py-2.5 px-3 whitespace-nowrap">${catCellHtml}</td>
-            <td class="py-2.5 px-3 text-right font-mono-num text-slate-600">${fmtCurrency(r.MonthlyTarget)}</td>
-            <td class="py-2.5 px-3 text-right font-mono-num font-bold text-indigo-800 bg-slate-50/80">${fmtCurrency(r.YtdActual)}</td>
-            ${monthCells}
-          </tr>
-        `;
-      }).join('');
-
-      let footMonthCells = '';
-      for (let m = 1; m <= 12; m++) {
-        const monthStr = `${currYear}-${String(m).padStart(2, '0')}`;
-        const isSel = monthStr === appState.selectedMonth;
-        footMonthCells += `<td class="py-3 px-2.5 text-right font-mono-num ${isSel ? 'bg-indigo-100/70 text-indigo-950' : 'text-slate-800'}">${fmtCurrency(totMonths[m])}</td>`;
-      }
-
-      tfoot.innerHTML = `
-        <tr>
-          <td class="py-3 pl-5 pr-3 uppercase text-[10px] tracking-wider text-slate-500" colspan="2">Filtered Totals (Unique Category Targets)</td>
           <td class="py-3 px-3 text-right font-mono-num text-slate-900">${fmtCurrency(totTarget)}</td>
           <td class="py-3 px-3 text-right font-mono-num text-indigo-900 bg-slate-200/60">${fmtCurrency(totYtd)}</td>
           ${footMonthCells}
