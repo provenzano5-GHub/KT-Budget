@@ -40,7 +40,7 @@
           <div class="flex items-center gap-2.5 flex-wrap">
             <h1 class="text-xl font-extrabold tracking-tight text-white">KTBudget 4.0</h1>
             <span class="px-2.5 py-0.5 text-[11px] font-semibold rounded-full bg-indigo-950/90 text-indigo-300 border border-indigo-700/60">
-              Unified Relational Engine • v4.2.0
+              Unified Relational Engine • v4.2.1
             </span>
           </div>
           <p class="text-xs text-slate-400 mt-0.5">Weekly AI Sync • Unified Goal Groups • Dual BvA &amp; 12-Mo YTD Views</p>
@@ -344,14 +344,16 @@
             </div>
             <div class="overflow-x-auto">
                 <table class="w-full text-left border-collapse">
-                    <thead><tr class="border-b border-slate-200 bg-slate-50 text-[10px] font-bold uppercase tracking-wider text-slate-400">
-                        <th class="py-2 pl-3">Group Name</th>
-                        <th class="py-2">Goal?</th>
-                        <th class="py-2">Type</th>
-                        <th class="py-2">Impact</th>
-                        <th class="py-2">Budgeted</th>
-                        <th class="py-2 text-right pr-3">Actions</th>
-                    </tr></thead>
+                    <thead>
+                      <tr class="border-b border-slate-200 bg-slate-50 text-[10px] font-bold uppercase tracking-wider text-slate-400 select-none">
+                        <th class="py-2 pl-3 cursor-pointer hover:text-slate-700 transition" onclick="sortStructure('group', 'Name')">Group Name <span id="structSort-group-Name" class="sort-icon sort-active">▲</span></th>
+                        <th class="py-2 cursor-pointer hover:text-slate-700 transition" onclick="sortStructure('group', 'Goal')">Goal? <span id="structSort-group-Goal" class="sort-icon">⇕</span></th>
+                        <th class="py-2 cursor-pointer hover:text-slate-700 transition" onclick="sortStructure('group', 'Type')">Type <span id="structSort-group-Type" class="sort-icon">⇕</span></th>
+                        <th class="py-2 cursor-pointer hover:text-slate-700 transition" onclick="sortStructure('group', 'Impact')">Impact <span id="structSort-group-Impact" class="sort-icon">⇕</span></th>
+                        <th class="py-2 cursor-pointer hover:text-slate-700 transition" onclick="sortStructure('group', 'Budget')">Budgeted <span id="structSort-group-Budget" class="sort-icon">⇕</span></th>
+                        <th class="py-2 text-right pr-3 cursor-default">Actions</th>
+                      </tr>
+                    </thead>
                     <tbody id="groupsTableBody" class="divide-y divide-slate-100 text-xs"></tbody>
                 </table>
             </div>
@@ -368,12 +370,14 @@
             </div>
             <div class="overflow-x-auto">
                 <table class="w-full text-left border-collapse">
-                    <thead><tr class="border-b border-slate-200 bg-slate-50 text-[10px] font-bold uppercase tracking-wider text-slate-400">
-                        <th class="py-2 pl-3">Category Name</th>
-                        <th class="py-2">Parent Group</th>
-                        <th class="py-2">Type / Impact</th>
-                        <th class="py-2 text-right pr-3">Actions</th>
-                    </tr></thead>
+                    <thead>
+                      <tr class="border-b border-slate-200 bg-slate-50 text-[10px] font-bold uppercase tracking-wider text-slate-400 select-none">
+                        <th class="py-2 pl-3 cursor-pointer hover:text-slate-700 transition" onclick="sortStructure('category', 'Name')">Category Name <span id="structSort-category-Name" class="sort-icon sort-active">▲</span></th>
+                        <th class="py-2 cursor-pointer hover:text-slate-700 transition" onclick="sortStructure('category', 'Group')">Parent Group <span id="structSort-category-Group" class="sort-icon">⇕</span></th>
+                        <th class="py-2 cursor-pointer hover:text-slate-700 transition" onclick="sortStructure('category', 'Type')">Type / Impact <span id="structSort-category-Type" class="sort-icon">⇕</span></th>
+                        <th class="py-2 text-right pr-3 cursor-default">Actions</th>
+                      </tr>
+                    </thead>
                     <tbody id="categoriesTableBody" class="divide-y divide-slate-100 text-xs"></tbody>
                 </table>
             </div>
@@ -682,7 +686,6 @@
 
   <!-- CRUD MODALS -->
   <!-- Group Modal -->
-  <!-- Group Modal -->
   <div id="groupModal" class="fixed inset-0 bg-slate-900/60 hidden items-center justify-center p-4 z-50">
     <div class="bg-white rounded-2xl max-w-sm w-full p-6 shadow-2xl space-y-4 text-xs">
       <h3 id="groupModalTitle" class="text-base font-bold">Add Group</h3>
@@ -953,6 +956,7 @@
     let appState = { selectedMonth: '2026-10', customMonths: ['2026-10', '2026-09'], show12Mo: false };
     
     let ledgerState = { search: '', month: '', account: '', group: '', category: '', sortCol: 'Date', sortDir: 'desc' };
+    let structureState = { groupCol: 'Name', groupDir: 'asc', categoryCol: 'Name', categoryDir: 'asc' };
     let pendingImports = [];
 
     function checkInstallMode() {
@@ -1061,7 +1065,7 @@
         return result;
     }
 
-function copyWeeklyAiSyncPacket() {
+    function copyWeeklyAiSyncPacket() {
         const acctLines = db.accounts.map(a => `- Account_ID: "${a.Account_ID}" | Name: "${a.Name}" | Type: "${a.Type}"`).join('\n');
 
         const cutoffLines = db.accounts.map(a => {
@@ -1153,7 +1157,6 @@ Return ONLY a valid JSON array (no markdown commentary outside the JSON block) m
         const raw = document.getElementById('aiStageJsonInput').value.trim();
         if (!raw) return alert('Paste the JSON array output from Gemini into the box first.');
 
-        // 1. Strip any markdown code fences (```json or ```) anywhere in the pasted text
         let cleaned = raw.replace(/```json/gi, '').replace(/```/g, '').trim();
 
         const firstBracket = cleaned.indexOf('[');
@@ -1162,19 +1165,14 @@ Return ONLY a valid JSON array (no markdown commentary outside the JSON block) m
             return alert('Could not find a valid JSON array [ ... ] in the pasted text.');
         }
 
-        // 2. Isolate from first '[' to last ']' and stitch multiple back-to-back arrays:
-        //    e.g., "[ {...} ]  [ {...} ]" or "[ {...} ], [ {...} ]"  -->  "[ {...}, {...} ]"
         let sliced = cleaned.substring(firstBracket, lastBracket + 1);
         sliced = sliced.replace(/\]\s*,?\s*\[/g, ',');
-        // Clean up any accidental double commas or empty array artifacts (e.g. "[, " or ", ]")
         sliced = sliced.replace(/\[\s*,/g, '[').replace(/,\s*\]/g, ']').replace(/,\s*,/g, ',');
 
         let arr = [];
         try {
             arr = JSON.parse(sliced);
         } catch (primaryErr) {
-            // Fallback: if there was stray conversational text between pasted blocks,
-            // extract every individual { ... } JSON object block directly
             try {
                 const objMatches = cleaned.match(/\{[\s\S]*?\}/g);
                 if (objMatches && objMatches.length > 0) {
@@ -1189,7 +1187,6 @@ Return ONLY a valid JSON array (no markdown commentary outside the JSON block) m
 
         if (!Array.isArray(arr) || arr.length === 0) return alert('The JSON array is empty.');
 
-        // Flatten in case of nested arrays
         arr = arr.flat(Infinity).filter(Boolean);
 
         let added = 0;
@@ -1357,13 +1354,20 @@ Return ONLY a valid JSON array (no markdown commentary outside the JSON block) m
         if (badge) badge.textContent = `${pendingImports.length} item${pendingImports.length === 1 ? '' : 's'}`;
         
         let destOptions = '<option value="" disabled>Select Group :: Category...</option>';
-        db.groups.forEach(g => {
+        // Alpha-sorted groups and categories in import dropdowns
+        const sortedGroups = [...db.groups].sort((a,b) => (a.Name||'').localeCompare(b.Name||''));
+        sortedGroups.forEach(g => {
             const prefix = g.Goal === 'Yes' ? '🎯 GOAL: ' : '';
             const gcs = db.group_category.filter(gc => gc.Group_ID === g.Group_ID);
             if (gcs.length === 0) {
                 destOptions += `<option value="${g.Group_ID}|">[${prefix}${g.Name}] (Direct / General)</option>`;
             } else {
-                gcs.forEach(gc => {
+                const sortedGcs = [...gcs].sort((x,y) => {
+                    const cx = db.categories.find(c => c.Category_ID === x.Category_ID)?.Name || '';
+                    const cy = db.categories.find(c => c.Category_ID === y.Category_ID)?.Name || '';
+                    return cx.localeCompare(cy);
+                });
+                sortedGcs.forEach(gc => {
                     const c = db.categories.find(cat => cat.Category_ID === gc.Category_ID);
                     if (c) destOptions += `<option value="${g.Group_ID}|${c.Category_ID}">[${prefix}${g.Name}] ${c.Name}</option>`;
                 });
@@ -1373,8 +1377,9 @@ Return ONLY a valid JSON array (no markdown commentary outside the JSON block) m
             }
         });
         
+        const sortedAccs = [...db.accounts].sort((a,b) => (a.Name||'').localeCompare(b.Name||''));
         let accOptions = '<option value="" disabled>Select Source...</option>';
-        db.accounts.forEach(a => {
+        sortedAccs.forEach(a => {
             accOptions += `<option value="${a.Account_ID}">${a.Name} (${a.Type})</option>`;
         });
 
@@ -1467,14 +1472,6 @@ Return ONLY a valid JSON array (no markdown commentary outside the JSON block) m
     function openImportGuideModal() { document.getElementById('importGuideModal').classList.remove('hidden'); document.getElementById('importGuideModal').classList.add('flex'); }
     function closeImportGuideModal() { document.getElementById('importGuideModal').classList.add('hidden'); document.getElementById('importGuideModal').classList.remove('flex'); }
     
-    function generateAIPrompt() {
-        const accs = db.accounts.map(a => a.Account_ID).join(', ');
-        const cats = db.categories.map(c => c.Category_ID).join(', ');
-        const prompt = `You are a financial data processor.\nHere is a list of my official Account IDs: [${accs}].\nHere is a list of my exact Category IDs: [${cats}].\n\nTake the following raw bank CSV data and return a newly mapped CSV. You must categorize every transaction as best as you can by matching the merchant to the most logical Category ID. If it is a credit card payment or transfer, use the most appropriate transfer category. Output ONLY the raw CSV text using exactly these headers: Txn_ID, Date, Month, Account_ID, Merchant, Group_ID, Category_ID, Amount, Include.\n\nNote: Output expenses as positive amounts, use '1' for Include, make up sequential Txn_IDs (e.g. T9001), format Date strictly as YYYY-MM-DD, and format Month strictly as YYYY-MM. Note: Use your best judgment to assign the logical Group_ID (e.g., G_NEC) that corresponds with the Category_ID.`;
-        
-        navigator.clipboard.writeText(prompt).then(() => alert('Prompt copied to clipboard! Paste this into Gemini/ChatGPT along with your raw bank CSV text.')).catch(err => alert('Failed to copy.'));
-    }
-
     function openAiPrepGuideModal() { document.getElementById('aiPrepGuideModal').classList.remove('hidden'); document.getElementById('aiPrepGuideModal').classList.add('flex'); }
     function closeAiPrepGuideModal() { document.getElementById('aiPrepGuideModal').classList.add('hidden'); document.getElementById('aiPrepGuideModal').classList.remove('flex'); }
     
@@ -1531,11 +1528,9 @@ Output ONLY valid JSON matching this exact schema:
     function harvestMerchantRulesFromTransactions() {
         if (!Array.isArray(db.merchant_rules)) db.merchant_rules = [];
         const ruleMap = new Map();
-        // Keep existing rules first
         db.merchant_rules.forEach(r => {
             if (r && r.Merchant) ruleMap.set(r.Merchant.toLowerCase().trim(), r);
         });
-        // Harvest from current transactions (newest wins)
         db.transactions.forEach(t => {
             if (!t.Merchant || (!t.Group_ID && !t.Category_ID)) return;
             const key = t.Merchant.toLowerCase().trim();
@@ -1546,7 +1541,6 @@ Output ONLY valid JSON matching this exact schema:
                 Category_ID: t.Category_ID || ''
             });
         });
-        // Also ensure every Group::Category pair has at least a structural hint if no transactions existed
         db.merchant_rules = Array.from(ruleMap.values());
     }
 
@@ -1558,7 +1552,6 @@ Output ONLY valid JSON matching this exact schema:
                 if (r && r.Merchant) map.set(r.Merchant.toLowerCase().trim(), r);
             });
         }
-        // Live transactions always override or supplement saved rules
         for (let i = 0; i < db.transactions.length; i++) {
             const t = db.transactions[i];
             if (!t.Merchant) continue;
@@ -1578,7 +1571,7 @@ Output ONLY valid JSON matching this exact schema:
         updateSavedRulesBadge();
     }
     function clearSavedMerchantHints() {
-        if (confirm('Clear all saved Merchant Rules / AI categorization hints? (Your Accounts, Groups, Categories, Budgets, and Transactions will not be touched.)')) {
+        if (confirm('Clear all saved Merchant Rules / AI categorization hints?')) {
             db.merchant_rules = [];
             saveDataToLocal();
             updateSavedRulesBadge();
@@ -1601,7 +1594,7 @@ Output ONLY valid JSON matching this exact schema:
         const ruleCount = db.merchant_rules ? db.merchant_rules.length : 0;
         const txnCount = db.transactions.length;
 
-        if (confirm(`🧹 SMART TRANSACTION WIPE:\n\nThis will remove all ${txnCount} transaction(s) from your ledger so you can load a fresh transaction set.\n\n✓ Preserves all Accounts, Groups, Goal Groups, Categories, Budgets, and Todos.\n✓ Preserves ${ruleCount} unique Merchant -> (Account, Group, Category) mapping hint(s) to assist AI Sync and CSV imports.\n\nProceed with wiping transactions only?`)) {
+        if (confirm(`🧹 SMART TRANSACTION WIPE:\n\nThis will remove all ${txnCount} transaction(s) from your ledger so you can load a fresh transaction set.\n\n✓ Preserves all Accounts, Groups, Goal Groups, Categories, Budgets, and Todos.\n✓ Preserves ${ruleCount} unique Merchant -> (Account, Group, Category) mapping hint(s).\n\nProceed with wiping transactions only?`)) {
             db.transactions = [];
             pendingImports = [];
             saveDataToLocal();
@@ -1613,9 +1606,9 @@ Output ONLY valid JSON matching this exact schema:
     }
 
     function wipeAllData() {
-        if (confirm("⚠️ WARNING: This will permanently delete ALL local data (including Accounts, Groups, Categories, Budgets, and Transactions) and restore the initial demo state.\n\nPlease ensure you have downloaded a backup if you wish to keep your current data.\n\nProceed with Full Factory Reset?")) {
+        if (confirm("⚠️ WARNING: This will permanently delete ALL local data and restore initial demo state. Proceed?")) {
             localStorage.removeItem(STORAGE_KEY);
-            alert("Data wiped successfully. The app will now reload into Demo mode.");
+            alert("Data wiped successfully. The app will now reload.");
             location.reload();
         }
     }
@@ -1680,7 +1673,6 @@ Output ONLY valid JSON matching this exact schema:
     }
 
     function normalizeAndMigrateDatabase() {
-        // 1. Ensure all groups have the Goal attribute ('Yes' or 'No')
         db.groups.forEach(g => {
             if (!g.Goal) g.Goal = 'No';
             else if (g.Goal.toLowerCase() === 'yes' || g.Goal === '1' || g.Goal === true) g.Goal = 'Yes';
@@ -1690,7 +1682,6 @@ Output ONLY valid JSON matching this exact schema:
             if (!g.Budget) g.Budget = 'Yes';
         });
 
-        // 2. Migrate any legacy db.goals rows into Special Groups (Goal = 'Yes') + Group-level Budgets
         if (Array.isArray(db.goals) && db.goals.length > 0) {
             db.goals.forEach(legacyGoal => {
                 if (!legacyGoal || !legacyGoal.Name) return;
@@ -1717,7 +1708,6 @@ Output ONLY valid JSON matching this exact schema:
                     if (legacyGoal.Linked_Account) existingGrp.Linked_Account = legacyGoal.Linked_Account;
                 }
 
-                // Ensure a Group-level budget exists for this Goal Group
                 const targetGrpId = existingGrp.Group_ID;
                 const amt = Number(legacyGoal.Amount !== undefined ? legacyGoal.Amount : legacyGoal.Target_Value) || 0;
                 const existingBg = db.budgets.find(b => b.Target_Ref_ID === targetGrpId);
@@ -1735,7 +1725,6 @@ Output ONLY valid JSON matching this exact schema:
                     });
                 }
 
-                // Re-point any transactions that referenced legacy Goal_ID to the Goal Group
                 if (legacyGoal.Goal_ID) {
                     db.transactions.forEach(t => {
                         if (t.Goal_ID === legacyGoal.Goal_ID) {
@@ -1748,7 +1737,6 @@ Output ONLY valid JSON matching this exact schema:
             db.goals = [];
         }
 
-        // 3. Normalize Budgets
         db.budgets.forEach(b => {
             if (!b.Scope_Level) {
                 if (db.groups.some(g => g.Group_ID === b.Target_Ref_ID)) b.Scope_Level = 'Group';
@@ -1757,7 +1745,6 @@ Output ONLY valid JSON matching this exact schema:
             if (!b.Start_Month) b.Start_Month = appState.selectedMonth;
         });
 
-        // 4. Normalize Transactions (Always Group_ID :: Category_ID)
         db.transactions.forEach(t => {
             if(!t.Date) t.Date = t.Month ? `${t.Month}-01` : '';
             if(t.GC_ID !== undefined) {
@@ -1780,7 +1767,6 @@ Output ONLY valid JSON matching this exact schema:
             delete t.Goal_ID;
         });
 
-        // 5. Normalize Todos
         db.todos.forEach((td, i) => {
             if (!td.Todo_ID) td.Todo_ID = 'TD_' + (i + 1);
             if (td.Completed === undefined) td.Completed = '0';
@@ -1838,22 +1824,31 @@ Output ONLY valid JSON matching this exact schema:
     }
 
     function populateDropdowns() {
+        // Universal alpha sort on all dropdown selections
+        const sortedGroups = [...db.groups].sort((a, b) => (a.Name || '').toLowerCase().localeCompare((b.Name || '').toLowerCase()));
+        
         let scopeOptions = '';
-        db.groups.forEach(g => {
+        sortedGroups.forEach(g => {
             const isGoal = g.Goal === 'Yes';
-            const icon = isGoal ? '🎯 GOAL GROUP:' : '📁 GROUP:';
+            const icon = isGoal ? '🎯 GOAL:' : '📁 GROUP:';
             scopeOptions += `<option value="Group|${g.Group_ID}" class="font-bold text-slate-900 bg-slate-100">${icon} ${g.Name}</option>`;
             const catsInGroup = db.group_category.filter(gc => gc.Group_ID === g.Group_ID);
-            catsInGroup.forEach(gc => {
+            const sortedCats = [...catsInGroup].sort((x, y) => {
+                const cx = db.categories.find(c => c.Category_ID === x.Category_ID)?.Name || '';
+                const cy = db.categories.find(c => c.Category_ID === y.Category_ID)?.Name || '';
+                return cx.toLowerCase().localeCompare(cy.toLowerCase());
+            });
+            sortedCats.forEach(gc => {
                 const c = db.categories.find(cat => cat.Category_ID === gc.Category_ID);
                 if (c) scopeOptions += `<option value="Category|${c.Category_ID}">&nbsp;&nbsp;&nbsp;↳ Category: ${c.Name}</option>`;
             });
         });
-        document.getElementById('newBudgCategory').innerHTML = '<option value="" disabled selected>Select Scope (Group or Category)...</option>' + scopeOptions;
+        const budgCatEl = document.getElementById('newBudgCategory');
+        if (budgCatEl) budgCatEl.innerHTML = '<option value="" disabled selected>Select Scope (Group or Category)...</option>' + scopeOptions;
 
         let stdGrpOpts = '';
         let goalGrpOpts = '';
-        db.groups.forEach(g => {
+        sortedGroups.forEach(g => {
             const label = `${g.Goal === 'Yes' ? '🎯 ' : ''}${g.Name} (${g.Impact || 'personal'})`;
             if (g.Goal === 'Yes') goalGrpOpts += `<option value="${g.Group_ID}">${label}</option>`;
             else stdGrpOpts += `<option value="${g.Group_ID}">${label}</option>`;
@@ -1863,20 +1858,39 @@ Output ONLY valid JSON matching this exact schema:
         if (stdGrpOpts) grpOptions += `<optgroup label="Standard Budget Groups">${stdGrpOpts}</optgroup>`;
         if (goalGrpOpts) grpOptions += `<optgroup label="🎯 Goal Groups">${goalGrpOpts}</optgroup>`;
         
-        document.getElementById('newTxnGroup').innerHTML = grpOptions;
-        document.getElementById('splitGrpA').innerHTML = grpOptions;
-        document.getElementById('splitGrpB').innerHTML = grpOptions;
+        const txnGrpEl = document.getElementById('newTxnGroup');
+        if (txnGrpEl) txnGrpEl.innerHTML = grpOptions;
+        const splitA = document.getElementById('splitGrpA');
+        if (splitA) splitA.innerHTML = grpOptions;
+        const splitB = document.getElementById('splitGrpB');
+        if (splitB) splitB.innerHTML = grpOptions;
 
-        const accs = db.accounts.map(a => `<option value="${a.Account_ID}">${a.Name} (${a.Type})</option>`).join('');
+        const sortedAccs = [...db.accounts].sort((a,b) => (a.Name||'').toLowerCase().localeCompare((b.Name||'').toLowerCase()));
+        const accs = sortedAccs.map(a => `<option value="${a.Account_ID}">${a.Name} (${a.Type})</option>`).join('');
         const budgAccEl = document.getElementById('newBudgAccount');
         if (budgAccEl) budgAccEl.innerHTML = '<option value="">None / Multiple Accounts</option>' + accs;
         
-        document.getElementById('newTxnAccount').innerHTML = '<option value="" disabled selected>Select Source Account...</option>' + accs;
+        const txnAccEl = document.getElementById('newTxnAccount');
+        if (txnAccEl) txnAccEl.innerHTML = '<option value="" disabled selected>Select Source Account...</option>' + accs;
 
-        document.getElementById('filterMonth').innerHTML = '<option value="">All Months</option>' + appState.customMonths.map(m => `<option value="${m}">${m}</option>`).join('');
-        document.getElementById('filterAccount').innerHTML = '<option value="">All Accounts</option>' + accs;
-        document.getElementById('filterGroup').innerHTML = '<option value="">All Groups &amp; Goals</option>' + db.groups.map(g => `<option value="${g.Group_ID}">${g.Goal === 'Yes' ? '🎯 ' : ''}${g.Name}</option>`).join('');
-        document.getElementById('filterCategory').innerHTML = '<option value="">All Categories</option>' + db.categories.map(c => `<option value="${c.Category_ID}">${c.Name}</option>`).join('');
+        const fMonth = document.getElementById('filterMonth');
+        if (fMonth) fMonth.innerHTML = '<option value="">All Months</option>' + appState.customMonths.map(m => `<option value="${m}">${m}</option>`).join('');
+        const fAcc = document.getElementById('filterAccount');
+        if (fAcc) fAcc.innerHTML = '<option value="">All Accounts</option>' + accs;
+        const fGrp = document.getElementById('filterGroup');
+        if (fGrp) fGrp.innerHTML = '<option value="">All Groups &amp; Goals</option>' + sortedGroups.map(g => `<option value="${g.Group_ID}">${g.Goal === 'Yes' ? '🎯 ' : ''}${g.Name}</option>`).join('');
+        
+        const sortedCatsOnly = [...db.categories].sort((a,b) => (a.Name||'').toLowerCase().localeCompare((b.Name||'').toLowerCase()));
+        const fCat = document.getElementById('filterCategory');
+        if (fCat) fCat.innerHTML = '<option value="">All Categories</option>' + sortedCatsOnly.map(c => `<option value="${c.Category_ID}">${c.Name}</option>`).join('');
+
+        // Also update parent group selector in Category modal if present
+        const catGrpSelect = document.getElementById('newCatGroup');
+        if (catGrpSelect) {
+            let catGrpOpts = '<option value="" disabled selected>Select Parent Group or Goal...</option>';
+            sortedGroups.forEach(g => catGrpOpts += `<option value="${g.Group_ID}">${g.Goal === 'Yes' ? '🎯 ' : ''}${g.Name} (${g.Impact || 'personal'})</option>`);
+            catGrpSelect.innerHTML = catGrpOpts;
+        }
     }
 
     function updateCategoryDropdown(targetId, groupId, selectedVal = '') {
@@ -1888,14 +1902,20 @@ Output ONLY valid JSON matching this exact schema:
         
         const grp = db.groups.find(g => g.Group_ID === groupId);
         const validGcs = db.group_category.filter(gc => gc.Group_ID === groupId);
-        const catOpts = validGcs.map(gc => {
+        // Alpha sort subcategories in dropdown
+        const sortedGcs = [...validGcs].sort((x, y) => {
+            const cx = db.categories.find(c => c.Category_ID === x.Category_ID)?.Name || '';
+            const cy = db.categories.find(c => c.Category_ID === y.Category_ID)?.Name || '';
+            return cx.toLowerCase().localeCompare(cy.toLowerCase());
+        });
+
+        const catOpts = sortedGcs.map(gc => {
             const c = db.categories.find(cat => cat.Category_ID === gc.Category_ID);
             return c ? `<option value="${c.Category_ID}">${c.Name}</option>` : '';
         }).join('');
         
         let html = '';
         if (validGcs.length === 0) {
-            // 0 categories assigned to this Goal/Group: allow direct Group-level categorization
             const directLabel = (grp && grp.Goal === 'Yes') ? `🎯 Direct to Goal (${grp.Name})` : `Direct to Group (${grp ? grp.Name : 'General'})`;
             html = `<option value="">${directLabel}</option>`;
         } else {
@@ -1973,8 +1993,10 @@ Output ONLY valid JSON matching this exact schema:
 
     function renderAll() {
       const mSel = document.getElementById('monthSelect');
-      mSel.innerHTML = appState.customMonths.map(m => `<option value="${m}">${m}</option>`).join('');
-      mSel.value = appState.selectedMonth;
+      if (mSel) {
+          mSel.innerHTML = appState.customMonths.map(m => `<option value="${m}">${m}</option>`).join('');
+          mSel.value = appState.selectedMonth;
+      }
       
       renderKpis();
       renderBudgetTable();
@@ -2044,14 +2066,14 @@ Output ONLY valid JSON matching this exact schema:
     }
 
     let bvaState = {
-      viewMode: 'category', // 'category' | 'ytd'
+      viewMode: 'category',
       search: '',
       account: '',
       group: '',
       category: '',
-      catSortCol: '',       // '' (default order) | 'Name' | 'Rule' | 'Target' | 'Actual' | 'Variance' | 'Prior' | 'Ytd' | 'Meter'
+      catSortCol: '',
       catSortDir: 'asc',
-      sortCol: 'Default',   // For YTD view: 'Default' sorts by Account ASC, then Category ASC
+      sortCol: 'Default',
       sortDir: 'asc'
     };
     
@@ -2085,9 +2107,13 @@ Output ONLY valid JSON matching this exact schema:
       const curGrp = bvaState.group;
       const curCat = bvaState.category;
 
-      accSel.innerHTML = '<option value="">All Accounts</option>' + db.accounts.map(a => `<option value="${a.Account_ID}">${a.Name} (${a.Type})</option>`).join('');
-      grpSel.innerHTML = '<option value="">All Groups &amp; Goals</option>' + db.groups.map(g => `<option value="${g.Group_ID}">${g.Goal === 'Yes' ? '🎯 ' : ''}${g.Name}</option>`).join('');
-      catSel.innerHTML = '<option value="">All Categories</option>' + db.categories.map(c => `<option value="${c.Category_ID}">${c.Name}</option>`).join('');
+      const sortedAccs = [...db.accounts].sort((a,b)=>(a.Name||'').localeCompare(b.Name||''));
+      const sortedGrps = [...db.groups].sort((a,b)=>(a.Name||'').localeCompare(b.Name||''));
+      const sortedCats = [...db.categories].sort((a,b)=>(a.Name||'').localeCompare(b.Name||''));
+
+      accSel.innerHTML = '<option value="">All Accounts</option>' + sortedAccs.map(a => `<option value="${a.Account_ID}">${a.Name} (${a.Type})</option>`).join('');
+      grpSel.innerHTML = '<option value="">All Groups &amp; Goals</option>' + sortedGrps.map(g => `<option value="${g.Group_ID}">${g.Goal === 'Yes' ? '🎯 ' : ''}${g.Name}</option>`).join('');
+      catSel.innerHTML = '<option value="">All Categories</option>' + sortedCats.map(c => `<option value="${c.Category_ID}">${c.Name}</option>`).join('');
 
       accSel.value = curAcc;
       grpSel.value = curGrp;
@@ -2161,7 +2187,9 @@ Output ONLY valid JSON matching this exact schema:
 
       let shownGroups = 0;
       const tbody = document.getElementById('relationalBudgetTableBody');
-      tbody.innerHTML = db.groups.map(g => {
+      const sortedGroupsForBva = [...db.groups].sort((a,b)=>(a.Name||'').localeCompare(b.Name||''));
+
+      tbody.innerHTML = sortedGroupsForBva.map(g => {
         if (grpFilter && g.Group_ID !== grpFilter) return '';
 
         const isGoalGrp = g.Goal === 'Yes';
@@ -2340,7 +2368,6 @@ Output ONLY valid JSON matching this exact schema:
       const currYear = appState.selectedMonth.split('-')[0];
       const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
-      // 1. Render Sortable Header Row (Single first column: Account / Category)
       const sortIconHtml = (col) => {
         if (bvaState.sortCol === col) {
           return `<span class="sort-icon sort-active">${bvaState.sortDir === 'asc' ? '▲' : '▼'}</span>`;
@@ -2365,7 +2392,6 @@ Output ONLY valid JSON matching this exact schema:
         ${monthHeaders}
       `;
 
-      // 2. Aggregate rows by Account_ID + Category_ID (plus include budgeted Categories/Goal Groups that have $0 activity yet)
       const rowMap = new Map();
       const catHasActivity = new Set();
       const grpHasActivity = new Set();
@@ -2431,7 +2457,6 @@ Output ONLY valid JSON matching this exact schema:
         }
       });
 
-      // Include budgeted Categories and Goal Groups that have $0 transactions so far this year
       db.group_category.forEach(gc => {
         if (catHasActivity.has(gc.Category_ID)) return;
         const catObj = db.categories.find(c => c.Category_ID === gc.Category_ID);
@@ -2487,16 +2512,9 @@ Output ONLY valid JSON matching this exact schema:
 
       let rows = Array.from(rowMap.values());
 
-      // 3. Apply Filters & Search
-      if (bvaState.account) {
-        rows = rows.filter(r => r.Account_ID === bvaState.account);
-      }
-      if (bvaState.group) {
-        rows = rows.filter(r => r.Group_ID === bvaState.group);
-      }
-      if (bvaState.category) {
-        rows = rows.filter(r => r.Category_ID === bvaState.category);
-      }
+      if (bvaState.account) rows = rows.filter(r => r.Account_ID === bvaState.account);
+      if (bvaState.group) rows = rows.filter(r => r.Group_ID === bvaState.group);
+      if (bvaState.category) rows = rows.filter(r => r.Category_ID === bvaState.category);
       if (bvaState.search) {
         rows = rows.filter(r =>
           r.AccountName.toLowerCase().includes(bvaState.search) ||
@@ -2516,7 +2534,6 @@ Output ONLY valid JSON matching this exact schema:
         return;
       }
 
-      // 4. Group rows by Account (ordered alphabetically by AccountName, with "Unassigned / No Activity Yet" at the bottom)
       const acctGroupsMap = new Map();
       rows.forEach(r => {
         const aKey = r.Account_ID || 'UNASSIGNED_ACCT';
@@ -2537,14 +2554,12 @@ Output ONLY valid JSON matching this exact schema:
         return a.AccountName.toLowerCase().localeCompare(b.AccountName.toLowerCase());
       });
 
-      // 5. Render Account Header Rows + Indented Category Rows
       let totTarget = 0;
       let totYtd = 0;
       const totMonths = Array(13).fill(0);
       const seenGlobalTargetKeys = new Set();
 
       tbody.innerHTML = acctGroups.map(grp => {
-        // Sort categories within each Account section (Default: CategoryName ASC)
         grp.items.sort((a, b) => {
           if (bvaState.sortCol === 'Default' || bvaState.sortCol === 'CategoryName') {
             const cmp = a.CategoryName.toLowerCase().localeCompare(b.CategoryName.toLowerCase());
@@ -2608,9 +2623,7 @@ Output ONLY valid JSON matching this exact schema:
           acctMonthCells += `<td class="py-3 px-2.5 text-right font-mono-num ${mSum === 0 ? 'text-slate-400' : 'text-slate-900'} ${isSel ? 'bg-indigo-100/50 text-indigo-950' : ''}">${fmtCurrency(mSum)}</td>`;
         }
 
-        const typeBadge = grp.AccountType
-          ? `<span class="ml-2 text-[9px] font-semibold px-1.5 py-0.5 rounded bg-slate-200 text-slate-600">${grp.AccountType}</span>`
-          : '';
+        const typeBadge = grp.AccountType ? `<span class="ml-2 text-[9px] font-semibold px-1.5 py-0.5 rounded bg-slate-200 text-slate-600">${grp.AccountType}</span>` : '';
 
         const acctHeaderHtml = `
           <tr class="bg-slate-100 font-bold text-slate-900 border-t-2 border-slate-300">
@@ -2744,23 +2757,18 @@ Output ONLY valid JSON matching this exact schema:
 
     function jumpToLedger(month, scope, refId) {
         closeDrillDown();
-        
         const monthSelect = document.getElementById('filterMonth');
         if (!Array.from(monthSelect.options).some(opt => opt.value === month)) {
             monthSelect.innerHTML += `<option value="${month}">${month}</option>`;
         }
-        
         document.getElementById('filterMerchant').value = '';
         document.getElementById('filterAccount').value = '';
         document.getElementById('filterGroup').value = '';
         document.getElementById('filterCategory').value = '';
         
         document.getElementById('filterMonth').value = month;
-        if (scope === 'Group') {
-            document.getElementById('filterGroup').value = refId;
-        } else if (scope === 'Category') {
-            document.getElementById('filterCategory').value = refId;
-        }
+        if (scope === 'Group') document.getElementById('filterGroup').value = refId;
+        else if (scope === 'Category') document.getElementById('filterCategory').value = refId;
         
         updateLedgerFilters();
         switchTab('ledger');
@@ -2781,11 +2789,7 @@ Output ONLY valid JSON matching this exact schema:
         document.getElementById('filterAccount').value = '';
         document.getElementById('filterGroup').value = '';
         document.getElementById('filterCategory').value = '';
-        ledgerState.search = '';
-        ledgerState.month = '';
-        ledgerState.account = '';
-        ledgerState.group = '';
-        ledgerState.category = '';
+        ledgerState.search = ''; ledgerState.month = ''; ledgerState.account = ''; ledgerState.group = ''; ledgerState.category = '';
         if (doRender) renderLedger();
     }
 
@@ -2796,14 +2800,12 @@ Output ONLY valid JSON matching this exact schema:
             ledgerState.sortCol = col;
             ledgerState.sortDir = col === 'Amount' ? 'desc' : 'asc'; 
         }
-        
         document.querySelectorAll('.sort-icon').forEach(el => { el.innerHTML = '⇕'; el.classList.remove('sort-active'); });
         const activeIcon = document.getElementById(`sort-${col}`);
         if(activeIcon) {
             activeIcon.innerHTML = ledgerState.sortDir === 'asc' ? '▲' : '▼';
             activeIcon.classList.add('sort-active');
         }
-        
         renderLedger();
     }
 
@@ -2816,9 +2818,7 @@ Output ONLY valid JSON matching this exact schema:
           
           const isGoalGroup = Boolean(grpObj && grpObj.Goal === 'Yes');
           const groupName = grpObj ? grpObj.Name : (t.Group_ID || 'Uncategorized');
-          const targetName = catObj
-              ? catObj.Name
-              : (isGoalGroup ? `🎯 Direct to Goal` : (t.Category_ID || 'Direct / Uncategorized'));
+          const targetName = catObj ? catObj.Name : (isGoalGroup ? `🎯 Direct to Goal` : (t.Category_ID || 'Direct / Uncategorized'));
 
           return {
               ...t,
@@ -2835,26 +2835,15 @@ Output ONLY valid JSON matching this exact schema:
       const isFiltered = Boolean(ledgerState.search || ledgerState.month || ledgerState.account || ledgerState.group || ledgerState.category);
       document.getElementById('activeFilterNotice').classList.toggle('hidden', !isFiltered);
 
-      if (ledgerState.search) {
-          enrichedTxns = enrichedTxns.filter(t => t.Merchant.toLowerCase().includes(ledgerState.search));
-      }
-      if (ledgerState.month) {
-          enrichedTxns = enrichedTxns.filter(t => t.Month === ledgerState.month);
-      }
-      if (ledgerState.account) {
-          enrichedTxns = enrichedTxns.filter(t => t.Account_ID === ledgerState.account);
-      }
-      if (ledgerState.group) {
-          enrichedTxns = enrichedTxns.filter(t => t.GroupID === ledgerState.group);
-      }
-      if (ledgerState.category) {
-          enrichedTxns = enrichedTxns.filter(t => t.CategoryID === ledgerState.category);
-      }
+      if (ledgerState.search) enrichedTxns = enrichedTxns.filter(t => t.Merchant.toLowerCase().includes(ledgerState.search));
+      if (ledgerState.month) enrichedTxns = enrichedTxns.filter(t => t.Month === ledgerState.month);
+      if (ledgerState.account) enrichedTxns = enrichedTxns.filter(t => t.Account_ID === ledgerState.account);
+      if (ledgerState.group) enrichedTxns = enrichedTxns.filter(t => t.GroupID === ledgerState.group);
+      if (ledgerState.category) enrichedTxns = enrichedTxns.filter(t => t.CategoryID === ledgerState.category);
 
       enrichedTxns.sort((a, b) => {
           let valA = a[ledgerState.sortCol];
           let valB = b[ledgerState.sortCol];
-          
           if (ledgerState.sortCol === 'Amount') {
               valA = parseFloat(valA) || 0;
               valB = parseFloat(valB) || 0;
@@ -2862,7 +2851,6 @@ Output ONLY valid JSON matching this exact schema:
               valA = (valA || '').toString().toLowerCase();
               valB = (valB || '').toString().toLowerCase();
           }
-
           if (valA < valB) return ledgerState.sortDir === 'asc' ? -1 : 1;
           if (valA > valB) return ledgerState.sortDir === 'asc' ? 1 : -1;
           return 0;
@@ -2878,11 +2866,8 @@ Output ONLY valid JSON matching this exact schema:
         const grpLower = t.GroupName.toLowerCase();
         const rawAmt = parseFloat(t.Amount) || 0;
         
-        if (targetLower.includes('transfer') || grpLower.includes('transfer')) {
-            amountColor = 'text-slate-500';
-        } else if (targetLower.includes('income') || grpLower.includes('income') || rawAmt < 0) {
-            amountColor = 'text-emerald-600';
-        }
+        if (targetLower.includes('transfer') || grpLower.includes('transfer')) amountColor = 'text-slate-500';
+        else if (targetLower.includes('income') || grpLower.includes('income') || rawAmt < 0) amountColor = 'text-emerald-600';
 
         const groupBadge = t.IsGoalGroup
             ? `<span class="inline-flex items-center px-2 py-0.5 rounded bg-emerald-100 text-emerald-900 font-bold text-[11px] border border-emerald-300">🎯 ${t.GroupName}</span>`
@@ -2908,9 +2893,7 @@ Output ONLY valid JSON matching this exact schema:
         </tr>
       `}).join('');
       
-      if(enrichedTxns.length === 0) {
-          tbody.innerHTML = `<tr><td colspan="8" class="py-8 text-center text-slate-500 italic">No transactions match your current filters.</td></tr>`;
-      }
+      if(enrichedTxns.length === 0) tbody.innerHTML = `<tr><td colspan="8" class="py-8 text-center text-slate-500 italic">No transactions match your current filters.</td></tr>`;
     }
 
     function toggleTransactionInclude(idx, isChecked) {
@@ -2922,7 +2905,10 @@ Output ONLY valid JSON matching this exact schema:
     }
 
     function renderAccountsAndTodos() {
-      document.getElementById('accountsGrid').innerHTML = db.accounts.map((a, idx) => `
+      const sortedAccs = [...db.accounts].sort((a,b)=>(a.Name||'').localeCompare(b.Name||''));
+      document.getElementById('accountsGrid').innerHTML = sortedAccs.map((a) => {
+        const idx = db.accounts.findIndex(x => x.Account_ID === a.Account_ID);
+        return `
         <div class="p-4 rounded-xl border border-slate-200 bg-slate-50 space-y-2 relative group">
           <div class="absolute top-3 right-3 flex items-center gap-2 opacity-0 group-hover:opacity-100 transition">
             <button onclick="openAccountModal(${idx})" class="text-indigo-600 hover:text-indigo-800 text-xs font-bold">✎ Edit</button>
@@ -2931,7 +2917,7 @@ Output ONLY valid JSON matching this exact schema:
           <div class="flex justify-between items-center pr-14"><h3 class="font-bold text-slate-900">${a.Name}</h3><span class="text-xs px-2 py-0.5 rounded bg-slate-200 text-slate-800 font-semibold">${a.Type}</span></div>
           <div class="text-2xl font-extrabold font-mono-num text-slate-900">${fmtCurrency(a.Balance)}</div>
         </div>
-      `).join('');
+      `;}).join('');
 
       const todosBody = document.getElementById('todosTableBody');
       if (!db.todos || db.todos.length === 0) {
@@ -2956,15 +2942,16 @@ Output ONLY valid JSON matching this exact schema:
       }
     }
 
- function renderBudgetAndGoalSetup() {
-      // Both tables use the exact same Parent (Group/Goal) -> Child (Category) renderer!
-      // Top Table: Goal === 'No' | Bottom Table: Goal === 'Yes'
+    function renderBudgetAndGoalSetup() {
       document.getElementById('budgetSetupTableBody').innerHTML = renderUnifiedCanvasRows(false);
       document.getElementById('goalsSetupTableBody').innerHTML = renderUnifiedCanvasRows(true);
     }
 
     function renderUnifiedCanvasRows(isGoalSection) {
-      const targetGroups = db.groups.filter(g => (g.Goal === 'Yes') === isGoalSection);
+      // Groups displayed first, alpha-sorted, then Goals (or vice-versa depending on the container table)
+      const targetGroups = db.groups.filter(g => (g.Goal === 'Yes') === isGoalSection)
+        .sort((a,b)=>(a.Name||'').localeCompare(b.Name||''));
+
       if (targetGroups.length === 0) {
         const emptyMsg = isGoalSection
           ? 'No Goal Groups configured yet. Click "+ New Goal Group" to create a Goal container, or "+ Add/Set Goal Target" to set targets.'
@@ -2979,7 +2966,14 @@ Output ONLY valid JSON matching this exact schema:
         const groupGc = db.group_category.filter(gc => gc.Group_ID === g.Group_ID);
 
         let sumChildBaseAmounts = 0;
-        const childRowsHtml = groupGc.map(gc => {
+        // Alpha-sort child categories under parent group
+        const sortedGroupGc = [...groupGc].sort((x, y) => {
+            const cx = db.categories.find(c => c.Category_ID === x.Category_ID)?.Name || '';
+            const cy = db.categories.find(c => c.Category_ID === y.Category_ID)?.Name || '';
+            return cx.toLowerCase().localeCompare(cy.toLowerCase());
+        });
+
+        const childRowsHtml = sortedGroupGc.map(gc => {
           const catObj = db.categories.find(c => c.Category_ID === gc.Category_ID);
           if (!catObj) return '';
           const catBgIdx = db.budgets.findIndex(b => b.Target_Ref_ID === catObj.Category_ID);
@@ -3024,7 +3018,6 @@ Output ONLY valid JSON matching this exact schema:
           `;
         }).join('');
 
-        // Parent (Group or Goal) Header Row
         const gAmt = grpBg ? (Number(grpBg.Amount) || 0) : 0;
         const effectiveDisplayAmt = gAmt > 0 ? gAmt : sumChildBaseAmounts;
         const amtSubLabel = (gAmt === 0 && sumChildBaseAmounts > 0) ? '<span class="block text-[9px] text-slate-400 font-normal">(Sum of children)</span>' : '';
@@ -3075,10 +3068,64 @@ Output ONLY valid JSON matching this exact schema:
       }).join('');
     }
 
+    function sortStructure(tableType, col) {
+        if (tableType === 'group') {
+            if (structureState.groupCol === col) {
+                structureState.groupDir = structureState.groupDir === 'asc' ? 'desc' : 'asc';
+            } else {
+                structureState.groupCol = col;
+                structureState.groupDir = 'asc';
+            }
+        } else {
+            if (structureState.categoryCol === col) {
+                structureState.categoryDir = structureState.categoryDir === 'asc' ? 'desc' : 'asc';
+            } else {
+                structureState.categoryCol = col;
+                structureState.categoryDir = 'asc';
+            }
+        }
+        renderStructure();
+    }
+
     function renderStructure() {
+        const { groupCol, groupDir, categoryCol, categoryDir } = structureState;
+        
+        // Update header sorting icons for Groups & Categories
+        ['Name', 'Goal', 'Type', 'Impact', 'Budget'].forEach(c => {
+            const iconEl = document.getElementById(`structSort-group-${c}`);
+            if (iconEl) {
+                if (groupCol === c) {
+                    iconEl.innerHTML = groupDir === 'asc' ? '▲' : '▼';
+                    iconEl.classList.add('sort-active');
+                } else {
+                    iconEl.innerHTML = '⇕';
+                    iconEl.classList.remove('sort-active');
+                }
+            }
+        });
+
+        ['Name', 'Group', 'Type'].forEach(c => {
+            const iconEl = document.getElementById(`structSort-category-${c}`);
+            if (iconEl) {
+                if (categoryCol === c) {
+                    iconEl.innerHTML = categoryDir === 'asc' ? '▲' : '▼';
+                    iconEl.classList.add('sort-active');
+                } else {
+                    iconEl.innerHTML = '⇕';
+                    iconEl.classList.remove('sort-active');
+                }
+            }
+        });
+
         const sortedGroups = db.groups
             .map((g, origIdx) => ({ ...g, origIdx }))
-            .sort((a, b) => (a.Name || '').toLowerCase().localeCompare((b.Name || '').toLowerCase()));
+            .sort((a, b) => {
+                let valA = (a[groupCol] || '').toString().toLowerCase();
+                let valB = (b[groupCol] || '').toString().toLowerCase();
+                if (valA < valB) return groupDir === 'asc' ? -1 : 1;
+                if (valA > valB) return groupDir === 'asc' ? 1 : -1;
+                return 0;
+            });
 
         document.getElementById('groupsTableBody').innerHTML = sortedGroups.map((g) => {
             const imp = g.Impact || 'personal';
@@ -3102,12 +3149,30 @@ Output ONLY valid JSON matching this exact schema:
         }).join('');
 
         const sortedCategories = db.categories
-            .map((c, origIdx) => ({ ...c, origIdx }))
-            .sort((a, b) => (a.Name || '').toLowerCase().localeCompare((b.Name || '').toLowerCase()));
+            .map((c, origIdx) => {
+                const gc = db.group_category.find(x => x.Category_ID === c.Category_ID);
+                const grp = gc ? db.groups.find(x => x.Group_ID === gc.Group_ID) : null;
+                return { ...c, origIdx, parentGroupName: grp ? grp.Name : '' };
+            })
+            .sort((a, b) => {
+                let valA = '', valB = '';
+                if (categoryCol === 'Group') {
+                    valA = (a.parentGroupName || '').toLowerCase();
+                    valB = (b.parentGroupName || '').toLowerCase();
+                } else if (categoryCol === 'Type') {
+                    valA = (a.Type || '').toLowerCase();
+                    valB = (b.Type || '').toLowerCase();
+                } else {
+                    valA = (a.Name || '').toLowerCase();
+                    valB = (b.Name || '').toLowerCase();
+                }
+                if (valA < valB) return categoryDir === 'asc' ? -1 : 1;
+                if (valA > valB) return categoryDir === 'asc' ? 1 : -1;
+                return 0;
+            });
 
         document.getElementById('categoriesTableBody').innerHTML = sortedCategories.map((c) => {
-            const gc = db.group_category.find(x => x.Category_ID === c.Category_ID);
-            const grp = gc ? db.groups.find(x => x.Group_ID === gc.Group_ID) : null;
+            const grp = db.groups.find(x => x.Group_ID === db.group_category.find(gc => gc.Category_ID === c.Category_ID)?.Group_ID);
             const gName = grp ? `${grp.Goal === 'Yes' ? '🎯 ' : ''}${grp.Name}` : '<span class="text-rose-500 text-[10px] font-bold">⚠ UNLINKED</span>';
             const imp = c.Impact || 'personal';
             const impBadge = imp === 'business' ? 'bg-amber-100 text-amber-800' : 'bg-slate-100 text-slate-600';
@@ -3190,8 +3255,9 @@ Output ONLY valid JSON matching this exact schema:
         editingCatIdx = idx;
         document.getElementById('categoryModalTitle').textContent = idx >= 0 ? 'Edit Category' : 'Add Category';
         
+        const sortedGroups = [...db.groups].sort((a,b)=>(a.Name||'').localeCompare(b.Name||''));
         let grpOpts = '<option value="" disabled selected>Select Parent Group or Goal...</option>';
-        db.groups.forEach(g => grpOpts += `<option value="${g.Group_ID}">${g.Goal === 'Yes' ? '🎯 ' : ''}${g.Name} (${g.Impact || 'personal'})</option>`);
+        sortedGroups.forEach(g => grpOpts += `<option value="${g.Group_ID}">${g.Goal === 'Yes' ? '🎯 ' : ''}${g.Name} (${g.Impact || 'personal'})</option>`);
         document.getElementById('newCatGroup').innerHTML = grpOpts;
 
         if(idx >= 0) {
@@ -3266,7 +3332,6 @@ Output ONLY valid JSON matching this exact schema:
 
         if (idx >= 0) {
             const t = db.transactions[idx];
-            
             accSelect.disabled = true;
             accSelect.classList.add('bg-slate-100', 'cursor-not-allowed', 'opacity-70');
             dateInput.disabled = true;
@@ -3281,10 +3346,8 @@ Output ONLY valid JSON matching this exact schema:
             dateInput.value = t.Date || `${t.Month}-01`;
             document.getElementById('newTxnMonth').value = t.Month || '';
             accSelect.value = t.Account_ID || '';
-            
             document.getElementById('newTxnGroup').value = t.Group_ID || '';
             updateCategoryDropdown('newTxnCategory', t.Group_ID, t.Category_ID || '');
-            
             document.getElementById('newTxnMerchant').value = t.Merchant || '';
             document.getElementById('newTxnAmount').value = t.Amount || '';
         } else {
@@ -3389,12 +3452,8 @@ Output ONLY valid JSON matching this exact schema:
             return alert('Please select a Group (or Goal Group) for both parts and ensure amounts equal the original total.');
         }
 
-        const txnA = {
-            ...orig, Txn_ID: orig.Txn_ID + '-A', Amount: amtA, Group_ID: grpA, Category_ID: catA
-        };
-        const txnB = {
-            ...orig, Txn_ID: orig.Txn_ID + '-B', Amount: amtB, Group_ID: grpB, Category_ID: catB
-        };
+        const txnA = { ...orig, Txn_ID: orig.Txn_ID + '-A', Amount: amtA, Group_ID: grpA, Category_ID: catA };
+        const txnB = { ...orig, Txn_ID: orig.Txn_ID + '-B', Amount: amtB, Group_ID: grpB, Category_ID: catB };
         
         db.transactions.splice(splittingTxnIdx, 1, txnA, txnB);
         saveDataToLocal(); closeSplitModal(); renderAll(); switchTab('ledger');
@@ -3487,13 +3546,13 @@ Output ONLY valid JSON matching this exact schema:
     // UNIFIED BUDGET & GOAL TARGETS CRUD
     let editingBudgIdx = -1;
     function toggleBudgetTargetDate() {
-        const type = document.getElementById('newBudgType').value;
-        document.getElementById('newBudgDate').disabled = false; // Always allow optional End Month, required for Target Month
+        document.getElementById('newBudgDate').disabled = false;
     }
 
     function buildScopedBudgetDropdown(onlyGoals = null) {
+        const sortedGroups = [...db.groups].sort((a,b)=>(a.Name||'').localeCompare(b.Name||''));
         let scopeOptions = '';
-        db.groups.forEach(g => {
+        sortedGroups.forEach(g => {
             const isGoal = g.Goal === 'Yes';
             if (onlyGoals === true && !isGoal) return;
             if (onlyGoals === false && isGoal) return;
@@ -3501,7 +3560,12 @@ Output ONLY valid JSON matching this exact schema:
             const icon = isGoal ? '🎯 GOAL (Parent):' : '📁 GROUP (Parent):';
             scopeOptions += `<option value="Group|${g.Group_ID}" class="font-bold text-slate-900 bg-slate-100">${icon} ${g.Name}</option>`;
             const catsInGroup = db.group_category.filter(gc => gc.Group_ID === g.Group_ID);
-            catsInGroup.forEach(gc => {
+            const sortedCats = [...catsInGroup].sort((x, y) => {
+                const cx = db.categories.find(c => c.Category_ID === x.Category_ID)?.Name || '';
+                const cy = db.categories.find(c => c.Category_ID === y.Category_ID)?.Name || '';
+                return cx.toLowerCase().localeCompare(cy.toLowerCase());
+            });
+            sortedCats.forEach(gc => {
                 const c = db.categories.find(cat => cat.Category_ID === gc.Category_ID);
                 if (c) scopeOptions += `<option value="Category|${c.Category_ID}">&nbsp;&nbsp;&nbsp;↳ Category (Child): ${c.Name}</option>`;
             });
@@ -3513,7 +3577,8 @@ Output ONLY valid JSON matching this exact schema:
         editingBudgIdx = idx;
         buildScopedBudgetDropdown(isGoalContext);
 
-        const accs = db.accounts.map(a => `<option value="${a.Account_ID}">${a.Name} (${a.Type})</option>`).join('');
+        const sortedAccs = [...db.accounts].sort((a,b)=>(a.Name||'').localeCompare(b.Name||''));
+        const accs = sortedAccs.map(a => `<option value="${a.Account_ID}">${a.Name} (${a.Type})</option>`).join('');
         document.getElementById('newBudgAccount').innerHTML = '<option value="">None / Multiple Accounts</option>' + accs;
 
         document.getElementById('budgetModalTitle').textContent = idx >= 0
@@ -3523,7 +3588,6 @@ Output ONLY valid JSON matching this exact schema:
         if (idx >= 0 && db.budgets[idx]) {
             const b = db.budgets[idx];
             const scopeVal = `${b.Scope_Level}|${b.Target_Ref_ID}`;
-            // If the item wasn't in the filtered dropdown, rebuild with all scopes
             if (!document.querySelector(`#newBudgCategory option[value="${scopeVal}"]`)) {
                 buildScopedBudgetDropdown(null);
             }
@@ -3579,7 +3643,6 @@ Output ONLY valid JSON matching this exact schema:
 
         const [scopeLevel, targetRef] = scopeVal.split('|');
 
-        // If this is a Group/Goal-level target, also sync Linked_Account & Description to the Group record
         if (scopeLevel === 'Group') {
             const grp = db.groups.find(g => g.Group_ID === targetRef);
             if (grp) {
@@ -3600,7 +3663,6 @@ Output ONLY valid JSON matching this exact schema:
             Notes: notes
         };
 
-        // Check if a budget already exists for this Target_Ref_ID when adding
         const existingIdx = editingBudgIdx >= 0 ? editingBudgIdx : db.budgets.findIndex(b => b.Target_Ref_ID === targetRef);
         if (existingIdx >= 0) {
             db.budgets[existingIdx] = { ...db.budgets[existingIdx], ...payload };
@@ -3618,7 +3680,7 @@ Output ONLY valid JSON matching this exact schema:
         }
     }
     function deleteGoal(groupId) {
-        if(confirm('Delete this Goal Group and its Group-level budget rule? (Any linked categories will become unlinked).')) {
+        if(confirm('Delete this Goal Group and its Group-level budget rule?')) {
             db.groups = db.groups.filter(g => g.Group_ID !== groupId);
             db.group_category = db.group_category.filter(gc => gc.Group_ID !== groupId);
             db.budgets = db.budgets.filter(b => b.Target_Ref_ID !== groupId);
