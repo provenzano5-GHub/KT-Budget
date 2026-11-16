@@ -2042,6 +2042,18 @@ Output ONLY valid JSON matching this exact schema:
       document.getElementById('kpiUtilization').textContent = util + '%';
       document.getElementById('kpiUtilizationBar').style.width = Math.min(util, 100) + '%';
     }
+
+    let bvaState = {
+      viewMode: 'category', // 'category' | 'ytd'
+      search: '',
+      account: '',
+      group: '',
+      category: '',
+      catSortCol: '',       // '' (default order) | 'Name' | 'Rule' | 'Target' | 'Actual' | 'Variance' | 'Prior' | 'Ytd' | 'Meter'
+      catSortDir: 'asc',
+      sortCol: 'Default',   // For YTD view: 'Default' sorts by Account ASC, then Category ASC
+      sortDir: 'asc'
+    };
     
     function setBvaViewMode(mode) {
       bvaState.viewMode = mode;
