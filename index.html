@@ -540,10 +540,13 @@
                     <p class="text-xs text-amber-900 leading-relaxed">
                         Clears your Transactions Ledger so you can start fresh, while <strong>preserving all Accounts, Groups, Goal Groups, Categories, Budgets, and Todos</strong>. Also snapshots your unique <code class="font-mono-num">Merchant &rarr; (Account, Group, Category)</code> patterns so the AI Sync Packet and CSV Importer still know how to categorize your merchants!
                     </p>
-                    <label class="flex items-center gap-2 pt-2 text-xs font-semibold text-amber-950 cursor-pointer select-none">
-                        <input type="checkbox" id="useAiHintsCheckbox" onchange="toggleUseAiHints(this.checked)" checked class="rounded border-amber-400 text-indigo-600 focus:ring-indigo-500 cursor-pointer" />
-                        <span>Use saved Merchant Rules / Demo Hints to assist transaction loading</span>
-                    </label>
+                    <div class="flex items-center justify-between gap-2 pt-2 flex-wrap">
+                      <label class="flex items-center gap-2 text-xs font-semibold text-amber-950 cursor-pointer select-none">
+                          <input type="checkbox" id="useAiHintsCheckbox" onchange="toggleUseAiHints(this.checked)" checked class="rounded border-amber-400 text-indigo-600 focus:ring-indigo-500 cursor-pointer" />
+                          <span>Use saved Merchant Rules / Hints</span>
+                      </label>
+                      <button onclick="clearSavedMerchantHints()" class="text-[11px] font-bold text-rose-700 hover:text-rose-900 underline">Clear Saved Hints</button>
+                    </div>
                 </div>
                 <button onclick="wipeTransactionsOnly()" class="bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold px-4 py-2.5 rounded transition w-full shadow-sm">
                     🧹 Wipe Transactions Only (Preserve Structure &amp; Hints)
@@ -1574,7 +1577,15 @@ Output ONLY valid JSON matching this exact schema:
         saveDataToLocal();
         updateSavedRulesBadge();
     }
-
+    function clearSavedMerchantHints() {
+        if (confirm('Clear all saved Merchant Rules / AI categorization hints? (Your Accounts, Groups, Categories, Budgets, and Transactions will not be touched.)')) {
+            db.merchant_rules = [];
+            saveDataToLocal();
+            updateSavedRulesBadge();
+            alert('Saved merchant hints cleared.');
+        }
+    }
+    
     function updateSavedRulesBadge() {
         const badge = document.getElementById('savedRulesCountBadge');
         const chk = document.getElementById('useAiHintsCheckbox');
@@ -1975,10 +1986,23 @@ Output ONLY valid JSON matching this exact schema:
     }
 
    function renderKpis() {
-      let totT = 0, totC = 0, totP = 0;
-      const priorMo = getPriorMonth(appState.selectedMonth); 
-      
+      let totT = 0, totC = 0, totP = 0, totIncomeC = 0;
+      const priorMo = getPriorMonth(appState.selectedMonth);
+
+      const isNonExpenseGroup = (grpId) => {
+          const g = db.groups.find(x => x.Group_ID === grpId);
+          const name = (g && g.Name ? g.Name : '').toLowerCase();
+          return name.includes('income') || name.includes('transfer');
+      };
+
+      const isIncomeGroup = (grpId) => {
+          const g = db.groups.find(x => x.Group_ID === grpId);
+          return (g && g.Name ? g.Name : '').toLowerCase().includes('income');
+      };
+
       db.groups.forEach(g => {
+          if (isNonExpenseGroup(g.Group_ID)) return;
+
           const groupGc = db.group_category.filter(gc => gc.Group_ID === g.Group_ID);
           let childrenTargetsTotal = 0;
 
@@ -1995,6 +2019,12 @@ Output ONLY valid JSON matching this exact schema:
       db.transactions.forEach(t => {
         const amt = Number(t.Amount) || 0;
         if (t.Include === '1') {
+          if (isIncomeGroup(t.Group_ID)) {
+            if (t.Month === appState.selectedMonth) totIncomeC += amt;
+            return;
+          }
+          if (isNonExpenseGroup(t.Group_ID)) return;
+
           if (t.Month === appState.selectedMonth) totC += amt;
           if (t.Month === priorMo) totP += amt;
         }
@@ -2003,28 +2033,16 @@ Output ONLY valid JSON matching this exact schema:
       const varVal = totT - totC;
       document.getElementById('kpiMonthlyTarget').textContent = fmtCurrency(totT);
       document.getElementById('kpiCurrentActual').textContent = fmtCurrency(totC);
-      document.getElementById('kpiPriorActualSub').textContent = `Prior Actual (${priorMo}): ` + fmtCurrency(totP);
+      document.getElementById('kpiPriorActualSub').textContent = `Prior (${priorMo}): ${fmtCurrency(totP)} • Income: ${fmtCurrency(totIncomeC)}`;
       document.getElementById('kpiVariance').textContent = fmtCurrency(varVal, true);
       document.getElementById('kpiVariance').className = `text-3xl font-extrabold mt-2 font-mono-num ${varVal < 0 ? 'text-rose-600' : 'text-emerald-600'}`;
-      document.getElementById('kpiVarianceSub').textContent = varVal < 0 ? '⚠ Over budget target' : '✓ Within budget target';
+      document.getElementById('kpiVarianceSub').textContent = varVal < 0 ? '⚠ Over expense target' : '✓ Within expense target';
 
       const util = totT > 0 ? Math.round((totC / totT) * 100) : 0;
       document.getElementById('kpiUtilization').textContent = util + '%';
       document.getElementById('kpiUtilizationBar').style.width = Math.min(util, 100) + '%';
     }
-
-    let bvaState = {
-      viewMode: 'category', // 'category' | 'ytd'
-      search: '',
-      account: '',
-      group: '',
-      category: '',
-      catSortCol: '',       // '' (default order) | 'Name' | 'Rule' | 'Target' | 'Actual' | 'Variance' | 'Prior' | 'Ytd' | 'Meter'
-      catSortDir: 'asc',
-      sortCol: 'Default',   // For YTD view: 'Default' sorts by Account ASC, then Category ASC
-      sortDir: 'asc'
-    };
-
+    
     function setBvaViewMode(mode) {
       bvaState.viewMode = mode;
       const isYtd = mode === 'ytd';
