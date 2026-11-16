@@ -40,10 +40,10 @@
           <div class="flex items-center gap-2.5 flex-wrap">
             <h1 class="text-xl font-extrabold tracking-tight text-white">KTBudget 4.0</h1>
             <span class="px-2.5 py-0.5 text-[11px] font-semibold rounded-full bg-indigo-950/90 text-indigo-300 border border-indigo-700/60">
-              Relational 8-Table Engine • v4.1.0
+              Unified Relational Engine • v4.2.0
             </span>
           </div>
-          <p class="text-xs text-slate-400 mt-0.5">Native Bulk-Import Wizard • Peer Goals &amp; Budgets</p>
+          <p class="text-xs text-slate-400 mt-0.5">Weekly AI Sync • Unified Goal Groups • Dual BvA &amp; 12-Mo YTD Views</p>
         </div>
       </div>
 
@@ -186,10 +186,10 @@
         </div>
 
         <div id="ledgerHelp" class="hidden bg-slate-50 border border-slate-200 rounded-lg p-4 text-xs text-slate-700 space-y-3 shadow-inner">
-            <p><strong class="text-slate-900">Transfers:</strong> Moving money between tracked accounts (like paying a credit card from checking) should be categorized into a 'Transfer' group. These are net-zero events and do not impact your income or expense budgets.</p>
-            <p><strong class="text-slate-900">Goals vs. Categories:</strong> Every transaction under a Group can be allocated directly to either a standard <strong>Category</strong> or a <strong>🎯 Goal</strong> (or split between both using the ✂ Split tool).</p>
-            <p><strong class="text-slate-900">Healing (Reconciliation &amp; Budgets):</strong> If your app balance drifts from your actual bank balance, enter a manual Adjustment transaction. To cover overspending in one category or goal, you can adjust a target amount or split a transaction to draw surplus from a different category.</p>
-            <p class="pt-2 border-t border-slate-200"><strong class="text-slate-900">Color Guide:</strong> <span class="text-rose-600 font-bold">Red</span> = Expenses ($ Out) &nbsp;|&nbsp; <span class="text-emerald-600 font-bold">Green</span> = Income ($ In) &nbsp;|&nbsp; <span class="text-slate-500 font-bold">Grey</span> = Transfers (Internal Move)</p>
+            <p><strong class="text-slate-900">Goals Are Special Groups (<code class="font-mono-num">Goal = Yes</code>):</strong> Every transaction has a <code class="font-mono-num">Group :: Category</code> assignment. Standard budget Groups and 🎯 Goal Groups both appear in the <strong>Group</strong> dropdown. A Goal Group can have 0, 1, or many child Categories (if 0, select <em>Direct to Goal</em> in the Category dropdown).</p>
+            <p><strong class="text-slate-900">Refunds &amp; Reimbursements (Not Income):</strong> Retail returns (Amazon, Walmart, Menards) and peer reimbursements (Venmo/PayPal splits) should be entered as <strong>negative amounts (<code class="font-mono-num">-$</code>)</strong> under the <em>same expense Group &amp; Category</em> as the original purchase. This offsets your category spending rather than inflating Income.</p>
+            <p><strong class="text-slate-900">Transfers &amp; Healing:</strong> Moving money between tracked accounts (like paying a credit card from checking) belongs in a 'Transfer' group. To split a purchase (e.g., at Menards) between a normal household category and a 🎯 Goal project, click the <strong>✂ Split</strong> icon.</p>
+            <p class="pt-2 border-t border-slate-200"><strong class="text-slate-900">Color Guide:</strong> <span class="text-rose-600 font-bold">Red</span> = Expenses (+$ Out) &nbsp;|&nbsp; <span class="text-emerald-600 font-bold">Green</span> = True Income or Negative Expense Refunds/Offsets (-$) &nbsp;|&nbsp; <span class="text-slate-500 font-bold">Grey</span> = Transfers (Internal Move)</p>
         </div>
 
         <div id="activeFilterNotice" class="hidden bg-amber-50 border border-amber-200 text-amber-900 px-3.5 py-2 rounded-lg text-xs flex items-center justify-between">
@@ -477,10 +477,10 @@
     <section id="tab-admin" class="hidden space-y-6">
       <div class="bg-indigo-900 rounded-xl p-6 shadow-sm text-indigo-50 flex flex-col md:flex-row gap-6 items-center justify-between">
           <div class="space-y-2">
-              <h2 class="text-lg font-bold text-white">How to Account for Next Month's Actuals</h2>
-              <p class="text-sm text-indigo-200">Learn the two methods for rapidly importing transaction data without manual entry.</p>
+              <h2 class="text-lg font-bold text-white">Weekly AI Sync &amp; Monthly Actuals Guide</h2>
+              <p class="text-sm text-indigo-200">Learn the 3 workflows for keeping your ledger current: Desktop "Ask Gemini" tabs, Mobile Screenshots, or Raw Bank CSVs.</p>
           </div>
-          <button onclick="openImportGuideModal()" class="bg-white text-indigo-900 hover:bg-indigo-50 font-bold py-2.5 px-6 rounded-lg text-sm shadow transition shrink-0">View Import Guide</button>
+          <button onclick="openImportGuideModal()" class="bg-white text-indigo-900 hover:bg-indigo-50 font-bold py-2.5 px-6 rounded-lg text-sm shadow transition shrink-0">View Import &amp; Sync Guide</button>
       </div>
 
       <div class="bg-slate-900 rounded-xl p-6 shadow-sm text-slate-50 flex flex-col md:flex-row gap-6 items-center justify-between mt-6">
@@ -586,26 +586,39 @@
   </div>
 
   <!-- MODALS -->
-  <div id="importGuideModal" class="fixed inset-0 bg-slate-900/70 hidden items-center justify-center p-4 z-[60]">
+ <div id="importGuideModal" class="fixed inset-0 bg-slate-900/70 hidden items-center justify-center p-4 z-[60]">
     <div class="bg-white rounded-2xl max-w-3xl w-full p-8 shadow-2xl space-y-6 text-sm flex flex-col max-h-[90vh] overflow-y-auto relative">
       <button onclick="closeImportGuideModal()" class="absolute top-6 right-6 text-slate-400 hover:text-rose-600 font-bold text-3xl leading-none">&times;</button>
-      <h3 class="text-xl font-extrabold text-slate-900 border-b pb-4">How to Account for Next Month's Actuals</h3>
-      <div class="space-y-4">
-          <h4 class="font-bold text-indigo-700 text-base">Method 1: The Native Bulk-Import Wizard (Recommended)</h4>
-          <p class="text-slate-600">This app is fully equipped to parse raw bank files directly on your device, ensuring privacy and speed.</p>
-          <ul class="list-decimal pl-5 text-slate-600 space-y-2">
-              <li>Log into your bank and click <strong>"Download Activity as CSV"</strong>.</li>
-              <li>In this app, click the <strong>📥 Data Importer</strong> tab.</li>
-              <li>Drag and drop your raw bank CSV file into the designated zone.</li>
-              <li>The engine will instantly parse the file, flip expenses to positive values, and attempt to auto-guess the Categories or Goals based on your past ledger entries.</li>
+      <h3 class="text-xl font-extrabold text-slate-900 border-b pb-4">Weekly AI Sync &amp; Transaction Import Guide</h3>
+
+      <div class="space-y-3">
+          <h4 class="font-bold text-indigo-700 text-base">Method 1: Weekly AI Sync on Desktop (Chrome "Ask Gemini" Side Panel)</h4>
+          <p class="text-slate-600">Keep your budget current weekly without downloading CSV files:</p>
+          <ul class="list-decimal pl-5 text-slate-600 space-y-1.5">
+              <li>Go to the <strong>📥 Data Importer</strong> tab and click <strong>📋 Copy Weekly AI Sync Packet to Clipboard</strong>.</li>
+              <li>Log into your bank/card accounts in Chrome tabs and open each account's <em>Recent Activity</em> view.</li>
+              <li>Click <strong>Ask Gemini</strong> in Chrome (you can even click <strong>Add tabs / @</strong> to share up to 5–10 open account tabs at once) and paste the Sync Packet.</li>
+              <li>Gemini will skip pending items, stop at your last 5 recorded cutoff transactions per account, format refunds as negative (<code class="font-mono-num">-Amount</code>), and return a JSON array.</li>
+              <li>Paste one or multiple JSON arrays into <strong>Step 2 (Stage &amp; Accumulate)</strong> on the Data Importer tab, review/tweak any Goal assignments in the <strong>Rapid-Fire Review</strong> table, and click <strong>✓ Save All to Ledger</strong>.</li>
           </ul>
       </div>
-      <div class="border-t border-slate-200 pt-6 space-y-4">
-          <h4 class="font-bold text-indigo-700 text-base">Method 2: AI Bulk Categorization (Alternative)</h4>
-          <p class="text-slate-600">Use a strict prompt in Gemini or ChatGPT to categorize massive batches of new merchants before importing.</p>
-          <button onclick="generateAIPrompt()" class="mt-4 bg-slate-800 hover:bg-slate-700 text-white font-bold py-2.5 px-6 rounded-lg text-xs transition">📋 Copy Master AI Prompt to Clipboard</button>
+
+      <div class="border-t border-slate-200 pt-5 space-y-3">
+          <h4 class="font-bold text-emerald-700 text-base">Method 2: Weekly AI Sync on Mobile Phone (Screenshots Workflow)</h4>
+          <p class="text-slate-600">Ideal when using banking apps on a phone where browser extensions aren't available:</p>
+          <ul class="list-decimal pl-5 text-slate-600 space-y-1.5">
+              <li>In KTBudget on your phone, tap <strong>📋 Copy Weekly AI Sync Packet to Clipboard</strong> on the Data Importer tab.</li>
+              <li>Open your banking or Venmo/PayPal app and take 1–2 screenshots of your recent posted activity.</li>
+              <li>Open the <strong>Gemini mobile app</strong>, attach the screenshots, paste the Sync Packet, and copy the resulting JSON array back into KTBudget's <strong>Stage AI JSON Output</strong> box.</li>
+          </ul>
       </div>
-      <div class="pt-4 text-right">
+
+      <div class="border-t border-slate-200 pt-5 space-y-3">
+          <h4 class="font-bold text-slate-800 text-base">Method 3: Native Bank CSV Drag &amp; Drop (Fallback)</h4>
+          <p class="text-slate-600">Expand the <strong>📁 Upload a Raw Bank CSV File</strong> section on the Data Importer tab and drop any bank CSV file. The engine will auto-match known merchants using your live ledger and saved Merchant Rules.</p>
+      </div>
+
+      <div class="pt-4 text-right border-t border-slate-200">
         <button onclick="closeImportGuideModal()" class="px-5 py-2.5 bg-slate-200 text-slate-800 rounded-lg font-bold hover:bg-slate-300 transition">Close Guide</button>
       </div>
     </div>
@@ -1463,35 +1476,53 @@ Return ONLY a valid JSON array (no markdown commentary outside the JSON block) m
     function closeAiPrepGuideModal() { document.getElementById('aiPrepGuideModal').classList.add('hidden'); document.getElementById('aiPrepGuideModal').classList.remove('flex'); }
     
     function copyAiPrepPrompt() {
-        const prompt = `Act as a financial data architect. I have attached several raw bank and credit card transaction files (or pasted the text below). Your job is to analyze my spending, design a bespoke relational category structure for me, and output a complete, valid JSON database matching my app's schema.
+        const prompt = `Act as a financial data architect for KTBudget 4.0 (v4.2). I have attached or pasted raw bank/credit card transaction data. Analyze my spending, design a bespoke relational structure, and output a valid JSON database matching my app's unified schema.
 
 Step 1: Analyze & Architect
-- Identify distinct funding sources (Accounts) based on the data and create Account IDs.
-- Analyze merchants and cluster them into logical Categories (e.g., Groceries, Utilities). Create Category IDs (e.g., C_GROC).
-- Cluster those Categories into high-level Groups (e.g., Necessities, Wants). Create Group IDs (e.g., G_NEC).
-- Map the Categories to the Groups using a relational Group_Category table (GC_ID).
+- Identify distinct funding sources (Accounts) and create Account_IDs.
+- Cluster merchants into logical Categories (e.g., Groceries, Utilities) with Category_IDs (e.g., C_GROC).
+- Cluster Categories into high-level Groups (e.g., Necessities, Wants) with Group_IDs (e.g., G_NEC).
+- Note on Goals (Model B): In KTBudget, Goals and Special Projects are simply Groups with the attribute "Goal": "Yes" (standard budget groups have "Goal": "No"). Both can have 0-to-many Categories mapped via group_category, and both store their target rules in the "budgets" table.
+- Map Categories to Groups in the "group_category" table.
 
-Step 2: Process Transactions
-- Format all transactions to match this schema. Make expenses positive numbers. Format Date as YYYY-MM-DD and Month as YYYY-MM.
-- Assign the correct Account_ID, Group_ID, and Category_ID to every transaction.
+Step 2: Process Transactions & Sign Rules
+- Format Date as YYYY-MM-DD and Month as YYYY-MM.
+- Standard expenses/outflows must be POSITIVE numbers (e.g., 145.20).
+- Retail refunds/returns (Amazon, Walmart, Menards, etc.) and peer reimbursements (Venmo/PayPal splits) are NOT income; output them as NEGATIVE numbers (e.g., -25.00) assigned to the SAME expense Group_ID and Category_ID as the original purchase so they offset category spending.
+- Only true income (W2 paychecks, business revenue, Social Security, pension) belongs in an Income Group. Credit card payments and internal account transfers belong in a Transfer Group.
 
-Step 3: Review Suggestions
-- You should also produce a set of review suggestions. Since you might have the hardest time understanding what I consider a want vs. necessary, explain your categorization logic and what I might want to review or adjust. The files have been loaded into this new chat window for you to work with.
+Step 3: Populate Merchant Rules Memory
+- Include a "merchant_rules" array containing the unique Merchant -> { Account_ID, Group_ID, Category_ID } mappings so future weekly AI syncs automatically recognize my merchants even if I wipe my transaction ledger.
 
 Step 4: JSON Output
-Output ONLY valid JSON (no markdown wrapping) matching this exact schema:
+Output ONLY valid JSON matching this exact schema:
 {
-  "groups": [ {"Group_ID": "G_NEC", "Name": "Necessities", "Type": "Fixed", "Impact": "personal", "Budget": "Yes"} ],
-  "categories": [ {"Category_ID": "C_GROC", "Name": "Groceries", "Type": "Flexible", "Impact": "personal", "Budget": "Yes"} ],
-  "group_category": [ {"GC_ID": "GC_1", "Group_ID": "G_NEC", "Category_ID": "C_GROC", "Display_Label": "Necessities::Groceries"} ],
-  "accounts": [ {"Account_ID": "Chase", "Name": "Chase Checking", "Type": "Payment", "Balance": "0.00"} ],
-  "budgets": [],
-  "goals": [],
+  "groups": [
+    {"Group_ID": "G_NEC", "Name": "Personal necessities", "Type": "Fixed", "Impact": "personal", "Budget": "Yes", "Goal": "No"},
+    {"Group_ID": "G_GOAL_1", "Name": "Emergency Reserve", "Type": "Flexible", "Impact": "personal", "Budget": "Yes", "Goal": "Yes", "Description": "Safety buffer", "Linked_Account": "Chase"}
+  ],
+  "categories": [
+    {"Category_ID": "C_GROC", "Name": "Groceries & household", "Type": "Flexible", "Impact": "personal", "Budget": "Yes"}
+  ],
+  "group_category": [
+    {"GC_ID": "GC_1", "Group_ID": "G_NEC", "Category_ID": "C_GROC", "Display_Label": "Personal necessities::Groceries & household"}
+  ],
+  "accounts": [
+    {"Account_ID": "Chase", "Name": "Chase Checking", "Type": "Payment", "Balance": "0.00"}
+  ],
+  "budgets": [
+    {"Budget_ID": "B_1", "Scope_Level": "Category", "Target_Ref_ID": "C_GROC", "Priority_Type": "Necessity", "Rule_Type": "Each Month", "Amount": "500.00", "Start_Month": "2026-10", "Target_Month": "", "Notes": ""},
+    {"Budget_ID": "B_2", "Scope_Level": "Group", "Target_Ref_ID": "G_GOAL_1", "Priority_Type": "Necessity", "Rule_Type": "Each Month", "Amount": "100.00", "Start_Month": "2026-10", "Target_Month": "", "Notes": "Safety buffer"}
+  ],
+  "merchant_rules": [
+    {"Merchant": "Target", "Account_ID": "Chase", "Group_ID": "G_NEC", "Category_ID": "C_GROC"}
+  ],
   "todos": [],
-  "transactions": [ {"Txn_ID": "T1001", "Date": "2026-10-15", "Month": "2026-10", "Account_ID": "Chase", "Merchant": "Target", "Group_ID": "G_NEC", "Category_ID": "C_GROC", "Amount": "145.20", "Include": "1"} ]
-}
-`;
-        navigator.clipboard.writeText(prompt).then(() => alert('Architecture Prompt copied to clipboard!')).catch(err => alert('Failed to copy.'));
+  "transactions": [
+    {"Txn_ID": "T1001", "Date": "2026-10-15", "Month": "2026-10", "Account_ID": "Chase", "Merchant": "Target", "Group_ID": "G_NEC", "Category_ID": "C_GROC", "Amount": 145.20, "Include": "1"}
+  ]
+}`;
+        navigator.clipboard.writeText(prompt).then(() => alert('Updated v4.2 AI Architect Prompt copied to clipboard!')).catch(err => alert('Failed to copy.'));
     }
 
     function harvestMerchantRulesFromTransactions() {
