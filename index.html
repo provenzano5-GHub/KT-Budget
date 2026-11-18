@@ -329,48 +329,87 @@
       </div>
     </section>
 
-    <!-- TAB 5: GROUPS & CATEGORIES (WITH SORT BUTTONS & ALPHA DROP-DOWNS) -->
+   <!-- TAB 5: GROUPS & CATEGORIES -->
     <section id="tab-structure" class="hidden space-y-6">
-      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
         
-        <!-- Groups Manager -->
-        <div class="bg-white rounded-xl border border-slate-200 p-5 shadow-sm space-y-4">
-            <div class="flex items-center justify-between border-b border-slate-100 pb-3">
-                <div>
-                    <h2 class="text-base font-bold text-slate-900">Groups</h2>
-                    <p class="text-[10px] text-slate-500">High-level containers for categories and goals. Click "Group Name" to toggle A–Z / Z–A sort.</p>
-                </div>
-                <button onclick="openGroupModal(-1)" class="bg-slate-800 hover:bg-slate-700 text-white text-xs font-semibold px-3.5 py-2 rounded-lg">+ Add Group</button>
-            </div>
-            <div class="overflow-x-auto">
-                <table class="w-full text-left border-collapse">
-                    <thead><tr class="border-b border-slate-200 bg-slate-50 text-[10px] font-bold uppercase tracking-wider text-slate-400 select-none">
-                        <th class="py-2 pl-3 cursor-pointer hover:text-slate-700 transition" onclick="toggleStructureSort('group')">Group Name <span id="structSort-group" class="sort-icon sort-active">▲</span></th>
-                        <th class="py-2">Goal?</th>
-                        <th class="py-2">Type</th>
-                        <th class="py-2">Impact</th>
-                        <th class="py-2">Budgeted</th>
-                        <th class="py-2 text-right pr-3">Actions</th>
-                    </tr></thead>
-                    <tbody id="groupsTableBody" class="divide-y divide-slate-100 text-xs"></tbody>
-                </table>
-            </div>
+        <!-- Left Column: Separate Standard Groups & Goal Groups Cards -->
+        <div class="space-y-6">
+          <!-- Card 1: Standard Budget Groups -->
+          <div class="bg-white rounded-xl border border-slate-200 p-5 shadow-sm space-y-4">
+              <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+                  <div>
+                      <h2 class="text-base font-bold text-slate-900">📁 Standard Budget Groups</h2>
+                      <p class="text-[10px] text-slate-500">Ongoing expense &amp; income group containers (alpha-sorted).</p>
+                  </div>
+                  <div class="flex items-center gap-2">
+                      <button onclick="toggleStructureSort('group')" class="px-2.5 py-1.5 border border-slate-200 bg-slate-50 hover:bg-slate-100 rounded text-[10px] font-bold text-slate-700 transition">
+                          Sort <span id="structSort-group" class="text-indigo-600 font-extrabold">▲</span>
+                      </button>
+                      <button onclick="openGroupModal(-1, 'No')" class="bg-slate-800 hover:bg-slate-700 text-white text-xs font-semibold px-3.5 py-2 rounded-lg">+ Add Group</button>
+                  </div>
+              </div>
+              <div class="overflow-x-auto">
+                  <table class="w-full text-left border-collapse">
+                      <thead><tr class="border-b border-slate-200 bg-slate-50 text-[10px] font-bold uppercase tracking-wider text-slate-400 select-none">
+                          <th class="py-2 pl-3 cursor-pointer hover:text-slate-700 transition" onclick="toggleStructureSort('group')">Group Name</th>
+                          <th class="py-2">Type</th>
+                          <th class="py-2">Impact</th>
+                          <th class="py-2">Budgeted</th>
+                          <th class="py-2 text-right pr-3">Actions</th>
+                      </tr></thead>
+                      <tbody id="stdGroupsTableBody" class="divide-y divide-slate-100 text-xs"></tbody>
+                  </table>
+              </div>
+          </div>
+
+          <!-- Card 2: Goal Groups -->
+          <div class="bg-white rounded-xl border border-emerald-200 p-5 shadow-sm space-y-4">
+              <div class="flex items-center justify-between border-b border-emerald-100 pb-3">
+                  <div>
+                      <h2 class="text-base font-bold text-emerald-950">🎯 Goal Groups &amp; Special Projects</h2>
+                      <p class="text-[10px] text-slate-500">Goal containers (<code class="font-mono-num">Goal = Yes</code>), alpha-sorted separately.</p>
+                  </div>
+                  <div class="flex items-center gap-2">
+                      <button onclick="toggleStructureSort('goalGroup')" class="px-2.5 py-1.5 border border-emerald-200 bg-emerald-50/50 hover:bg-emerald-100 rounded text-[10px] font-bold text-emerald-800 transition">
+                          Sort <span id="structSort-goalGroup" class="text-emerald-700 font-extrabold">▲</span>
+                      </button>
+                      <button onclick="openGroupModal(-1, 'Yes')" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold px-3.5 py-2 rounded-lg">+ Add Goal Group</button>
+                  </div>
+              </div>
+              <div class="overflow-x-auto">
+                  <table class="w-full text-left border-collapse">
+                      <thead><tr class="border-b border-emerald-200 bg-emerald-50/60 text-[10px] font-bold uppercase tracking-wider text-emerald-900 select-none">
+                          <th class="py-2 pl-3 cursor-pointer hover:text-emerald-950 transition" onclick="toggleStructureSort('goalGroup')">Goal Name</th>
+                          <th class="py-2">Type</th>
+                          <th class="py-2">Impact</th>
+                          <th class="py-2">Budgeted</th>
+                          <th class="py-2 text-right pr-3">Actions</th>
+                      </tr></thead>
+                      <tbody id="goalGroupsTableBody" class="divide-y divide-slate-100 text-xs"></tbody>
+                  </table>
+              </div>
+          </div>
         </div>
         
-        <!-- Categories Manager -->
+        <!-- Right Column: Categories Manager -->
         <div class="bg-white rounded-xl border border-slate-200 p-5 shadow-sm space-y-4">
             <div class="flex items-center justify-between border-b border-slate-100 pb-3">
                 <div>
                     <h2 class="text-base font-bold text-slate-900">Categories &amp; Mapping</h2>
-                    <p class="text-[10px] text-slate-500">Assign categories to parent groups. Click "Category Name" to toggle A–Z / Z–A sort.</p>
+                    <p class="text-[10px] text-slate-500">Click <strong>Category Name</strong> or <strong>Parent Group</strong> headers to sort ascending/descending.</p>
                 </div>
                 <button onclick="openCategoryModal(-1)" class="bg-[#6c5ce7] hover:bg-[#5b4bc4] text-white text-xs font-semibold px-3.5 py-2 rounded-lg">+ Add Category</button>
             </div>
             <div class="overflow-x-auto">
                 <table class="w-full text-left border-collapse">
                     <thead><tr class="border-b border-slate-200 bg-slate-50 text-[10px] font-bold uppercase tracking-wider text-slate-400 select-none">
-                        <th class="py-2 pl-3 cursor-pointer hover:text-slate-700 transition" onclick="toggleStructureSort('category')">Category Name <span id="structSort-category" class="sort-icon sort-active">▲</span></th>
-                        <th class="py-2">Parent Group</th>
+                        <th class="py-2 pl-3 cursor-pointer hover:text-slate-700 transition" onclick="toggleStructureSort('catName')">
+                            Category Name <span id="structSort-catName" class="sort-icon sort-active">▲</span>
+                        </th>
+                        <th class="py-2 cursor-pointer hover:text-slate-700 transition" onclick="toggleStructureSort('catGroup')">
+                            Parent Group <span id="structSort-catGroup" class="sort-icon">⇕</span>
+                        </th>
                         <th class="py-2">Type / Impact</th>
                         <th class="py-2 text-right pr-3">Actions</th>
                     </tr></thead>
@@ -380,7 +419,6 @@
         </div>
       </div>
     </section>
-
     <!-- TAB 6: DATA IMPORTER (WEEKLY AI SYNC & NATIVE BULK WIZARD) -->
     <section id="tab-importer" class="hidden space-y-6">
       <div class="bg-white rounded-xl border border-slate-200 p-6 shadow-sm space-y-6">
@@ -1833,8 +1871,13 @@ Output ONLY valid JSON matching this exact schema:
 
     // --- UNIVERSAL ALPHABETICAL DROPDOWN SORTING ---
     function populateDropdowns() {
-        const sortedGroups = [...db.groups].sort((a, b) => (a.Name || '').toLowerCase().localeCompare((b.Name || '').toLowerCase()));
-        
+        const sortedGroups = [...db.groups].sort((a, b) => {
+            const aGoal = a.Goal === 'Yes' ? 1 : 0;
+            const bGoal = b.Goal === 'Yes' ? 1 : 0;
+            if (aGoal !== bGoal) return aGoal - bGoal; // Standard Groups (0) first, Goal Groups (1) second
+            return (a.Name || '').toLowerCase().localeCompare((b.Name || '').toLowerCase());
+        });
+
         let scopeOptions = '';
         sortedGroups.forEach(g => {
             const isGoal = g.Goal === 'Yes';
@@ -1862,33 +1905,25 @@ Output ONLY valid JSON matching this exact schema:
         });
 
         let grpOptions = '<option value="" disabled selected>Select Group or Goal...</option>';
-        if (stdGrpOpts) grpOptions += `<optgroup label="Standard Budget Groups">${stdGrpOpts}</optgroup>`;
+        if (stdGrpOpts) grpOptions += `<optgroup label="📁 Standard Budget Groups">${stdGrpOpts}</optgroup>`;
         if (goalGrpOpts) grpOptions += `<optgroup label="🎯 Goal Groups">${goalGrpOpts}</optgroup>`;
         
         document.getElementById('newTxnGroup').innerHTML = grpOptions;
         document.getElementById('splitGrpA').innerHTML = grpOptions;
         document.getElementById('splitGrpB').innerHTML = grpOptions;
 
-        const sortedAccounts = [...db.accounts].sort((a, b) => (a.Name || '').toLowerCase().localeCompare((b.Name || '').toLowerCase()));
-        const accs = sortedAccounts.map(a => `<option value="${a.Account_ID}">${a.Name} (${a.Type})</option>`).join('');
+        const sortedAccs = [...db.accounts].sort((a, b) => (a.Name || '').toLowerCase().localeCompare((b.Name || '').toLowerCase()));
+        const accs = sortedAccs.map(a => `<option value="${a.Account_ID}">${a.Name} (${a.Type})</option>`).join('');
         const budgAccEl = document.getElementById('newBudgAccount');
         if (budgAccEl) budgAccEl.innerHTML = '<option value="">None / Multiple Accounts</option>' + accs;
         
         document.getElementById('newTxnAccount').innerHTML = '<option value="" disabled selected>Select Source Account...</option>' + accs;
 
-        const sortedCategories = [...db.categories].sort((a, b) => (a.Name || '').toLowerCase().localeCompare((b.Name || '').toLowerCase()));
-
+        const sortedCatsAll = [...db.categories].sort((a, b) => (a.Name || '').toLowerCase().localeCompare((b.Name || '').toLowerCase()));
         document.getElementById('filterMonth').innerHTML = '<option value="">All Months</option>' + appState.customMonths.map(m => `<option value="${m}">${m}</option>`).join('');
         document.getElementById('filterAccount').innerHTML = '<option value="">All Accounts</option>' + accs;
         document.getElementById('filterGroup').innerHTML = '<option value="">All Groups &amp; Goals</option>' + sortedGroups.map(g => `<option value="${g.Group_ID}">${g.Goal === 'Yes' ? '🎯 ' : ''}${g.Name}</option>`).join('');
-        document.getElementById('filterCategory').innerHTML = '<option value="">All Categories</option>' + sortedCategories.map(c => `<option value="${c.Category_ID}">${c.Name}</option>`).join('');
-
-        const catGrpSelect = document.getElementById('newCatGroup');
-        if (catGrpSelect) {
-            let catGrpOpts = '<option value="" disabled selected>Select Parent Group or Goal...</option>';
-            sortedGroups.forEach(g => catGrpOpts += `<option value="${g.Group_ID}">${g.Goal === 'Yes' ? '🎯 ' : ''}${g.Name} (${g.Impact || 'personal'})</option>`);
-            catGrpSelect.innerHTML = catGrpOpts;
-        }
+        document.getElementById('filterCategory').innerHTML = '<option value="">All Categories</option>' + sortedCatsAll.map(c => `<option value="${c.Category_ID}">${c.Name}</option>`).join('');
     }
 
     function updateCategoryDropdown(targetId, groupId, selectedVal = '') {
@@ -1905,6 +1940,7 @@ Output ONLY valid JSON matching this exact schema:
             const cy = db.categories.find(c => c.Category_ID === y.Category_ID)?.Name || '';
             return cx.toLowerCase().localeCompare(cy.toLowerCase());
         });
+
         const catOpts = sortedGcs.map(gc => {
             const c = db.categories.find(cat => cat.Category_ID === gc.Category_ID);
             return c ? `<option value="${c.Category_ID}">${c.Name}</option>` : '';
@@ -1928,7 +1964,7 @@ Output ONLY valid JSON matching this exact schema:
             }
         }
     }
-
+    
     function fmtCurrency(val, showPlus = false) {
       const num = Number(val) || 0;
       const abs = '$' + Math.abs(num).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -3002,10 +3038,10 @@ Output ONLY valid JSON matching this exact schema:
         const grpBg = grpBgIdx >= 0 ? db.budgets[grpBgIdx] : null;
         const groupGc = db.group_category
           .filter(gc => gc.Group_ID === g.Group_ID)
-          .sort((x, y) => {
-            const cx = db.categories.find(c => c.Category_ID === x.Category_ID)?.Name || '';
-            const cy = db.categories.find(c => c.Category_ID === y.Category_ID)?.Name || '';
-            return cx.toLowerCase().localeCompare(cy.toLowerCase());
+          .sort((a, b) => {
+            const catA = db.categories.find(c => c.Category_ID === a.Category_ID)?.Name || '';
+            const catB = db.categories.find(c => c.Category_ID === b.Category_ID)?.Name || '';
+            return catA.toLowerCase().localeCompare(catB.toLowerCase());
           });
 
         let sumChildBaseAmounts = 0;
@@ -3115,63 +3151,153 @@ Output ONLY valid JSON matching this exact schema:
         renderStructure();
     }
 
+   let structureSortState = {
+        stdGroupDir: 'asc',
+        goalGroupDir: 'asc',
+        catPrimary: 'Name', // 'Name' or 'Group'
+        catDir: 'asc'
+    };
+
+    function toggleStructureSort(target) {
+        if (target === 'group') {
+            structureSortState.stdGroupDir = structureSortState.stdGroupDir === 'asc' ? 'desc' : 'asc';
+        } else if (target === 'goalGroup') {
+            structureSortState.goalGroupDir = structureSortState.goalGroupDir === 'asc' ? 'desc' : 'asc';
+        } else if (target === 'catName') {
+            if (structureSortState.catPrimary === 'Name') {
+                structureSortState.catDir = structureSortState.catDir === 'asc' ? 'desc' : 'asc';
+            } else {
+                structureSortState.catPrimary = 'Name';
+                structureSortState.catDir = 'asc';
+            }
+        } else if (target === 'catGroup') {
+            if (structureSortState.catPrimary === 'Group') {
+                structureSortState.catDir = structureSortState.catDir === 'asc' ? 'desc' : 'asc';
+            } else {
+                structureSortState.catPrimary = 'Group';
+                structureSortState.catDir = 'asc';
+            }
+        }
+        renderStructure();
+    }
+
     function renderStructure() {
-        const sortedGroups = db.groups
-            .map((g, origIdx) => ({ ...g, origIdx }))
+        const allGroupsWithIdx = db.groups.map((g, origIdx) => ({ ...g, origIdx }));
+
+        // 1. Standard Budget Groups (Goal !== 'Yes')
+        const stdGroups = allGroupsWithIdx
+            .filter(g => g.Goal !== 'Yes')
             .sort((a, b) => {
                 const cmp = (a.Name || '').toLowerCase().localeCompare((b.Name || '').toLowerCase());
-                return structureState.groupDir === 'asc' ? cmp : -cmp;
+                return structureSortState.stdGroupDir === 'asc' ? cmp : -cmp;
             });
 
-        const grpSortIcon = document.getElementById('structSort-group');
-        if (grpSortIcon) grpSortIcon.textContent = structureState.groupDir === 'asc' ? '▲' : '▼';
+        const stdIcon = document.getElementById('structSort-group');
+        if (stdIcon) stdIcon.textContent = structureSortState.stdGroupDir === 'asc' ? '▲' : '▼';
 
-        document.getElementById('groupsTableBody').innerHTML = sortedGroups.map((g) => {
-            const imp = g.Impact || 'personal';
-            const impBadge = imp === 'business' ? 'bg-amber-100 text-amber-800' : 'bg-slate-100 text-slate-600';
-            const isGoal = g.Goal === 'Yes';
-            const goalBadge = isGoal
-                ? '<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-300">🎯 Yes</span>'
-                : '<span class="text-slate-400 text-[10px]">No</span>';
-            return `
-            <tr class="hover:bg-slate-50 ${isGoal ? 'bg-emerald-50/30' : ''}">
-                <td class="py-2.5 pl-3 font-semibold text-slate-800">${isGoal ? '🎯 ' : ''}${g.Name}</td>
-                <td class="py-2.5">${goalBadge}</td>
-                <td class="py-2.5 text-slate-500">${g.Type || '-'}</td>
-                <td class="py-2.5"><span class="px-2 py-0.5 rounded text-[10px] font-bold ${impBadge}">${imp}</span></td>
-                <td class="py-2.5 text-slate-500">${g.Budget || 'Yes'}</td>
-                <td class="py-2.5 pr-3 text-right">
-                    <button onclick="openGroupModal(${g.origIdx})" class="text-indigo-600 hover:text-indigo-800 font-bold mr-3" title="Edit">✎</button>
-                    <button onclick="deleteGroup(${g.origIdx})" class="text-slate-400 hover:text-rose-500 font-bold text-lg leading-none align-middle" title="Delete">&times;</button>
-                </td>
-            </tr>`;
-        }).join('');
+        const stdBody = document.getElementById('stdGroupsTableBody');
+        if (stdBody) {
+            stdBody.innerHTML = stdGroups.map(g => {
+                const imp = g.Impact || 'personal';
+                const impBadge = imp === 'business' ? 'bg-amber-100 text-amber-800' : 'bg-slate-100 text-slate-600';
+                return `
+                <tr class="hover:bg-slate-50">
+                    <td class="py-2.5 pl-3 font-semibold text-slate-800">${g.Name}</td>
+                    <td class="py-2.5 text-slate-500">${g.Type || '-'}</td>
+                    <td class="py-2.5"><span class="px-2 py-0.5 rounded text-[10px] font-bold ${impBadge}">${imp}</span></td>
+                    <td class="py-2.5 text-slate-500">${g.Budget || 'Yes'}</td>
+                    <td class="py-2.5 pr-3 text-right whitespace-nowrap">
+                        <button onclick="openGroupModal(${g.origIdx})" class="text-indigo-600 hover:text-indigo-800 font-bold mr-3" title="Edit">✎</button>
+                        <button onclick="deleteGroup(${g.origIdx})" class="text-slate-400 hover:text-rose-500 font-bold text-lg leading-none align-middle" title="Delete">&times;</button>
+                    </td>
+                </tr>`;
+            }).join('') || `<tr><td colspan="5" class="py-4 text-center text-slate-400 italic">No standard groups found.</td></tr>`;
+        }
 
-        const sortedCategories = db.categories
-            .map((c, origIdx) => ({ ...c, origIdx }))
+        // 2. Goal Groups (Goal === 'Yes')
+        const goalGroups = allGroupsWithIdx
+            .filter(g => g.Goal === 'Yes')
             .sort((a, b) => {
                 const cmp = (a.Name || '').toLowerCase().localeCompare((b.Name || '').toLowerCase());
-                return structureState.categoryDir === 'asc' ? cmp : -cmp;
+                return structureSortState.goalGroupDir === 'asc' ? cmp : -cmp;
             });
 
-        const catSortIcon = document.getElementById('structSort-category');
-        if (catSortIcon) catSortIcon.textContent = structureState.categoryDir === 'asc' ? '▲' : '▼';
+        const goalIcon = document.getElementById('structSort-goalGroup');
+        if (goalIcon) goalIcon.textContent = structureSortState.goalGroupDir === 'asc' ? '▲' : '▼';
 
-        document.getElementById('categoriesTableBody').innerHTML = sortedCategories.map((c) => {
+        const goalBody = document.getElementById('goalGroupsTableBody');
+        if (goalBody) {
+            goalBody.innerHTML = goalGroups.map(g => {
+                const imp = g.Impact || 'personal';
+                const impBadge = imp === 'business' ? 'bg-amber-100 text-amber-800' : 'bg-slate-100 text-slate-600';
+                return `
+                <tr class="hover:bg-emerald-50/50 bg-emerald-50/20">
+                    <td class="py-2.5 pl-3 font-semibold text-emerald-950">🎯 ${g.Name}</td>
+                    <td class="py-2.5 text-slate-500">${g.Type || '-'}</td>
+                    <td class="py-2.5"><span class="px-2 py-0.5 rounded text-[10px] font-bold ${impBadge}">${imp}</span></td>
+                    <td class="py-2.5 text-slate-500">${g.Budget || 'Yes'}</td>
+                    <td class="py-2.5 pr-3 text-right whitespace-nowrap">
+                        <button onclick="openGroupModal(${g.origIdx})" class="text-indigo-600 hover:text-indigo-800 font-bold mr-3" title="Edit">✎</button>
+                        <button onclick="deleteGroup(${g.origIdx})" class="text-slate-400 hover:text-rose-500 font-bold text-lg leading-none align-middle" title="Delete">&times;</button>
+                    </td>
+                </tr>`;
+            }).join('') || `<tr><td colspan="5" class="py-4 text-center text-slate-400 italic">No goal groups found.</td></tr>`;
+        }
+
+        // 3. Categories & Mapping (Sort by Category Name OR by Parent Group -> Category Name alphabetical)
+        const catNameIcon = document.getElementById('structSort-catName');
+        const catGrpIcon = document.getElementById('structSort-catGroup');
+        if (catNameIcon && catGrpIcon) {
+            if (structureSortState.catPrimary === 'Name') {
+                catNameIcon.textContent = structureSortState.catDir === 'asc' ? '▲' : '▼';
+                catNameIcon.classList.add('sort-active');
+                catGrpIcon.textContent = '⇕';
+                catGrpIcon.classList.remove('sort-active');
+            } else {
+                catGrpIcon.textContent = structureSortState.catDir === 'asc' ? '▲' : '▼';
+                catGrpIcon.classList.add('sort-active');
+                catNameIcon.textContent = '⇕';
+                catNameIcon.classList.remove('sort-active');
+            }
+        }
+
+        const enrichedCategories = db.categories.map((c, origIdx) => {
             const gc = db.group_category.find(x => x.Category_ID === c.Category_ID);
             const grp = gc ? db.groups.find(x => x.Group_ID === gc.Group_ID) : null;
-            const gName = grp ? `${grp.Goal === 'Yes' ? '🎯 ' : ''}${grp.Name}` : '<span class="text-rose-500 text-[10px] font-bold">⚠ UNLINKED</span>';
+            return {
+                ...c,
+                origIdx,
+                grpNameClean: grp ? (grp.Name || '').toLowerCase() : 'zzzz_unlinked',
+                isGoalGrp: Boolean(grp && grp.Goal === 'Yes'),
+                grpDisplay: grp ? `${grp.Goal === 'Yes' ? '🎯 ' : ''}${grp.Name}` : '<span class="text-rose-500 text-[10px] font-bold">⚠ UNLINKED</span>'
+            };
+        });
+
+        enrichedCategories.sort((a, b) => {
+            const dir = structureSortState.catDir === 'asc' ? 1 : -1;
+            if (structureSortState.catPrimary === 'Group') {
+                // Primary sort: Parent Group (asc or desc), Secondary sort: Category Name (always alphabetical A-Z)
+                const grpCmp = a.grpNameClean.localeCompare(b.grpNameClean);
+                if (grpCmp !== 0) return grpCmp * dir;
+                return (a.Name || '').toLowerCase().localeCompare((b.Name || '').toLowerCase());
+            } else {
+                // Primary sort: Category Name (asc or desc)
+                return (a.Name || '').toLowerCase().localeCompare((b.Name || '').toLowerCase()) * dir;
+            }
+        });
+
+        document.getElementById('categoriesTableBody').innerHTML = enrichedCategories.map((c) => {
             const imp = c.Impact || 'personal';
             const impBadge = imp === 'business' ? 'bg-amber-100 text-amber-800' : 'bg-slate-100 text-slate-600';
             return `
             <tr class="hover:bg-slate-50">
                 <td class="py-2.5 pl-3 font-semibold text-slate-800">${c.Name}</td>
-                <td class="py-2.5 text-slate-600 font-medium">${gName}</td>
+                <td class="py-2.5 text-slate-600 font-medium">${c.grpDisplay}</td>
                 <td class="py-2.5">
                   <span class="text-slate-500 text-[11px] mr-1">${c.Type || 'Flexible'}</span>
                   <span class="px-1.5 py-0.5 rounded text-[10px] font-bold ${impBadge}">${imp}</span>
                 </td>
-                <td class="py-2.5 pr-3 text-right">
+                <td class="py-2.5 pr-3 text-right whitespace-nowrap">
                     <button onclick="openCategoryModal(${c.origIdx})" class="text-indigo-600 hover:text-indigo-800 font-bold mr-3" title="Edit">✎</button>
                     <button onclick="deleteCategory(${c.origIdx})" class="text-slate-400 hover:text-rose-500 font-bold text-lg leading-none align-middle" title="Delete">&times;</button>
                 </td>
@@ -3242,9 +3368,14 @@ Output ONLY valid JSON matching this exact schema:
         editingCatIdx = idx;
         document.getElementById('categoryModalTitle').textContent = idx >= 0 ? 'Edit Category' : 'Add Category';
         
-        const sortedGroups = [...db.groups].sort((a, b) => (a.Name || '').toLowerCase().localeCompare((b.Name || '').toLowerCase()));
+       const sortedModalGroups = [...db.groups].sort((a, b) => {
+            const aGoal = a.Goal === 'Yes' ? 1 : 0;
+            const bGoal = b.Goal === 'Yes' ? 1 : 0;
+            if (aGoal !== bGoal) return aGoal - bGoal;
+            return (a.Name || '').toLowerCase().localeCompare((b.Name || '').toLowerCase());
+        });
         let grpOpts = '<option value="" disabled selected>Select Parent Group or Goal...</option>';
-        sortedGroups.forEach(g => grpOpts += `<option value="${g.Group_ID}">${g.Goal === 'Yes' ? '🎯 ' : ''}${g.Name} (${g.Impact || 'personal'})</option>`);
+        sortedModalGroups.forEach(g => grpOpts += `<option value="${g.Group_ID}">${g.Goal === 'Yes' ? '🎯 ' : ''}${g.Name} (${g.Impact || 'personal'})</option>`);
         document.getElementById('newCatGroup').innerHTML = grpOpts;
 
         if(idx >= 0) {
